@@ -158,9 +158,9 @@ class ConfigPampaRCoder:
 # GTX 1650 4GB - Tu hardware
 CODER_4GB = ConfigPampaRCoder(
     vocab_size=8000,      # BPE optimizado para código
-    dim=192,              # Balance velocidad/calidad
-    n_heads=6,
-    n_capas=4,
+    dim=256,              # Balance velocidad/calidad
+    n_heads=8,
+    n_capas=6,            # 6 capas para más profundidad
     dropout=0.1,
     max_seq_len=512,      # Contexto razonable para funciones
     peso_llaves=0.8,      # Código es muy predecible
@@ -175,6 +175,29 @@ CODER_4GB = ConfigPampaRCoder(
     usar_early_exit=True,
     umbral_confianza_exit=0.90,
     capas_minimas=2,
+)
+
+# GTX 1650 4GB + 32GB RAM - MÁXIMA CALIDAD con CPU offloading
+# Este es tu config óptimo: modelo más grande que usa RAM cuando necesita
+CODER_4GB_MAX = ConfigPampaRCoder(
+    vocab_size=16000,     # Vocabulario más rico
+    dim=384,              # Dimensión mayor = mejor representación
+    n_heads=8,
+    n_capas=8,            # 8 capas territoriales
+    dropout=0.1,
+    max_seq_len=1024,     # Contexto largo para archivos completos
+    peso_llaves=0.75,     # Balance reglas/atención
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=500,
+    use_gradient_checkpointing=True,  # Ahorra VRAM
+    use_mixed_precision=True,
+    batch_size=4,         # Batch pequeño para caber en VRAM
+    learning_rate=1.5e-4,
+    max_epochs=30,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.92,
+    capas_minimas=3,
 )
 
 # RTX 3060/3070 8GB
@@ -221,6 +244,120 @@ CODER_24GB = ConfigPampaRCoder(
     capas_minimas=3,
 )
 
+# =============================================================================
+# CONFIGURACIONES PROFESIONALES - Competir con modelos serios
+# =============================================================================
+
+# PAMPAr-Coder-1B (Multi-GPU / Cloud)
+CODER_1B = ConfigPampaRCoder(
+    vocab_size=50257,      # GPT-2 vocab size
+    dim=1536,              # 1.5K hidden
+    n_heads=16,
+    n_capas=24,            # 24 bloques territoriales
+    dropout=0.1,
+    max_seq_len=4096,      # Archivos completos
+    peso_llaves=0.65,      # Más atención aprendida
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=5000,
+    use_gradient_checkpointing=True,
+    use_mixed_precision=True,
+    batch_size=64,
+    learning_rate=6e-5,
+    max_epochs=3,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.94,
+    capas_minimas=6,
+)
+
+# PAMPAr-Coder-3B (Serio - Competidor de CodeLlama-3B)
+CODER_3B = ConfigPampaRCoder(
+    vocab_size=50257,
+    dim=2560,              # 2.5K hidden
+    n_heads=20,
+    n_capas=32,            # 32 bloques
+    dropout=0.1,
+    max_seq_len=8192,      # Contexto largo
+    peso_llaves=0.6,       # Balance reglas/atención
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=10000,
+    use_gradient_checkpointing=True,
+    use_mixed_precision=True,
+    batch_size=128,
+    learning_rate=3e-5,
+    max_epochs=2,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.95,
+    capas_minimas=8,
+)
+
+# PAMPAr-Coder-7B (Competidor de CodeLlama-7B / DeepSeek-Coder-7B)
+CODER_7B = ConfigPampaRCoder(
+    vocab_size=50257,
+    dim=4096,              # 4K hidden (como Llama)
+    n_heads=32,
+    n_capas=32,
+    dropout=0.1,
+    max_seq_len=16384,     # Contexto muy largo
+    peso_llaves=0.55,      # Más flexible
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=20000,
+    use_gradient_checkpointing=True,
+    use_mixed_precision=True,
+    batch_size=256,
+    learning_rate=2e-5,
+    max_epochs=1,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.95,
+    capas_minimas=10,
+)
+
+# PAMPAr-Coder-33B (Competidor de Kimi-style, CodeLlama-34B)
+CODER_33B = ConfigPampaRCoder(
+    vocab_size=50257,
+    dim=6656,              # Grande
+    n_heads=52,
+    n_capas=60,            # 60 bloques territoriales
+    dropout=0.05,
+    max_seq_len=32768,     # Contexto enorme
+    peso_llaves=0.5,       # 50/50 reglas y atención
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=50000,
+    use_gradient_checkpointing=True,
+    use_mixed_precision=True,
+    batch_size=512,
+    learning_rate=1e-5,
+    max_epochs=1,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.96,
+    capas_minimas=15,
+)
+
+# PAMPAr-Coder-72B (Competidor directo de Kimi-Dev-72B)
+CODER_72B = ConfigPampaRCoder(
+    vocab_size=50257,
+    dim=8192,              # Masivo
+    n_heads=64,
+    n_capas=80,            # 80 bloques territoriales
+    dropout=0.05,
+    max_seq_len=65536,     # 64K contexto
+    peso_llaves=0.45,      # Más atención para complejidad
+    usar_axiomas=True,
+    usar_memoria=True,
+    capacidad_memoria=100000,
+    use_gradient_checkpointing=True,
+    use_mixed_precision=True,
+    batch_size=1024,
+    learning_rate=5e-6,
+    max_epochs=1,
+    usar_early_exit=True,
+    umbral_confianza_exit=0.97,
+    capas_minimas=20,
+)
+
 
 def print_coder_configs():
     """Muestra comparación de configuraciones."""
@@ -228,22 +365,42 @@ def print_coder_configs():
         ("CODER_4GB (GTX 1650)", CODER_4GB),
         ("CODER_8GB (RTX 3060)", CODER_8GB),
         ("CODER_24GB (RTX 4090)", CODER_24GB),
+        ("CODER_1B (Cloud/Multi-GPU)", CODER_1B),
+        ("CODER_3B (CodeLlama-3B tier)", CODER_3B),
+        ("CODER_7B (CodeLlama-7B tier)", CODER_7B),
+        ("CODER_33B (CodeLlama-34B tier)", CODER_33B),
+        ("CODER_72B (Kimi-72B tier)", CODER_72B),
     ]
     
-    print("\n" + "=" * 70)
-    print("PAMPAr-Coder - Configuraciones")
-    print("=" * 70)
+    print("\n" + "=" * 80)
+    print("🐸 PAMPAr-Coder - Configuraciones (Arquitectura Territorial para Código)")
+    print("=" * 80)
     
     for name, cfg in configs:
         params = cfg.estimate_params()
         vram_train = cfg.estimate_vram_gb(training=True)
         vram_infer = cfg.estimate_vram_gb(training=False)
         
-        print(f"\n{name}:")
-        print(f"  Parámetros: {params['total']:,} ({params['total']/1e6:.1f}M)")
-        print(f"  VRAM train: {vram_train:.2f} GB | infer: {vram_infer:.2f} GB")
-        print(f"  Config: dim={cfg.dim}, capas={cfg.n_capas}, ctx={cfg.max_seq_len}")
-        print(f"  Early Exit: {cfg.usar_early_exit} (umbral={cfg.umbral_confianza_exit})")
+        # Formato según tamaño
+        if params['total'] >= 1e9:
+            param_str = f"{params['total']/1e9:.1f}B"
+        else:
+            param_str = f"{params['total']/1e6:.1f}M"
+        
+        print(f"\n🔹 {name}:")
+        print(f"   Parámetros: {params['total']:,} ({param_str})")
+        print(f"   VRAM: {vram_train:.1f} GB (train) | {vram_infer:.1f} GB (infer)")
+        print(f"   Arquitectura: dim={cfg.dim}, capas={cfg.n_capas}, ctx={cfg.max_seq_len:,}")
+        print(f"   LLAVES: {int(cfg.peso_llaves*100)}% reglas + {int((1-cfg.peso_llaves)*100)}% atención")
+        print(f"   Early Exit: capas_min={cfg.capas_minimas}, umbral={cfg.umbral_confianza_exit}")
+    
+    print("\n" + "=" * 80)
+    print("💡 La arquitectura TERRITORIAL escala manteniendo:")
+    print("   - 4 Territorios: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL")
+    print("   - 6 Fronteras bidireccionales entre territorios")
+    print("   - Sistema LLAVES: reglas explícitas + atención aprendida")
+    print("   - Early Exit: inferencia adaptativa por confianza")
+    print("=" * 80)
 
 
 if __name__ == "__main__":

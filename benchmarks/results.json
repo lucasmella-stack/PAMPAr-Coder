@@ -1,32 +1,32 @@
 [
   {
     "name": "PAMPAr-Coder (Early Exit)",
-    "tokens_per_sec": 33.946740063260194,
-    "perplexity": 8149.147286840239,
+    "tokens_per_sec": 33.61731131248854,
+    "perplexity": 8140.549328082081,
     "vram_mb": 447.52783203125,
     "params": 44137528,
     "extra": null
   },
   {
     "name": "PAMPAr-Coder (No Early Exit)",
-    "tokens_per_sec": 33.69180197726086,
-    "perplexity": 8130.044889074479,
+    "tokens_per_sec": 33.92451873272917,
+    "perplexity": 8148.805109046796,
     "vram_mb": 456.02783203125,
     "params": 39529528,
     "extra": null
   },
   {
     "name": "Transformer Vanilla",
-    "tokens_per_sec": 192.08534613034192,
-    "perplexity": 5.709852844313152e+23,
+    "tokens_per_sec": 189.84663733328836,
+    "perplexity": 3.7490140993977816e+22,
     "vram_mb": 142.26171875,
     "params": 5193600,
     "extra": null
   },
   {
     "name": "PAMPAr (LLAVES 50%)",
-    "tokens_per_sec": 34.6642472315643,
-    "perplexity": 8126.5201755491635,
+    "tokens_per_sec": 32.98684305248618,
+    "perplexity": 8138.885639188741,
     "vram_mb": 0,
     "params": 44137528,
     "extra": {
@@ -35,8 +35,8 @@
   },
   {
     "name": "PAMPAr (LLAVES 80%)",
-    "tokens_per_sec": 34.59051307857694,
-    "perplexity": 8132.17681493749,
+    "tokens_per_sec": 32.884803900635966,
+    "perplexity": 8149.619349468611,
     "vram_mb": 0,
     "params": 44137528,
     "extra": {
@@ -45,8 +45,8 @@
   },
   {
     "name": "PAMPAr (LLAVES 95%)",
-    "tokens_per_sec": 33.88899813203604,
-    "perplexity": 8151.614454095967,
+    "tokens_per_sec": 34.319874602320944,
+    "perplexity": 8161.341232613224,
     "vram_mb": 0,
     "params": 44137528,
     "extra": {

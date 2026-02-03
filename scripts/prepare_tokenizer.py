@@ -381,8 +381,9 @@ def convert_jsonl_to_txt(jsonl_file: Path, output_dir: Path) -> Path:
             for line in fin:
                 try:
                     record = json.loads(line)
-                    text = record.get('text', '')
-                    if text:
+                    # Buscar código en varios campos posibles
+                    text = record.get('code', '') or record.get('content', '') or record.get('text', '')
+                    if text and len(text) > 20:
                         fout.write(text)
                         fout.write('\n\n')
                         count += 1

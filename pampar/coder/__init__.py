@@ -21,7 +21,8 @@ Uso:
 
 from .config import (
     ConfigPampaRCoder, 
-    CODER_4GB, 
+    CODER_4GB,
+    CODER_4GB_MAX,
     CODER_8GB, 
     CODER_24GB,
     print_coder_configs

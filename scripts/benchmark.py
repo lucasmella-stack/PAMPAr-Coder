@@ -252,7 +252,22 @@ def benchmark_vram(
     return vram_mb
 
 
-def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
+def cargar_checkpoint(model, checkpoint_path: str, device: torch.device):
+    """Carga pesos desde checkpoint."""
+    if not os.path.exists(checkpoint_path):
+        print(f"   ⚠️ Checkpoint no encontrado: {checkpoint_path}")
+        return False
+    
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    if 'model' in checkpoint:
+        model.load_state_dict(checkpoint['model'])
+    else:
+        model.load_state_dict(checkpoint)
+    print(f"   ✅ Checkpoint cargado: {checkpoint_path}")
+    return True
+
+
+def run_benchmarks(device: torch.device, checkpoint_path: str = None) -> List[BenchmarkResult]:
     """Ejecuta todos los benchmarks."""
     results = []
     
@@ -264,9 +279,35 @@ def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
     print("=" * 70)
     
     # =========================================================================
-    # 1. PAMPAr-Coder con Early Exit
+    # 1. PAMPAr-Coder ENTRENADO (si hay checkpoint)
     # =========================================================================
-    print("\n📊 1. PAMPAr-Coder (Early Exit ON)")
+    if checkpoint_path and os.path.exists(checkpoint_path):
+        print("\n📊 1. PAMPAr-Coder ENTRENADO")
+        model_trained = crear_modelo("4GB")
+        model_trained.config.usar_early_exit = True
+        cargar_checkpoint(model_trained, checkpoint_path, device)
+        
+        speed_trained = benchmark_inference_speed(model_trained, device, vocab_size)
+        ppl_trained = benchmark_perplexity(model_trained, device, vocab_size)
+        vram_trained = benchmark_vram(model_trained, device, vocab_size) if device.type == 'cuda' else 0
+        
+        results.append(BenchmarkResult(
+            name="PAMPAr-Coder (Entrenado)",
+            tokens_per_sec=speed_trained,
+            perplexity=ppl_trained,
+            vram_mb=vram_trained,
+            params=model_trained.count_parameters()['total']
+        ))
+        print(f"   Speed: {speed_trained:.1f} tok/s | PPL: {ppl_trained:.2f} | VRAM: {vram_trained:.0f} MB")
+        
+        del model_trained
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
+    
+    # =========================================================================
+    # 2. PAMPAr-Coder SIN ENTRENAR (baseline)
+    # =========================================================================
+    print("\n📊 2. PAMPAr-Coder (Sin Entrenar)")
     model_ee = crear_modelo("4GB")
     model_ee.config.usar_early_exit = True
     
@@ -275,7 +316,7 @@ def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
     vram_ee = benchmark_vram(model_ee, device, vocab_size) if device.type == 'cuda' else 0
     
     results.append(BenchmarkResult(
-        name="PAMPAr-Coder (Early Exit)",
+        name="PAMPAr-Coder (Sin Entrenar)",
         tokens_per_sec=speed_ee,
         perplexity=ppl_ee,
         vram_mb=vram_ee,
@@ -288,9 +329,9 @@ def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
         torch.cuda.empty_cache()
     
     # =========================================================================
-    # 2. PAMPAr-Coder sin Early Exit
+    # 3. PAMPAr-Coder sin Early Exit
     # =========================================================================
-    print("\n📊 2. PAMPAr-Coder (Early Exit OFF)")
+    print("\n📊 3. PAMPAr-Coder (Early Exit OFF)")
     model_no_ee = crear_modelo("4GB")
     model_no_ee.config.usar_early_exit = False
     
@@ -312,9 +353,9 @@ def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
         torch.cuda.empty_cache()
     
     # =========================================================================
-    # 3. Transformer Vanilla (baseline)
+    # 4. Transformer Vanilla (baseline)
     # =========================================================================
-    print("\n📊 3. Transformer Vanilla (baseline)")
+    print("\n📊 4. Transformer Vanilla (baseline)")
     model_vanilla = TransformerVanilla(
         vocab_size=vocab_size,
         dim=config.dim,
@@ -342,10 +383,10 @@ def run_benchmarks(device: torch.device) -> List[BenchmarkResult]:
         torch.cuda.empty_cache()
     
     # =========================================================================
-    # 4. PAMPAr-Coder con diferentes pesos de LLAVES
+    # 5. PAMPAr-Coder con diferentes pesos de LLAVES
     # =========================================================================
     for llaves_peso in [0.5, 0.8, 0.95]:
-        print(f"\n📊 4. PAMPAr-Coder (LLAVES {int(llaves_peso*100)}%)")
+        print(f"\n📊 5. PAMPAr-Coder (LLAVES {int(llaves_peso*100)}%)")
         
         custom_config = ConfigPampaRCoder(
             vocab_size=vocab_size,
@@ -539,6 +580,8 @@ def main():
                         help='Directorio para guardar resultados')
     parser.add_argument('--cpu', action='store_true',
                         help='Forzar uso de CPU')
+    parser.add_argument('--checkpoint', type=str, default=None,
+                        help='Checkpoint del modelo entrenado')
     args = parser.parse_args()
     
     print("=" * 70)
@@ -553,8 +596,16 @@ def main():
         device = torch.device('cuda')
         print(f"🎮 Usando GPU: {torch.cuda.get_device_name()}")
     
+    # Auto-detectar checkpoint si no se especifica
+    checkpoint_path = args.checkpoint
+    if checkpoint_path is None:
+        default_checkpoint = Path('checkpoints/pampar_coder_final.pt')
+        if default_checkpoint.exists():
+            checkpoint_path = str(default_checkpoint)
+            print(f"📦 Checkpoint encontrado: {checkpoint_path}")
+    
     # Run benchmarks
-    results = run_benchmarks(device)
+    results = run_benchmarks(device, checkpoint_path)
     
     # Print results
     print_results_table(results)
