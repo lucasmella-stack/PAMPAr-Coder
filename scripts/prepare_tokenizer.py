@@ -268,9 +268,13 @@ def train_tokenizer_spm(corpus_file: Path, output_dir: Path, vocab_size: int = 8
     
     model_prefix = output_dir / "code_tokenizer"
     
-    # Preparar user_defined_symbols (keywords y operadores)
-    user_symbols = list(CODE_KEYWORDS) + CODE_OPERATORS
-    user_symbols_str = ','.join(user_symbols)
+    # Preparar user_defined_symbols (keywords y operadores) - eliminar duplicados
+    user_symbols = set(CODE_KEYWORDS) | set(CODE_OPERATORS)
+    # Remover los que ya son keywords de Python usados como operadores
+    user_symbols.discard('and')
+    user_symbols.discard('or')
+    user_symbols.discard('not')
+    user_symbols_list = list(user_symbols)
     
     spm.SentencePieceTrainer.train(
         input=str(corpus_file),
@@ -285,13 +289,11 @@ def train_tokenizer_spm(corpus_file: Path, output_dir: Path, vocab_size: int = 8
         bos_id=2,
         eos_id=3,
         # User defined symbols (keywords, operadores)
-        user_defined_symbols=user_symbols,
+        user_defined_symbols=user_symbols_list,
         # Control de tokens
         split_by_whitespace=True,
         split_by_number=True,
         split_digits=True,
-        # Frecuencia mínima
-        min_sentencepiece_frequency=2,
     )
     
     print(f"✅ Tokenizer guardado: {model_prefix}.model")
