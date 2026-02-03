@@ -370,10 +370,34 @@ def test_tokenizer(tokenizer_path: Path):
         print()
 
 
+def convert_jsonl_to_txt(jsonl_file: Path, output_dir: Path) -> Path:
+    """Convierte archivo JSONL a texto plano para el tokenizer."""
+    txt_file = output_dir / "corpus.txt"
+    print(f"📄 Convirtiendo {jsonl_file.name} a texto plano...")
+    
+    count = 0
+    with open(jsonl_file, 'r', encoding='utf-8') as fin:
+        with open(txt_file, 'w', encoding='utf-8') as fout:
+            for line in fin:
+                try:
+                    record = json.loads(line)
+                    text = record.get('text', '')
+                    if text:
+                        fout.write(text)
+                        fout.write('\n\n')
+                        count += 1
+                except:
+                    continue
+    
+    print(f"   ✅ {count:,} documentos convertidos")
+    return txt_file
+
+
 def main():
     parser = argparse.ArgumentParser(description='Preparar tokenizer para código')
     parser.add_argument('--vocab-size', type=int, default=8000, help='Tamaño del vocabulario')
-    parser.add_argument('--corpus-size', type=int, default=50, help='Tamaño del corpus en MB')
+    parser.add_argument('--corpus', type=str, default=None, help='Corpus JSONL existente')
+    parser.add_argument('--corpus-size', type=int, default=50, help='Tamaño del corpus en MB (si descarga)')
     parser.add_argument('--output-dir', type=str, default='data/tokenizer', help='Directorio de salida')
     args = parser.parse_args()
     
@@ -385,8 +409,12 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # 1. Descargar/crear corpus
-    corpus_file = download_code_dataset(output_dir, args.corpus_size)
+    # 1. Usar corpus existente o descargar
+    if args.corpus and Path(args.corpus).exists():
+        corpus_jsonl = Path(args.corpus)
+        corpus_file = convert_jsonl_to_txt(corpus_jsonl, output_dir)
+    else:
+        corpus_file = download_code_dataset(output_dir, args.corpus_size)
     
     # 2. Entrenar tokenizer
     if USE_SPM:
