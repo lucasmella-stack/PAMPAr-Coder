@@ -93,12 +93,18 @@ class AttentionCoder(nn.Module):
         scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
         
         # Add relative position bias
+        L_q = q.shape[2]
         L_k = k.shape[2]
-        scores = scores + self.rel_pos_bias[:, :L, :L_k]
+        # Ajustar bias a las dimensiones actuales
+        bias = self.rel_pos_bias[:, :L_q, :L_k]
+        scores = scores + bias
         
-        # Causal mask
-        if mask is not None:
-            scores = scores.masked_fill(mask == 0, float('-inf'))
+        # Causal mask (crear dinámicamente para generación)
+        causal_mask = torch.tril(torch.ones(L_q, L_k, device=scores.device))
+        # Para generación incremental, solo el último token puede ver todo el contexto
+        if L_q < L_k:
+            causal_mask = torch.ones(L_q, L_k, device=scores.device)
+        scores = scores.masked_fill(causal_mask == 0, float('-inf'))
         
         attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)

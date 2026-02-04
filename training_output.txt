@@ -91,3 +91,29 @@
   Época 3/3
 ----------------------------------------
     Batch     0/750 | Loss: 3.3877 | Avg: 3.3877
+    Batch    50/750 | Loss: 4.0601 | Avg: 3.6131
+    Batch   100/750 | Loss: 3.4072 | Avg: 3.5613
+    Batch   150/750 | Loss: 3.7791 | Avg: 3.6133
+    Batch   200/750 | Loss: 4.2540 | Avg: 3.6098
+    Batch   250/750 | Loss: 3.7768 | Avg: 3.5951
+    Batch   300/750 | Loss: 3.4543 | Avg: 3.5810
+    Batch   350/750 | Loss: 2.3812 | Avg: 3.5332
+    Batch   400/750 | Loss: 3.6473 | Avg: 3.5053
+    Batch   450/750 | Loss: 3.9999 | Avg: 3.5057
+    Batch   500/750 | Loss: 3.7971 | Avg: 3.4983
+    Batch   550/750 | Loss: 3.7678 | Avg: 3.4918
+    Batch   600/750 | Loss: 3.0098 | Avg: 3.4845
+    Batch   650/750 | Loss: 3.6244 | Avg: 3.4776
+    Batch   700/750 | Loss: 3.9613 | Avg: 3.4738
+
+  Época 3 completada:
+    Loss: 3.4654
+    Perplexity: 31.99
+    Tiempo: 59.5 min
+    Guardado: stable_last.pt
+    ¡Nuevo mejor modelo! -> stable_best.pt
+
+============================================================
+  ¡ENTRENAMIENTO COMPLETADO!
+  Mejor loss: 3.4654
+============================================================
