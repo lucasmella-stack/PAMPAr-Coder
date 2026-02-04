@@ -1,0 +1,93 @@
+============================================================
+  PAMPAr-Coder - Entrenamiento ESTABLE
+============================================================
+
+  Device: cuda
+  GPU: NVIDIA GeForce GTX 1650
+  VRAM: 4.3 GB
+
+  Creando modelo...
+    Parámetros: 88,467,714
+
+  Cargando tokenizer...
+[LLAVES] Registrando LLAVES para codigo...
+[OK] 16000 tokens registrados
+
+[STATS] Distribucion de territorios:
+   SINTAXIS                          0.8%
+   SEMANTICA    ###################  99.1%
+   LOGICO                            0.1%
+   ESTRUCTURAL                       0.0%
+    Vocab size: 16000
+
+  Cargando datos de calidad...
+  Leyendo github_code.jsonl...
+  Leyendo train.jsonl...
+  Leyendo train_massive.jsonl...
+  Leyendo codealpaca_20k.jsonl...
+  Leyendo codeexercises_python.jsonl...
+  Leyendo code_feedback.jsonl...
+  Leyendo distillation_data.jsonl...
+  Leyendo evol_instruct_code_80k.jsonl...
+  Total cargados: 359596
+  Filtrando por calidad...
+  Items de alta calidad: 3000
+    Textos finales: 3000
+
+============================================================
+  ENTRENAMIENTO
+============================================================
+
+  Época 1/3
+----------------------------------------
+    Batch     0/750 | Loss: 9.6869 | Avg: 9.6869
+    Batch    50/750 | Loss: 7.6449 | Avg: 8.4647
+    Batch   100/750 | Loss: 6.4528 | Avg: 7.7071
+    Batch   150/750 | Loss: 5.7414 | Avg: 7.1523
+    Batch   200/750 | Loss: 6.0043 | Avg: 6.7901
+    Batch   250/750 | Loss: 5.5902 | Avg: 6.5466
+    Batch   300/750 | Loss: 4.6947 | Avg: 6.3534
+    Batch   350/750 | Loss: 5.1870 | Avg: 6.1878
+    Batch   400/750 | Loss: 5.0478 | Avg: 6.0481
+    Batch   450/750 | Loss: 4.9704 | Avg: 5.9311
+    Batch   500/750 | Loss: 5.4303 | Avg: 5.8138
+    Batch   550/750 | Loss: 5.3880 | Avg: 5.7063
+    Batch   600/750 | Loss: 3.9324 | Avg: 5.6006
+    Batch   650/750 | Loss: 4.2999 | Avg: 5.5223
+    Batch   700/750 | Loss: 4.7387 | Avg: 5.4438
+
+  Época 1 completada:
+    Loss: 5.3766
+    Perplexity: 216.29
+    Tiempo: 3.3 min
+    Guardado: stable_last.pt
+    ¡Nuevo mejor modelo! -> stable_best.pt
+
+  Época 2/3
+----------------------------------------
+    Batch     0/750 | Loss: 4.3327 | Avg: 4.3327
+    Batch    50/750 | Loss: 4.1532 | Avg: 4.0619
+    Batch   100/750 | Loss: 4.2922 | Avg: 4.0821
+    Batch   150/750 | Loss: 4.1996 | Avg: 4.0903
+    Batch   200/750 | Loss: 4.8721 | Avg: 4.0735
+    Batch   250/750 | Loss: 4.2331 | Avg: 4.0977
+    Batch   300/750 | Loss: 3.2597 | Avg: 4.0924
+    Batch   350/750 | Loss: 3.9836 | Avg: 4.0564
+    Batch   400/750 | Loss: 2.4172 | Avg: 4.0477
+    Batch   450/750 | Loss: 3.2482 | Avg: 4.0245
+    Batch   500/750 | Loss: 4.9834 | Avg: 4.0237
+    Batch   550/750 | Loss: 3.5841 | Avg: 3.9972
+    Batch   600/750 | Loss: 4.2608 | Avg: 3.9815
+    Batch   650/750 | Loss: 3.0358 | Avg: 3.9536
+    Batch   700/750 | Loss: 3.4927 | Avg: 3.9349
+
+  Época 2 completada:
+    Loss: 3.9193
+    Perplexity: 50.37
+    Tiempo: 3.3 min
+    Guardado: stable_last.pt
+    ¡Nuevo mejor modelo! -> stable_best.pt
+
+  Época 3/3
+----------------------------------------
+    Batch     0/750 | Loss: 3.3877 | Avg: 3.3877

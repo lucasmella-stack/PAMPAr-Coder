@@ -37,16 +37,22 @@ class TalamoCoder(nn.Module):
         self, 
         dim: int, 
         peso_llaves: float = 0.75,
-        n_territorios: int = 4
+        n_territorios: int = 4,
+        vocab_size: int = 16000
     ):
         super().__init__()
         self.dim = dim
         self.peso_llaves = peso_llaves
         self.n_territorios = n_territorios
+        self.vocab_size = vocab_size
         
         # LLAVES: reglas pre-definidas
         self.llaves = LlavesCodigo()
         self.llaves_registry: Optional[LlavesCodigoRegistry] = None
+        
+        # Lookup table para LLAVES (se llena al registrar tokenizer)
+        # Shape: [vocab_size, 4] para los 4 territorios
+        self.register_buffer('llaves_lookup', torch.full((vocab_size, 4), 0.25))
         
         # Atención aprendida para ajuste fino
         self.attn_routing = nn.Sequential(
@@ -57,9 +63,16 @@ class TalamoCoder(nn.Module):
         )
     
     def registrar_tokenizer(self, tokenizer) -> None:
-        """Registra tokenizer para pre-computar LLAVES."""
+        """Registra tokenizer para pre-computar LLAVES y crear lookup table."""
         self.llaves_registry = LlavesCodigoRegistry()
         self.llaves_registry.registrar_tokenizer(tokenizer)
+        
+        # Llenar lookup table vectorizada
+        territorios = list(TipoTerritorioCoder)
+        for token_id, acts in self.llaves_registry._cache.items():
+            if token_id < self.vocab_size:
+                for i, t in enumerate(territorios):
+                    self.llaves_lookup[token_id, i] = acts.get(t, 0.25)
     
     def forward(
         self, 
@@ -109,18 +122,20 @@ class TalamoCoder(nn.Module):
         token_ids: torch.Tensor, 
         device: torch.device
     ) -> Dict[TipoTerritorioCoder, torch.Tensor]:
-        """Obtiene activaciones de LLAVES para batch de tokens."""
+        """Obtiene activaciones de LLAVES - VECTORIZADO (sin loops Python)."""
         B, L = token_ids.shape
         
-        activaciones = {t: torch.zeros(B, L, device=device) for t in TipoTerritorioCoder}
+        # Clamp token_ids para evitar out of bounds
+        safe_ids = token_ids.clamp(0, self.vocab_size - 1)
         
-        # Iterar sobre tokens (se puede optimizar con batching)
-        for b in range(B):
-            for l in range(L):
-                tid = token_ids[b, l].item()
-                acts = self.llaves_registry.get_activaciones(tid)
-                for tipo, valor in acts.items():
-                    activaciones[tipo][b, l] = valor
+        # Lookup vectorizado: [B, L] -> [B, L, 4]
+        lookup_result = self.llaves_lookup[safe_ids]  # [B, L, 4]
+        
+        # Separar por territorio
+        territorios = list(TipoTerritorioCoder)
+        activaciones = {}
+        for i, tipo in enumerate(territorios):
+            activaciones[tipo] = lookup_result[:, :, i]
         
         return activaciones
 
@@ -155,7 +170,8 @@ class PampaRCoder(nn.Module):
         self.talamo = TalamoCoder(
             self.config.dim,
             self.config.peso_llaves,
-            n_territorios=4
+            n_territorios=4,
+            vocab_size=self.config.vocab_size
         )
         
         # =====================================================================

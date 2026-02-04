@@ -244,7 +244,7 @@ class LlavesCodigoRegistry:
         """
         Pre-computa activaciones para todos los tokens del vocabulario.
         """
-        print("🔑 Registrando LLAVES para código...")
+        print("[LLAVES] Registrando LLAVES para codigo...")
         
         vocab_size = tokenizer.vocab_size() if hasattr(tokenizer, 'vocab_size') else len(tokenizer)
         
@@ -258,7 +258,7 @@ class LlavesCodigoRegistry:
                 self._tokens[token_id] = "<unk>"
                 self._cache[token_id] = {t: 0.25 for t in TipoTerritorioCoder}
         
-        print(f"✅ {len(self._cache)} tokens registrados")
+        print(f"[OK] {len(self._cache)} tokens registrados")
         self._print_stats()
     
     def _print_stats(self) -> None:
@@ -270,10 +270,10 @@ class LlavesCodigoRegistry:
             counts[principal] += 1
         
         total = len(self._cache)
-        print("\n📊 Distribución de territorios:")
+        print("\n[STATS] Distribucion de territorios:")
         for territorio, count in counts.items():
             pct = count / total * 100
-            bar = "█" * int(pct / 5)
+            bar = "#" * int(pct / 5)
             print(f"   {territorio.name:12} {bar:20} {pct:.1f}%")
     
     def get_activaciones(self, token_id: int) -> Dict[TipoTerritorioCoder, float]:
