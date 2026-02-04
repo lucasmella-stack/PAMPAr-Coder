@@ -155,9 +155,9 @@ class ConfigPampaRCoder:
 # PRESETS PARA PAMPAr-Coder
 # =============================================================================
 
-# GTX 1650 4GB - Tu hardware
+# GTX 1650 4GB - Tu hardware (optimizado para entrenamiento de calidad)
 CODER_4GB = ConfigPampaRCoder(
-    vocab_size=8000,      # BPE optimizado para código
+    vocab_size=16000,     # Coincide con tokenizer entrenado
     dim=256,              # Balance velocidad/calidad
     n_heads=8,
     n_capas=6,            # 6 capas para más profundidad
@@ -169,8 +169,8 @@ CODER_4GB = ConfigPampaRCoder(
     capacidad_memoria=200,
     use_gradient_checkpointing=False,
     use_mixed_precision=True,
-    batch_size=8,
-    learning_rate=2e-4,
+    batch_size=4,         # Batch pequeño para estabilidad
+    learning_rate=1.5e-4,
     max_epochs=50,
     usar_early_exit=True,
     umbral_confianza_exit=0.90,
