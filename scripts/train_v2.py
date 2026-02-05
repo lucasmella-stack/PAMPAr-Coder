@@ -19,17 +19,17 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 import sentencepiece as spm
+from tqdm import tqdm
 
 # Agregar path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pampar.coder.model_v2 import PampaRCoderV2, ConfigPampaRCoderV2, CODER_V2_4GB
-from pampar.coder.llaves_codigo import clasificar_token, TipoTokenCodigo
 
 
 # =============================================================================
@@ -85,12 +85,17 @@ class CodeDataset(Dataset):
     
     def _extract_text(self, data: Dict) -> str:
         """Extrae texto de diferentes formatos."""
+        # Formato text (CodeAlpaca, etc.)
+        if "text" in data:
+            return data["text"]
+        
         # Formato instruction-response
-        if "instruction" in data and "response" in data:
+        if "instruction" in data:
             instruction = data.get("instruction", "")
             response = data.get("response", "") or data.get("output", "")
             if response:
                 return f"[INST]{instruction}[/INST]{response}"
+            return instruction
         
         # Formato input-output
         if "input" in data and "output" in data:
@@ -158,7 +163,7 @@ class TrainerV2:
         model.registrar_tokenizer(self.tokenizer)
         
         # Scaler para AMP
-        self.scaler = GradScaler() if self.use_amp else None
+        self.scaler = GradScaler('cuda') if self.use_amp else None
         
         # Métricas
         self.history = {
@@ -183,13 +188,14 @@ class TrainerV2:
         
         optimizer.zero_grad()
         
-        for i, batch in enumerate(dataloader):
+        pbar = tqdm(dataloader, desc="Training", leave=False)
+        for i, batch in enumerate(pbar):
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
             
             # Forward
             if self.use_amp:
-                with autocast(device_type='cuda'):
+                with autocast('cuda'):
                     logits, loss, _ = self.model(input_ids, labels)
                 
                 # Backward
@@ -200,6 +206,7 @@ class TrainerV2:
             
             total_loss += loss.item()
             num_batches += 1
+            pbar.set_postfix({'loss': f'{total_loss/num_batches:.4f}'})
             
             # Gradient step
             if (i + 1) % gradient_accumulation == 0:
@@ -231,7 +238,7 @@ class TrainerV2:
             labels = batch["labels"].to(self.device)
             
             if self.use_amp:
-                with autocast(device_type='cuda'):
+                with autocast('cuda'):
                     logits, loss, _ = self.model(input_ids, labels)
             else:
                 logits, loss, _ = self.model(input_ids, labels)

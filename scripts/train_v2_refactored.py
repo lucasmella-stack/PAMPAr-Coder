@@ -23,7 +23,6 @@ from datetime import datetime
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torch.cuda.amp import autocast, GradScaler
 import sentencepiece as spm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -115,7 +114,7 @@ class Trainer:
         self.tokenizer = tokenizer
         self.device = device
         self.use_amp = use_amp and device == "cuda"
-        self.scaler = GradScaler() if self.use_amp else None
+        self.scaler = torch.amp.GradScaler("cuda") if self.use_amp else None
         
         # Registrar tokenizer
         model.registrar_tokenizer(tokenizer)
@@ -137,7 +136,7 @@ class Trainer:
             
             # Forward
             if self.use_amp:
-                with autocast(device_type="cuda"):
+                with torch.amp.autocast("cuda"):
                     _, loss, _ = self.model(ids, labels)
                 self.scaler.scale(loss / grad_accum).backward()
             else:
@@ -174,7 +173,7 @@ class Trainer:
             labels = batch["labels"].to(self.device)
             
             if self.use_amp:
-                with autocast(device_type="cuda"):
+                with torch.amp.autocast("cuda"):
                     _, loss, _ = self.model(ids, labels)
             else:
                 _, loss, _ = self.model(ids, labels)
