@@ -43,6 +43,33 @@ from .model import (
     crear_modelo
 )
 
+# V2: 52 Zonas de Brodmann
+from .zonas_brodmann import (
+    MacroTerritorio,
+    ZonaBrodmann,
+    LLAVES_BRODMANN,
+    ClasificadorBrodmann,
+)
+from .talamo_v2 import (
+    TalamoBrodmann,
+    TerritorioV2,
+    GestorTerritoriosV2,
+)
+from .model_v2 import (
+    PampaRCoderV2,
+    ConfigPampaRCoderV2,
+    CODER_V2_4GB,
+    CODER_V2_8GB,
+    CODER_V2_24GB,
+    crear_modelo_v2,
+)
+from .distillation import (
+    DistillationConfig,
+    TeacherAPI,
+    DistillationDataCollector,
+    DistillationTrainer,
+)
+
 __all__ = [
     # Config
     'ConfigPampaRCoder',
@@ -58,10 +85,25 @@ __all__ = [
     'TerritorioCoder',
     'FronteraCoder',
     'GestorTerritoriosCoder',
-    # Modelo
+    # Modelo v1
     'PampaRCoder',
     'TalamoCoder',
     'crear_modelo',
+    # Modelo v2 (52 Zonas Brodmann)
+    'PampaRCoderV2',
+    'ConfigPampaRCoderV2',
+    'CODER_V2_4GB',
+    'CODER_V2_8GB',
+    'CODER_V2_24GB',
+    'crear_modelo_v2',
+    'MacroTerritorio',
+    'ZonaBrodmann',
+    'TalamoBrodmann',
+    # Distillation
+    'DistillationConfig',
+    'TeacherAPI',
+    'DistillationDataCollector',
+    'DistillationTrainer',
 ]
 
-__version__ = "0.1.0"
+__version__ = "2.0.0"

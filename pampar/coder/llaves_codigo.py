@@ -16,6 +16,32 @@ from typing import Dict, List, Set, Optional, Tuple
 import re
 
 
+def normalizar_token(token: str) -> str:
+    """
+    Normaliza token de SentencePiece/BPE para clasificación.
+    
+    Los tokenizers agregan prefijos especiales:
+    - SentencePiece: '▁' (unicode 9601) para inicio de palabra
+    - GPT-style: 'Ġ' para espacios
+    - Byte-level: 'Ċ' para newlines
+    
+    Sin esto, '▁def' no matchea 'def' y todo va a SEMÁNTICA.
+    """
+    if not token:
+        return token
+    
+    # Quitar prefijos de tokenizers
+    token = token.replace('▁', '')  # SentencePiece
+    token = token.replace('Ġ', '')  # GPT-2/GPT-Neo style
+    token = token.replace('Ċ', '')  # Newline en byte-level
+    token = token.replace('##', '') # BERT WordPiece
+    
+    # Limpiar espacios
+    token = token.strip()
+    
+    return token
+
+
 class TipoTerritorioCoder(Enum):
     """Territorios especializados para código."""
     SINTAXIS = auto()      # Keywords, operadores, delimitadores
@@ -70,6 +96,7 @@ class LlavesCodigo:
         '==', '!=', '<', '>', '<=', '>=',             # Comparación
         '&&', '||', '!', '&', '|', '^', '~',          # Lógicos/Bitwise
         '<<', '>>', '>>>', '&=', '|=', '^=',          # Bitwise assign
+        '<<=' , '>>=', '//=', '**=',                  # Assignment extended
         '->', '=>', '::', '.', '..', '...',           # Especiales
         '?', '??', '?.', '?:',                        # Ternario/nullish
     })
@@ -79,6 +106,7 @@ class LlavesCodigo:
         '(', ')', '[', ']', '{', '}',
         ',', ';', ':', '@', '#',
         '"', "'", '`', '"""', "'''",
+        '//', '/*', '*/',                             # Comentarios
     })
     
     # =========================================================================
@@ -86,14 +114,18 @@ class LlavesCodigo:
     # =========================================================================
     
     control_flow: Set[str] = field(default_factory=lambda: {
-        # Condicionales
+        # Condicionales (minúsculas y variantes)
         'if', 'else', 'elif', 'switch', 'case', 'default', 'match',
+        'If', 'Else', 'Switch', 'Case', 'Default', 'Match',
         # Loops
         'for', 'while', 'do', 'loop', 'foreach',
+        'For', 'While', 'Do', 'Loop',
         # Excepciones
         'try', 'except', 'catch', 'finally', 'throw', 'raise',
+        'Try', 'Catch', 'Finally', 'Throw', 'Raise',
         # Jumps
         'break', 'continue', 'return', 'yield', 'goto',
+        'Break', 'Continue', 'Return', 'Yield',
     })
     
     # =========================================================================
@@ -154,6 +186,17 @@ class LlavesCodigo:
             TipoTerritorioCoder.ESTRUCTURAL: 0.0,
         }
         
+        # =====================================================================
+        # NORMALIZACIÓN CRÍTICA: Quitar prefijos de SentencePiece/BPE
+        # Sin esto '▁def' != 'def' y todo va al catch-all SEMÁNTICA
+        # =====================================================================
+        token_original = token
+        token = normalizar_token(token)
+        
+        # Si el token queda vacío después de normalizar, usar original
+        if not token:
+            token = token_original
+        
         token_lower = token.lower() if token else ""
         
         # =====================================================================
@@ -174,14 +217,19 @@ class LlavesCodigo:
         
         if token in self.delimitadores:
             activaciones[TipoTerritorioCoder.SINTAXIS] = 0.7
-            # Brackets activan ESTRUCTURAL
-            if token in {'(', ')', '[', ']', '{', '}'}:
+            # Brackets activan ESTRUCTURAL fuertemente
+            if token in {'{', '}'}:
+                activaciones[TipoTerritorioCoder.ESTRUCTURAL] = 1.0  # Máximo para bloques
+            elif token in {'(', ')', '[', ']'}:
                 activaciones[TipoTerritorioCoder.ESTRUCTURAL] = 0.6
+            elif token == ':':
+                activaciones[TipoTerritorioCoder.ESTRUCTURAL] = 0.8  # Python blocks
         
         # =====================================================================
         # LOGICO: Control flow específico
+        # Verificamos tanto minúscula como el token original (case-insensitive)
         # =====================================================================
-        if token_lower in self.control_flow:
+        if token_lower in self.control_flow or token in self.control_flow:
             activaciones[TipoTerritorioCoder.LOGICO] = 1.0
         
         # =====================================================================
@@ -203,18 +251,29 @@ class LlavesCodigo:
         if token in self.tipos_builtin:
             activaciones[TipoTerritorioCoder.SEMANTICA] = 1.0
         
-        # Nombres de variables/funciones
-        if re.match(self.patron_nombre, token) and token not in self.keywords_python:
-            if activaciones[TipoTerritorioCoder.SEMANTICA] == 0.0:
-                activaciones[TipoTerritorioCoder.SEMANTICA] = 0.6
+        # Nombres de variables/funciones (solo si parece identificador)
+        if token and re.match(self.patron_nombre, token):
+            # Verificar que no sea keyword de ningún lenguaje
+            all_keywords = self.keywords_python | self.keywords_js | self.keywords_rust
+            if token not in all_keywords and token_lower not in self.control_flow:
+                if activaciones[TipoTerritorioCoder.SEMANTICA] == 0.0:
+                    activaciones[TipoTerritorioCoder.SEMANTICA] = 0.6
         
         # Números
-        if re.match(self.patron_numero, token):
+        if token and re.match(self.patron_numero, token):
             activaciones[TipoTerritorioCoder.SEMANTICA] = 0.5
+            # Números también activan ESTRUCTURAL (patrones numéricos)
+            activaciones[TipoTerritorioCoder.ESTRUCTURAL] = 0.3
         
-        # Si ningún territorio se activó, default a semántica (catch-all)
+        # =====================================================================
+        # CATCH-ALL: Solo si REALMENTE no matcheó nada
+        # Peso bajo para no dominar el routing
+        # =====================================================================
         if sum(activaciones.values()) == 0:
-            activaciones[TipoTerritorioCoder.SEMANTICA] = 0.3
+            # Distribuir uniformemente con peso bajo
+            activaciones[TipoTerritorioCoder.SEMANTICA] = 0.25
+            activaciones[TipoTerritorioCoder.SINTAXIS] = 0.1
+            activaciones[TipoTerritorioCoder.ESTRUCTURAL] = 0.1
         
         return activaciones
     
