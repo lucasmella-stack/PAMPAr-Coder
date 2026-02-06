@@ -98,30 +98,30 @@ class Config3B:
 
 @dataclass  
 class Config1_5B:
-    """Configuración para modelo de ~350M parámetros (más realista)."""
+    """Configuración para modelo de ~150M parámetros."""
     
-    vocab_size: int = 32000      # ¡CORREGIDO! Tokenizer tiene 32K
-    dim: int = 1024              # Reducido - 2048 era muy grande
-    n_heads: int = 8             # Reducido
-    n_capas: int = 16            # Reducido - 24 era mucho
+    vocab_size: int = 32000      # Tokenizer tiene 32K
+    dim: int = 512               # Más pequeño
+    n_heads: int = 8
+    n_capas: int = 12            # Menos capas
     dropout: float = 0.1
-    max_seq_len: int = 1024      # Reducido para ahorrar memoria
+    max_seq_len: int = 512       # Contexto más corto
     
     n_zonas: int = 52
     n_territorios: int = 4
     peso_llaves: float = 0.80
-    usar_cuantizacion: bool = False
+    usar_cuantizacion: bool = True  # Cuantizar LLAVES
     
     use_gradient_checkpointing: bool = True
     use_mixed_precision: bool = True
     
-    batch_size: int = 16         # Aumentado con modelo más pequeño
-    gradient_accumulation: int = 4
+    batch_size: int = 32         # Batch grande
+    gradient_accumulation: int = 2
     effective_batch: int = 64
     
-    learning_rate: float = 5e-4  # Más alto para modelo pequeño
+    learning_rate: float = 1e-3  # Más alto para modelo pequeño
     weight_decay: float = 0.1
-    warmup_steps: int = 500
+    warmup_steps: int = 200
     max_steps: int = 30000
     
     save_every_steps: int = 500
