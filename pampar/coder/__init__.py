@@ -48,12 +48,13 @@ from .v2 import (
     crear_modelo,
 )
 
-# === Distillation ===
-from .distillation import (
-    DistillationConfig,
-    TeacherAPI,
-    DistillationDataCollector,
-    DistillationTrainer,
+# === Destilación v2 ===
+from .v2.aprendizaje.destilacion import (
+    ConfigProfesor,
+    ClienteProfesor,
+    GeneradorDestilacion,
+    distillation_loss,
+    territory_aware_distillation,
 )
 
 __all__ = [
@@ -80,11 +81,12 @@ __all__ = [
     # Modelo
     "PampaRCoderV2",
     "crear_modelo",
-    # Distillation
-    "DistillationConfig",
-    "TeacherAPI",
-    "DistillationDataCollector",
-    "DistillationTrainer",
+    # Destilación v2
+    "ConfigProfesor",
+    "ClienteProfesor",
+    "GeneradorDestilacion",
+    "distillation_loss",
+    "territory_aware_distillation",
 ]
 
 __version__ = "2.0.0"

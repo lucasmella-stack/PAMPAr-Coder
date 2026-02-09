@@ -111,9 +111,16 @@ class PampaRCoderV2(nn.Module):
 
         # 3. Bloques territoriales con Early Exit
         info = {"exit_capa": self.config.n_capas}
+        mask = self.mask[:L, :L]
 
         for i, bloque in enumerate(self.bloques):
-            x, conf = bloque(x, terr_acts, self.mask[:L, :L])
+            if self.config.use_checkpoint and self.training and not use_early_exit:
+                x, conf = torch.utils.checkpoint.checkpoint(
+                    bloque, x, terr_acts, mask,
+                    use_reentrant=False,
+                )
+            else:
+                x, conf = bloque(x, terr_acts, mask)
 
             if use_early_exit and conf > self.config.umbral_exit:
                 if i >= self.config.capas_min - 1:
@@ -171,7 +178,8 @@ class PampaRCoderV2(nn.Module):
             next_tok = torch.multinomial(probs, 1)
             generated = torch.cat([generated, next_tok], dim=1)
 
-            if next_tok.item() == 0:
+            # Stop on EOS (token 0) — solo batch_size=1
+            if generated.shape[0] == 1 and next_tok.item() == 0:
                 break
 
         return generated

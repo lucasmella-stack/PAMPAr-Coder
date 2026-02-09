@@ -12,7 +12,6 @@ El tálamo decide qué territorios y zonas procesar cada token.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .config import ConfigV2
 from .llaves import LlavesV2, agregar_zonas_a_territorios

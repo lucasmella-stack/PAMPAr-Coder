@@ -156,11 +156,21 @@ ZONAS: Dict[Zona, Set[str]] = {
     Zona.B15_COMMENT: {"#", "//", "/*", "*/", "'''", '"""'},
     
     # SEMANTICA
+    Zona.B16_ID_VAR: {"self", "this", "cls", "_"},
+    Zona.B17_ID_FUNC: {"main", "init", "setup", "run", "process", "handle"},
+    Zona.B18_ID_CLASS: {"Error", "Exception", "Base", "Abstract", "Mixin"},
+    Zona.B19_ID_PARAM: {"args", "kwargs", "key", "value", "index", "item"},
+    Zona.B20_ID_ATTR: {"name", "size", "length", "data", "result", "status"},
+    Zona.B21_LIT_INT: {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
+    Zona.B22_LIT_FLOAT: {"0.0", "1.0", "0.5", "0.1", "3.14", "1e-5"},
+    Zona.B23_LIT_STR: {"'", '"', "f'", 'f"', "r'", 'r"', "b'", 'b"'},
     Zona.B24_LIT_BOOL: {"True", "False", "true", "false"},
     Zona.B25_LIT_NONE: {"None", "null", "nil", "undefined"},
     Zona.B26_TYPE_PRIM: {"int", "str", "float", "bool", "char", "byte"},
     Zona.B27_TYPE_COLL: {"list", "dict", "set", "tuple", "array", "map"},
+    Zona.B28_TYPE_GEN: {"Optional", "List", "Dict", "Tuple", "Union", "Any"},
     Zona.B29_BUILTIN: {"print", "len", "range", "open", "input", "type"},
+    Zona.B30_MAGIC: {"__init__", "__str__", "__repr__", "__len__", "__call__"},
     
     # LOGICO
     Zona.B31_OP_ARITH: {"+", "-", "*", "/", "%", "**", "//"},
@@ -169,9 +179,22 @@ ZONAS: Dict[Zona, Set[str]] = {
     Zona.B34_OP_BIT: {"&", "|", "^", "~", "<<", ">>"},
     Zona.B35_OP_ASSIGN: {"=", "+=", "-=", "*=", "/=", ":="},
     Zona.B36_OP_MEMBER: {".", "->", "::"},
+    Zona.B37_OP_TERNARY: {"?", "if", "else"},
+    Zona.B38_FLOW_BRANCH: {"if", "elif", "else", "switch", "case"},
+    Zona.B39_FLOW_LOOP: {"for", "while", "do", "foreach"},
     Zona.B40_FLOW_JUMP: {"break", "continue", "pass", "goto"},
+    Zona.B41_FLOW_CALL: {"(", ")", "call", "invoke"},
+    Zona.B42_FLOW_EXCEPT: {"try", "except", "catch", "finally", "raise"},
     
     # ESTRUCTURAL
+    Zona.B43_BLOCK_FUNC: {"def", "function", "fn", "->"},
+    Zona.B44_BLOCK_CLASS: {"class", "struct", "interface"},
+    Zona.B45_BLOCK_LOOP: {"for", "while", "do"},
+    Zona.B46_BLOCK_COND: {"if", "elif", "else", "match"},
     Zona.B47_INDENT: {"\t", "    "},
     Zona.B48_NEWLINE: {"\n", "\r\n"},
+    Zona.B49_SPACE: {" ", "  "},
+    Zona.B50_PATTERN_LIST: {"[", "]", "for", "in"},
+    Zona.B51_PATTERN_DICT: {"{", "}", ":"},
+    Zona.B52_PATTERN_CALL: {"(", ")", ","},
 }

@@ -30,8 +30,9 @@ from tqdm import tqdm
 # Agregar path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from pampar.coder.model_v2 import PampaRCoderV2, ConfigPampaRCoderV2
-from pampar.coder.zonas_brodmann import MacroTerritorio
+from pampar.coder.v2.modelo import PampaRCoderV2
+from pampar.coder.v2.config import ConfigV2
+from pampar.coder.v2.zonas import Territorio
 from config_3b import Config3B, Config1_5B, CONFIGS
 
 
@@ -437,7 +438,7 @@ def main():
     parser.add_argument("--config", type=str, default="3B",
                         choices=["3B", "1.5B"])
     parser.add_argument("--data-dir", type=str, default="data/distillation")
-    parser.add_argument("--tokenizer", type=str, default="data/tokenizer/code_tokenizer.model")
+    parser.add_argument("--tokenizer", type=str, default="data/tokenizer/pampar_48k.model")
     parser.add_argument("--output", type=str, default="checkpoints")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--max-samples", type=int, default=None)
@@ -455,7 +456,7 @@ def main():
     
     # Model
     print("\n📦 Creando modelo...")
-    model_config = ConfigPampaRCoderV2(
+    model_config = ConfigV2(
         vocab_size=config.vocab_size,
         dim=config.dim,
         n_heads=config.n_heads,
