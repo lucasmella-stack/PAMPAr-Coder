@@ -70,25 +70,40 @@ class ConfigV2:
         return self.n_kv_heads if self.n_kv_heads > 0 else self.n_heads
 
     def estimate_params(self) -> int:
-        """Estima parámetros totales del modelo."""
+        """Estima parámetros totales del modelo (incluyendo 4 territory FFNs)."""
         # Embeddings: vocab * dim (weight-tied, no cuenta doble)
-        emb = self.vocab_size * self.dim + self.max_seq_len * self.dim
+        emb = self.vocab_size * self.dim
 
-        # Por capa:
+        # Per layer:
         # Attn: Q(dim*dim) + K(dim*kv_dim) + V(dim*kv_dim) + O(dim*dim)
         kv_dim = self.kv_heads * self.head_dim
         attn = self.dim * self.dim + 2 * self.dim * kv_dim + self.dim * self.dim
-        # FFN SwiGLU: 3 * dim * hidden (up + gate + down)
+
+        # FFN SwiGLU × 4 territories: 4 * 3 * dim * hidden
         ffn_hidden = int(self.dim * self.ffn_mult * 2 / 3)
-        ffn = 3 * self.dim * ffn_hidden
-        # LayerNorm: 2 * dim
-        ln = 4 * self.dim  # 2 norms per layer (attn + ffn)
-        # Talamo per layer (routing): ~dim * n_territorios
-        talamo = self.dim * self.n_territorios
+        ffn = self.n_territorios * 3 * self.dim * ffn_hidden
 
-        per_capa = attn + ffn + ln + talamo
-        total = emb + per_capa * self.n_capas
+        # Mix: dim * n_territorios * dim → dim (combina 4 territory outputs)
+        mix = self.dim * self.n_territorios * self.dim
 
+        # RMSNorm: 2 * dim (attn + ffn norms)
+        norms = 2 * self.dim
+
+        # Exit head: dim → 1
+        exit_head = self.dim + 1
+
+        per_capa = attn + ffn + mix + norms + exit_head
+
+        # Tálamo (once):
+        # attn_proj: dim → dim//2 → n_zonas
+        talamo = self.dim * (self.dim // 2) + (self.dim // 2) * self.n_zonas
+        # terr_gate: n_territorios → n_territorios
+        talamo += self.n_territorios * self.n_territorios
+
+        # Final RMSNorm: dim
+        final_norm = self.dim
+
+        total = emb + per_capa * self.n_capas + talamo + final_norm
         return total
 
     def memory_estimate_mb(self, dtype_bytes: int = 2) -> float:
@@ -168,7 +183,9 @@ PRESET_24GB = ConfigV2(
 #    - PAMPAr: 48K vocab → 74M en embeddings (5%)
 #    - Más parámetros para capas de razonamiento en vez de embeddings
 #
-# Config: dim=1536, 24 capas, 12Q/4KV GQA = ~1.54B params
+# Config: dim=1536, 25 capas, 12Q/4KV GQA, 4 territory FFNs (hidden=2304 each)
+# Total FFN budget: ~42M/layer (same as Qwen) but distributed across 4 specialists
+# Extra: mix layer (~9.4M/layer) learns cross-territory interactions
 # Training: A40 48GB (BF16 + grad checkpoint = ~35GB VRAM)
 # Inference: INT4 GGUF = ~0.9GB → vuela en GTX 1650 4GB
 
@@ -177,9 +194,9 @@ PRESET_1_5B = ConfigV2(
     dim=1536,               # Igual que Qwen para fair comparison
     n_heads=12,             # 12 query heads
     n_kv_heads=4,           # GQA: 4 KV heads (3:1 ratio, más agresivo que Qwen 6:1)
-    n_capas=24,             # 24 capas (vs Qwen 28 — compensado por LLAVES+Brodmann)
+    n_capas=25,             # 25 capas (vs Qwen 28 — compensado por LLAVES+Brodmann)
     max_seq_len=4096,       # 4K context (suficiente para código, expandible)
-    ffn_mult=4.0,           # SwiGLU standard
+    ffn_mult=2.25,          # Per-territory hidden=2304; total 4x = Qwen's FFN budget
     n_zonas=52,
     n_territorios=4,
     peso_llaves=0.75,       # 75% reglas (código es muy estructurado)
