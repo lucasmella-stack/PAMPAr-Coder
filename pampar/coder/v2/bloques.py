@@ -3,10 +3,12 @@
 """
 Bloques de procesamiento: Atención y FFN.
 
-Componentes ligeros y optimizados:
-- BloqueAttn: Multi-head self-attention con RoPE
+Componentes optimizados para escalar de 42M a 1.5B params:
+- RoPE: Rotary Position Embedding para generalización posicional
+- RMSNorm: Normalización eficiente (vs LayerNorm) — como Llama/Qwen
+- BloqueAttn: Multi-head self-attention con RoPE y GQA
 - BloqueFFN: Feed-forward con SwiGLU
-- BloqueTerritorial: Combina atención + FFN por territorio
+- BloqueTerritorial: Combina atención + FFN modulados por territorios
 """
 
 import torch
@@ -18,31 +20,59 @@ from .config import ConfigV2
 
 
 # =============================================================================
+# RMS NORMALIZATION
+# =============================================================================
+
+class RMSNorm(nn.Module):
+    """
+    Root Mean Square Layer Normalization (Zhang & Sennrich, 2019).
+
+    Más eficiente que LayerNorm: omite el centrado (resta media),
+    solo normaliza por RMS. Usado en Llama, Qwen, Mistral.
+    """
+
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        rms = torch.rsqrt(x.float().pow(2).mean(-1, keepdim=True) + self.eps)
+        return (x.float() * rms).type_as(x) * self.weight
+
+
+# =============================================================================
 # ROTARY POSITION EMBEDDING (RoPE)
 # =============================================================================
 
 class RoPE(nn.Module):
-    """Rotary Position Embedding para mejor generalización."""
-    
-    def __init__(self, dim: int, max_seq_len: int = 2048, base: float = 10000.0):
+    """
+    Rotary Position Embedding (Su et al., 2021).
+
+    Codifica posiciones como rotaciones complejas aplicadas a Q y K.
+    Ventajas sobre posicional absoluto:
+    - Codifica distancias relativas naturalmente
+    - Generaliza a secuencias más largas que el training
+    - Zero parámetros extra (solo buffers)
+    """
+
+    def __init__(self, dim: int, max_seq_len: int = 4096, base: float = 10000.0):
         super().__init__()
-        # Frecuencias inversas
         inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq)
-        
-        # Cache de posiciones
+
+        # Pre-computar cache para todas las posiciones
         pos = torch.arange(max_seq_len)
         freqs = torch.outer(pos, inv_freq)
         self.register_buffer("cos_cache", freqs.cos())
         self.register_buffer("sin_cache", freqs.sin())
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Aplica RoPE a tensor [B, H, L, D]."""
         L = x.shape[2]
         cos = self.cos_cache[:L].unsqueeze(0).unsqueeze(0)  # [1, 1, L, D/2]
         sin = self.sin_cache[:L].unsqueeze(0).unsqueeze(0)
-        
-        # Rotar pares de dimensiones
+
         x1, x2 = x[..., ::2], x[..., 1::2]
         return torch.cat([
             x1 * cos - x2 * sin,
@@ -51,103 +81,130 @@ class RoPE(nn.Module):
 
 
 # =============================================================================
-# ATENCIÓN
+# ATENCIÓN CON GQA
 # =============================================================================
 
 class BloqueAttn(nn.Module):
     """
-    Multi-head self-attention con RoPE.
-    
-    Optimizaciones:
-    - RoPE para posiciones
-    - Grouped Query Attention (GQA) opcional
-    - Flash Attention compatible
+    Multi-head self-attention con RoPE y Grouped Query Attention (GQA).
+
+    GQA (Ainslie et al., 2023): Comparte KV heads entre múltiples Q heads.
+    Reduce KV cache en inferencia sin perder calidad.
+
+    Con config.n_kv_heads=0 → MHA estándar (backward compatible).
+    Con config.n_kv_heads>0 → GQA con ese número de KV heads.
+
+    Ejemplo PRESET_1_5B: 12 Q heads, 4 KV heads → ratio 3:1
+    - KV cache es 3x menor que MHA
+    - Inferencia batch más rápida
+    - Calidad prácticamente igual que MHA
     """
-    
+
     def __init__(self, config: ConfigV2):
         super().__init__()
         self.n_heads = config.n_heads
+        self.n_kv_heads = config.kv_heads  # Effective KV heads (MHA if 0)
         self.head_dim = config.head_dim
         self.dim = config.dim
-        
-        # Proyecciones Q, K, V
-        self.q_proj = nn.Linear(config.dim, config.dim, bias=False)
-        self.k_proj = nn.Linear(config.dim, config.dim, bias=False)
-        self.v_proj = nn.Linear(config.dim, config.dim, bias=False)
+        self.n_rep = self.n_heads // self.n_kv_heads  # Q groups per KV head
+
+        # Q projection: full n_heads
+        self.q_proj = nn.Linear(config.dim, self.n_heads * self.head_dim, bias=False)
+        # K,V projections: n_kv_heads (smaller if GQA)
+        kv_dim = self.n_kv_heads * self.head_dim
+        self.k_proj = nn.Linear(config.dim, kv_dim, bias=False)
+        self.v_proj = nn.Linear(config.dim, kv_dim, bias=False)
+        # Output projection: full dim
         self.o_proj = nn.Linear(config.dim, config.dim, bias=False)
-        
+
         # RoPE
         self.rope = RoPE(config.head_dim, config.max_seq_len)
-        
+
         # Dropout
         self.attn_drop = nn.Dropout(config.dropout)
-        
+
         # Escala
         self.scale = config.head_dim ** -0.5
-    
+
+    def _repeat_kv(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Repite KV heads para matchear Q heads (GQA → MHA-like).
+
+        [B, n_kv_heads, L, D] → [B, n_heads, L, D]
+        """
+        if self.n_rep == 1:
+            return x  # MHA: no repetir
+        B, H, L, D = x.shape
+        x = x.unsqueeze(2).expand(B, H, self.n_rep, L, D)
+        return x.reshape(B, H * self.n_rep, L, D)
+
     def forward(
         self,
         x: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Forward de atención.
-        
+        Forward de atención con GQA.
+
         Args:
-            x: [B, L, D]
-            mask: [L, L] máscara causal opcional
-            
+            x: [B, L, D] input embeddings
+            mask: [L, L] causal mask (1=attend, 0=mask)
+
         Returns:
-            [B, L, D] salida
+            [B, L, D] output
         """
-        B, L, D = x.shape
-        
-        # Proyectar Q, K, V
+        B, L, _ = x.shape
+
+        # Project Q (full heads), K and V (kv_heads)
         q = self.q_proj(x).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
-        
-        # Aplicar RoPE a Q y K
+        k = self.k_proj(x).view(B, L, self.n_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, L, self.n_kv_heads, self.head_dim).transpose(1, 2)
+
+        # RoPE on Q and K
         q = self.rope(q)
         k = self.rope(k)
-        
-        # Atención
+
+        # Expand KV heads to match Q heads for attention
+        k = self._repeat_kv(k)  # [B, n_heads, L, D]
+        v = self._repeat_kv(v)  # [B, n_heads, L, D]
+
+        # Scaled dot-product attention
         attn = (q @ k.transpose(-2, -1)) * self.scale
-        
+
         if mask is not None:
             attn = attn.masked_fill(mask[:L, :L] == 0, float("-inf"))
-        
+
         attn = F.softmax(attn, dim=-1)
         attn = self.attn_drop(attn)
-        
-        # Combinar
-        out = (attn @ v).transpose(1, 2).reshape(B, L, D)
+
+        out = (attn @ v).transpose(1, 2).reshape(B, L, self.dim)
         return self.o_proj(out)
 
 
 # =============================================================================
-# FEED-FORWARD
+# FEED-FORWARD (SwiGLU)
 # =============================================================================
 
 class BloqueFFN(nn.Module):
     """
-    Feed-forward con SwiGLU.
-    
-    SwiGLU = Swish(xW_gate) * (xW_up)
-    Mejor que ReLU/GELU estándar.
+    Feed-forward con SwiGLU (Shazeer, 2020).
+
+    SwiGLU = SiLU(x @ W_gate) ⊙ (x @ W_up), luego down-project.
+    Superior a ReLU/GELU en benchmarks de LLM.
+    Hidden dim = 2/3 * dim * mult (compensar la gate extra).
     """
-    
-    def __init__(self, config: ConfigV2, mult: float = 4.0):
+
+    def __init__(self, config: ConfigV2):
         super().__init__()
-        hidden = int(config.dim * mult * 2 / 3)  # SwiGLU usa 2/3
-        
+        hidden = int(config.dim * config.ffn_mult * 2 / 3)
+
         self.gate = nn.Linear(config.dim, hidden, bias=False)
         self.up = nn.Linear(config.dim, hidden, bias=False)
         self.down = nn.Linear(hidden, config.dim, bias=False)
         self.drop = nn.Dropout(config.dropout)
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """SwiGLU forward."""
+        """SwiGLU forward: SiLU(gate) * up → down."""
         return self.drop(
             self.down(F.silu(self.gate(x)) * self.up(x))
         )
@@ -160,36 +217,41 @@ class BloqueFFN(nn.Module):
 class BloqueTerritorial(nn.Module):
     """
     Bloque que procesa los 4 territorios en paralelo.
-    
-    Cada territorio tiene su propio par atención+FFN,
-    modulados por las activaciones del tálamo.
+
+    Arquitectura por capa:
+      x → RMSNorm → Atención(GQA+RoPE) → residual
+      x → RMSNorm → [FFN_t0, FFN_t1, FFN_t2, FFN_t3] × terr_acts → mix → residual
+      x → exit_head → confianza (para Early Exit)
+
+    Cada FFN se modula por la activación de su territorio,
+    logrando especialización sin separar los parámetros.
     """
-    
+
     def __init__(self, config: ConfigV2):
         super().__init__()
         self.config = config
-        
-        # Pre-normalization
-        self.norm1 = nn.LayerNorm(config.dim)
-        self.norm2 = nn.LayerNorm(config.dim)
-        
-        # Un bloque de atención compartido
+
+        # Pre-normalization (RMSNorm — más eficiente que LayerNorm)
+        self.norm1 = RMSNorm(config.dim)
+        self.norm2 = RMSNorm(config.dim)
+
+        # Atención compartida (con GQA)
         self.attn = BloqueAttn(config)
-        
-        # FFN por territorio (4 territorios)
+
+        # FFN por territorio (4 FFN especializados)
         self.ffns = nn.ModuleList([
             BloqueFFN(config) for _ in range(config.n_territorios)
         ])
-        
-        # Mezcla de territorios
-        self.mix = nn.Linear(config.dim * config.n_territorios, config.dim)
-        
+
+        # Mezcla de territorios: D*4 → D
+        self.mix = nn.Linear(config.dim * config.n_territorios, config.dim, bias=False)
+
         # Dropout residual
         self.drop = nn.Dropout(config.dropout)
-        
-        # Para early exit
+
+        # Cabeza de confianza para Early Exit
         self.exit_head = nn.Linear(config.dim, 1)
-    
+
     def forward(
         self,
         x: torch.Tensor,
@@ -198,41 +260,34 @@ class BloqueTerritorial(nn.Module):
     ) -> Tuple[torch.Tensor, float]:
         """
         Forward del bloque territorial.
-        
+
         Args:
-            x: [B, L, D] entrada
-            terr_acts: [B, L, 4] activaciones de territorio
-            mask: [L, L] máscara causal
-            
+            x: [B, L, D] input
+            terr_acts: [B, L, 4] territorial activations from Tálamo
+            mask: [L, L] causal mask
+
         Returns:
-            x: [B, L, D] salida
-            confianza: float para early exit
+            x: [B, L, D] output
+            confianza: float in [0,1] for Early Exit decision
         """
-        B, L, D = x.shape
-        
-        # 1. Atención con residual
+        # 1. Atención + residual
         x = x + self.drop(self.attn(self.norm1(x), mask))
-        
-        # 2. FFN por territorio
+
+        # 2. FFN por territorio, modulado por activaciones
         h = self.norm2(x)
         outputs = []
-        
+
         for t, ffn in enumerate(self.ffns):
-            # Activación del territorio
-            act = terr_acts[:, :, t:t+1]  # [B, L, 1]
-            
-            # FFN modulado
-            out = ffn(h) * act
-            outputs.append(out)
-        
-        # 3. Mezclar territorios
-        concat = torch.cat(outputs, dim=-1)  # [B, L, D*4]
-        mixed = self.mix(concat)
-        
+            act = terr_acts[:, :, t:t+1]       # [B, L, 1]
+            outputs.append(ffn(h) * act)        # FFN modulado
+
+        # 3. Concatenar y mezclar territorios
+        mixed = self.mix(torch.cat(outputs, dim=-1))  # [B, L, D*4] → [B, L, D]
+
         # 4. Residual
         x = x + self.drop(mixed)
-        
-        # 5. Confianza para early exit
+
+        # 5. Confianza para Early Exit
         conf = torch.sigmoid(self.exit_head(x.mean(dim=1))).mean().item()
-        
+
         return x, conf

@@ -17,22 +17,23 @@ Uso:
     modelo = crear_modelo(PRESET_4GB)
 """
 
-from .config import ConfigV2, PRESET_4GB, PRESET_8GB, PRESET_24GB
+from .config import ConfigV2, PRESET_4GB, PRESET_8GB, PRESET_24GB, PRESET_1_5B
 from .zonas import Zona, Territorio, ZONAS
 from .llaves import LlavesV2, clasificar_token
 from .talamo import Talamo
-from .bloques import BloqueAttn, BloqueFFN, BloqueTerritorial
+from .bloques import RMSNorm, RoPE, BloqueAttn, BloqueFFN, BloqueTerritorial
 from .modelo import PampaRCoderV2, crear_modelo
 
 __all__ = [
     # Config
-    "ConfigV2", "PRESET_4GB", "PRESET_8GB", "PRESET_24GB",
+    "ConfigV2", "PRESET_4GB", "PRESET_8GB", "PRESET_24GB", "PRESET_1_5B",
     # Zonas
     "Zona", "Territorio", "ZONAS",
     # LLAVES
     "LlavesV2", "clasificar_token",
     # Componentes
-    "Talamo", "BloqueAttn", "BloqueFFN", "BloqueTerritorial",
+    "Talamo", "RMSNorm", "RoPE",
+    "BloqueAttn", "BloqueFFN", "BloqueTerritorial",
     # Modelo
     "PampaRCoderV2", "crear_modelo",
 ]

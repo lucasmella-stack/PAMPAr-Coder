@@ -1,68 +1,54 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 """
-PAMPAr-Coder: Módulo especializado para código.
+PAMPAr-Coder: Modelo de lenguaje cerebral para código.
 
-Arquitectura territorial adaptada para programación:
-- Territorios: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL
-- LLAVES específicas para tokens de código (keywords, operadores, etc.)
-- Fronteras optimizadas para el flujo de información en código
-- Early Exit para inferencia ultra-rápida
+Arquitectura v2 con 52 Zonas de Brodmann:
+- 4 Territorios: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL
+- 52 Zonas especializadas con routing LLAVES (80% reglas + 20% atención)
+- RoPE embeddings + SwiGLU FFN
+- Early Exit para inferencia rápida
 
 Uso:
-    from pampar.coder import PampaRCoder, crear_modelo, CODER_4GB
-    
+    from pampar.coder import PampaRCoderV2, crear_modelo, PRESET_4GB
+
     # Crear modelo para GTX 1650
-    model = crear_modelo("4GB")
-    
-    # O con config custom
-    model = PampaRCoder(CODER_4GB)
+    model = crear_modelo(PRESET_4GB)
+
+    # Con config custom
+    from pampar.coder import ConfigV2
+    config = ConfigV2(dim=512, n_heads=8, n_capas=8)
+    model = PampaRCoderV2(config)
 """
 
-from .config import (
-    ConfigPampaRCoder, 
-    CODER_4GB,
-    CODER_4GB_MAX,
-    CODER_8GB, 
-    CODER_24GB,
-    print_coder_configs
-)
-from .llaves_codigo import (
-    LlavesCodigo,
-    LlavesCodigoRegistry, 
-    TipoTerritorioCoder
-)
-from .territorios_codigo import (
-    TerritorioCoder,
-    FronteraCoder,
-    GestorTerritoriosCoder
-)
-from .model import (
-    PampaRCoder,
-    TalamoCoder,
-    crear_modelo
+# === Arquitectura canónica (v2 — 52 Zonas de Brodmann) ===
+from .v2 import (
+    # Config
+    ConfigV2,
+    PRESET_4GB,
+    PRESET_8GB,
+    PRESET_24GB,
+    PRESET_1_5B,
+    # Zonas y territorios
+    Zona,
+    Territorio,
+    ZONAS,
+    # LLAVES (routing por reglas)
+    LlavesV2,
+    clasificar_token,
+    # Componentes
+    Talamo,
+    RMSNorm,
+    RoPE,
+    BloqueAttn,
+    BloqueFFN,
+    BloqueTerritorial,
+    # Modelo
+    PampaRCoderV2,
+    crear_modelo,
 )
 
-# V2: 52 Zonas de Brodmann
-from .zonas_brodmann import (
-    MacroTerritorio,
-    ZonaBrodmann,
-    LLAVES_BRODMANN,
-    ClasificadorBrodmann,
-)
-from .talamo_v2 import (
-    TalamoBrodmann,
-    TerritorioV2,
-    GestorTerritoriosV2,
-)
-from .model_v2 import (
-    PampaRCoderV2,
-    ConfigPampaRCoderV2,
-    CODER_V2_4GB,
-    CODER_V2_8GB,
-    CODER_V2_24GB,
-    crear_modelo_v2,
-)
+# === Distillation ===
 from .distillation import (
     DistillationConfig,
     TeacherAPI,
@@ -72,38 +58,33 @@ from .distillation import (
 
 __all__ = [
     # Config
-    'ConfigPampaRCoder',
-    'CODER_4GB',
-    'CODER_8GB', 
-    'CODER_24GB',
-    'print_coder_configs',
+    "ConfigV2",
+    "PRESET_4GB",
+    "PRESET_8GB",
+    "PRESET_24GB",
+    "PRESET_1_5B",
+    # Zonas
+    "Zona",
+    "Territorio",
+    "ZONAS",
     # LLAVES
-    'LlavesCodigo',
-    'LlavesCodigoRegistry',
-    'TipoTerritorioCoder',
-    # Territorios
-    'TerritorioCoder',
-    'FronteraCoder',
-    'GestorTerritoriosCoder',
-    # Modelo v1
-    'PampaRCoder',
-    'TalamoCoder',
-    'crear_modelo',
-    # Modelo v2 (52 Zonas Brodmann)
-    'PampaRCoderV2',
-    'ConfigPampaRCoderV2',
-    'CODER_V2_4GB',
-    'CODER_V2_8GB',
-    'CODER_V2_24GB',
-    'crear_modelo_v2',
-    'MacroTerritorio',
-    'ZonaBrodmann',
-    'TalamoBrodmann',
+    "LlavesV2",
+    "clasificar_token",
+    # Componentes
+    "Talamo",
+    "RMSNorm",
+    "RoPE",
+    "BloqueAttn",
+    "BloqueFFN",
+    "BloqueTerritorial",
+    # Modelo
+    "PampaRCoderV2",
+    "crear_modelo",
     # Distillation
-    'DistillationConfig',
-    'TeacherAPI',
-    'DistillationDataCollector',
-    'DistillationTrainer',
+    "DistillationConfig",
+    "TeacherAPI",
+    "DistillationDataCollector",
+    "DistillationTrainer",
 ]
 
 __version__ = "2.0.0"

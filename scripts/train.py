@@ -1,91 +1,82 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 """
-Script de entrenamiento para PAMPAr-Coder.
+PAMPAr-Coder v2: Entrenamiento optimizado.
 
-Entrena el modelo territorial especializado en código.
-Optimizado para hardware consumer (GTX 1650, 4GB VRAM).
+Componentes:
+- CodeDataset: Dataset eficiente con streaming
+- Trainer: Loop de entrenamiento simple
+- Checkpointing: Guardar/resumir entrenamiento
+
+Uso:
+    python scripts/train_v2_refactored.py --preset 4GB --epochs 10
 """
 
 import os
 import sys
-import argparse
 import json
 import time
+import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Tuple, Dict
-import math
 
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torch.cuda.amp import autocast, GradScaler
+import sentencepiece as spm
 
-# Agregar path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pampar.coder import PampaRCoder, crear_modelo, CODER_4GB, CODER_8GB, CODER_24GB
-
-try:
-    import sentencepiece as spm
-    HAS_SPM = True
-except ImportError:
-    HAS_SPM = False
+from pampar.coder.v2 import crear_modelo, PRESET_4GB, PRESET_8GB
 
 
 # =============================================================================
-# Dataset
+# DATASET
 # =============================================================================
 
 class CodeDataset(Dataset):
-    """Dataset de código para entrenamiento."""
+    """Dataset de código ligero y eficiente."""
     
-    def __init__(
-        self,
-        data_file: Path,
-        tokenizer_path: Path,
-        max_seq_len: int = 512,
-        max_samples: Optional[int] = None
-    ):
-        self.max_seq_len = max_seq_len
-        
-        # Cargar tokenizer
-        if str(tokenizer_path).endswith('.model'):
-            self.tokenizer = spm.SentencePieceProcessor()
-            self.tokenizer.load(str(tokenizer_path))
-            self.encode = lambda x: self.tokenizer.encode(x)
-            self.vocab_size = self.tokenizer.get_piece_size()
-            self.pad_id = self.tokenizer.pad_id()
-            self.bos_id = self.tokenizer.bos_id()
-            self.eos_id = self.tokenizer.eos_id()
-        else:
-            from tokenizers import Tokenizer
-            self.tokenizer = Tokenizer.from_file(str(tokenizer_path))
-            self.encode = lambda x: self.tokenizer.encode(x).ids
-            self.vocab_size = self.tokenizer.get_vocab_size()
-            self.pad_id = 0
-            self.bos_id = 2
-            self.eos_id = 3
-        
-        # Cargar datos
+    def __init__(self, data_dir: str, tokenizer: spm.SentencePieceProcessor, max_len: int = 512):
+        self.tokenizer = tokenizer
+        self.max_len = max_len
         self.samples = []
-        print(f"📚 Cargando {data_file}...")
         
-        with open(data_file, 'r', encoding='utf-8') as f:
-            for i, line in enumerate(f):
-                if max_samples and i >= max_samples:
-                    break
-                
+        # Cargar todos los JSONL
+        data_path = Path(data_dir)
+        for f in sorted(data_path.glob("*.jsonl")):
+            self._load_file(f)
+        
+        print(f"📚 Dataset: {len(self.samples):,} samples")
+    
+    def _load_file(self, path: Path):
+        """Carga un archivo JSONL."""
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
                 try:
-                    record = json.loads(line)
-                    text = record.get('text', '')
-                    if len(text) > 50:
+                    data = json.loads(line)
+                    text = self._extract_text(data)
+                    if text and len(text) > 20:
                         self.samples.append(text)
                 except:
                     continue
+    
+    def _extract_text(self, data: dict) -> str:
+        """Extrae texto de diferentes formatos."""
+        # Instruction/output format
+        if "instruction" in data and "output" in data:
+            return f"[INST]{data['instruction']}[/INST]{data['output']}"
         
-        print(f"   {len(self.samples):,} samples cargados")
+        # Code/docstring format
+        if "code" in data:
+            doc = data.get("docstring", "")
+            return f"{doc}\n{data['code']}" if doc else data["code"]
+        
+        # CommitPack format
+        if "new_contents" in data:
+            return data["new_contents"]
+        
+        return data.get("content", "")
     
     def __len__(self):
         return len(self.samples)
@@ -94,375 +85,239 @@ class CodeDataset(Dataset):
         text = self.samples[idx]
         
         # Tokenizar
-        tokens = self.encode(text)
+        tokens = self.tokenizer.Encode(text)[:self.max_len]
         
-        # Truncar/padding
-        if len(tokens) > self.max_seq_len - 2:
-            tokens = tokens[:self.max_seq_len - 2]
+        # Pad
+        pad_len = self.max_len - len(tokens)
+        if pad_len > 0:
+            tokens = tokens + [0] * pad_len
         
-        # Agregar BOS/EOS
-        tokens = [self.bos_id] + tokens + [self.eos_id]
+        ids = torch.tensor(tokens, dtype=torch.long)
         
-        # Padding
-        padding = [self.pad_id] * (self.max_seq_len - len(tokens))
-        tokens = tokens + padding
+        # Labels = shifted input
+        labels = ids.clone()
+        labels[:-1] = ids[1:]
+        labels[-1] = -100
         
-        # Input y target (shifted)
-        input_ids = torch.tensor(tokens[:-1], dtype=torch.long)
-        target_ids = torch.tensor(tokens[1:], dtype=torch.long)
-        
-        # Mask para padding (-100 ignora en loss)
-        target_ids[target_ids == self.pad_id] = -100
-        
-        return input_ids, target_ids
+        return {"input_ids": ids, "labels": labels}
 
 
 # =============================================================================
-# Training Loop
+# TRAINER
 # =============================================================================
 
 class Trainer:
-    """Entrenador para PAMPAr-Coder."""
+    """Trainer simple y eficiente."""
     
-    def __init__(
-        self,
-        model: PampaRCoder,
-        train_dataset: Dataset,
-        val_dataset: Optional[Dataset],
-        config: dict
-    ):
-        self.model = model
-        self.train_dataset = train_dataset
-        self.val_dataset = val_dataset
-        self.config = config
+    def __init__(self, model, tokenizer, device="cuda", use_amp=True):
+        self.model = model.to(device)
+        self.tokenizer = tokenizer
+        self.device = device
+        self.use_amp = use_amp and device == "cuda"
+        self.scaler = torch.amp.GradScaler("cuda") if self.use_amp else None
         
-        # Device
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
-        print(f"🖥️ Device: {self.device}")
+        # Registrar tokenizer
+        model.registrar_tokenizer(tokenizer)
         
-        if self.device.type == 'cuda':
-            print(f"   GPU: {torch.cuda.get_device_name()}")
-            print(f"   VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
-        
-        # DataLoaders
-        self.train_loader = DataLoader(
-            train_dataset,
-            batch_size=config['batch_size'],
-            shuffle=True,
-            num_workers=0,  # Windows compatibility
-            pin_memory=True if self.device.type == 'cuda' else False,
-        )
-        
-        if val_dataset:
-            self.val_loader = DataLoader(
-                val_dataset,
-                batch_size=config['batch_size'] * 2,
-                shuffle=False,
-                num_workers=0,
-            )
-        else:
-            self.val_loader = None
-        
-        # Optimizer
-        self.optimizer = torch.optim.AdamW(
-            model.parameters(),
-            lr=config['learning_rate'],
-            weight_decay=config['weight_decay'],
-            betas=(0.9, 0.95),
-        )
-        
-        # Scheduler
-        total_steps = len(self.train_loader) * config['epochs']
-        warmup_steps = config.get('warmup_steps', 100)
-        
-        def lr_lambda(step):
-            if step < warmup_steps:
-                return step / warmup_steps
-            progress = (step - warmup_steps) / (total_steps - warmup_steps)
-            return 0.5 * (1 + math.cos(math.pi * progress))
-        
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(
-            self.optimizer, lr_lambda
-        )
-        
-        # Mixed precision
-        self.use_amp = config.get('use_amp', True) and self.device.type == 'cuda'
-        self.scaler = GradScaler() if self.use_amp else None
-        
-        # Checkpointing
-        self.checkpoint_dir = Path(config.get('checkpoint_dir', 'checkpoints'))
-        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Tracking
-        self.global_step = 0
-        self.best_val_loss = float('inf')
-        self.train_losses = []
-        self.val_losses = []
+        # Historial
+        self.history = {"train_loss": [], "val_loss": [], "epoch": []}
     
-    def train_epoch(self, epoch: int) -> float:
-        """Entrena una época."""
+    def train_epoch(self, loader, optimizer, grad_accum=4):
+        """Entrena una epoch."""
         self.model.train()
         total_loss = 0
         n_batches = 0
         
-        start_time = time.time()
+        optimizer.zero_grad()
         
-        for batch_idx, (input_ids, targets) in enumerate(self.train_loader):
-            input_ids = input_ids.to(self.device)
-            targets = targets.to(self.device)
+        for i, batch in enumerate(loader):
+            ids = batch["input_ids"].to(self.device)
+            labels = batch["labels"].to(self.device)
             
-            # Forward pass
-            self.optimizer.zero_grad()
-            
+            # Forward
             if self.use_amp:
-                with autocast():
-                    logits, loss = self.model(input_ids, targets)
-                
-                self.scaler.scale(loss).backward()
-                self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
+                with torch.amp.autocast("cuda"):
+                    _, loss, _ = self.model(ids, labels)
+                self.scaler.scale(loss / grad_accum).backward()
             else:
-                logits, loss = self.model(input_ids, targets)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                self.optimizer.step()
-            
-            self.scheduler.step()
+                _, loss, _ = self.model(ids, labels)
+                (loss / grad_accum).backward()
             
             total_loss += loss.item()
             n_batches += 1
-            self.global_step += 1
             
-            # Logging
-            if batch_idx % 50 == 0:
-                elapsed = time.time() - start_time
-                samples_per_sec = (batch_idx + 1) * self.config['batch_size'] / elapsed
-                lr = self.scheduler.get_last_lr()[0]
+            # Step
+            if (i + 1) % grad_accum == 0:
+                if self.use_amp:
+                    self.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                    self.scaler.step(optimizer)
+                    self.scaler.update()
+                else:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                    optimizer.step()
                 
-                print(f"   Batch {batch_idx:4d}/{len(self.train_loader)} | "
-                      f"Loss: {loss.item():.4f} | "
-                      f"LR: {lr:.2e} | "
-                      f"{samples_per_sec:.1f} samples/s")
+                optimizer.zero_grad()
         
-        avg_loss = total_loss / n_batches
-        self.train_losses.append(avg_loss)
-        
-        return avg_loss
+        return total_loss / n_batches
     
     @torch.no_grad()
-    def validate(self) -> float:
-        """Valida el modelo."""
-        if not self.val_loader:
-            return float('inf')
-        
+    def evaluate(self, loader):
+        """Evalúa el modelo."""
         self.model.eval()
         total_loss = 0
         n_batches = 0
         
-        for input_ids, targets in self.val_loader:
-            input_ids = input_ids.to(self.device)
-            targets = targets.to(self.device)
+        for batch in loader:
+            ids = batch["input_ids"].to(self.device)
+            labels = batch["labels"].to(self.device)
             
             if self.use_amp:
-                with autocast():
-                    _, loss = self.model(input_ids, targets)
+                with torch.amp.autocast("cuda"):
+                    _, loss, _ = self.model(ids, labels)
             else:
-                _, loss = self.model(input_ids, targets)
+                _, loss, _ = self.model(ids, labels)
             
             total_loss += loss.item()
             n_batches += 1
         
-        avg_loss = total_loss / n_batches
-        self.val_losses.append(avg_loss)
-        
-        return avg_loss
+        return total_loss / n_batches
     
-    def save_checkpoint(self, epoch: int, val_loss: float, is_best: bool = False):
+    def save(self, path: str, epoch: int, optimizer=None, val_loss=None):
         """Guarda checkpoint."""
-        checkpoint = {
-            'epoch': epoch,
-            'model': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
-            'val_loss': val_loss,
-            'config': self.config,
-            'train_losses': self.train_losses,
-            'val_losses': self.val_losses,
+        ckpt = {
+            "model": self.model.state_dict(),
+            "epoch": epoch,
+            "val_loss": val_loss,
+            "history": self.history,
         }
+        if optimizer:
+            ckpt["optimizer"] = optimizer.state_dict()
         
-        # Guardar último
-        path = self.checkpoint_dir / "last.pt"
-        torch.save(checkpoint, path)
-        
-        # Guardar mejor
-        if is_best:
-            best_path = self.checkpoint_dir / "best.pt"
-            torch.save(checkpoint, best_path)
-            print(f"   💾 Mejor modelo guardado: {best_path}")
+        torch.save(ckpt, path)
+        print(f"💾 Saved: {path}")
     
-    def train(self):
-        """Loop de entrenamiento completo."""
-        print("\n" + "=" * 70)
-        print("🚀 Iniciando entrenamiento")
-        print("=" * 70)
+    def load(self, path: str, optimizer=None):
+        """Carga checkpoint."""
+        ckpt = torch.load(path, map_location=self.device, weights_only=False)
+        self.model.load_state_dict(ckpt["model"])
         
-        epochs = self.config['epochs']
+        if optimizer and "optimizer" in ckpt:
+            optimizer.load_state_dict(ckpt["optimizer"])
         
-        for epoch in range(epochs):
-            print(f"\n📅 Época {epoch + 1}/{epochs}")
-            print("-" * 40)
-            
-            # Train
-            train_loss = self.train_epoch(epoch)
-            
-            # Validate
-            val_loss = self.validate()
-            
-            # Check best
-            is_best = val_loss < self.best_val_loss
-            if is_best:
-                self.best_val_loss = val_loss
-            
-            # Save checkpoint
-            self.save_checkpoint(epoch, val_loss, is_best)
-            
-            # Report
-            print(f"\n   📊 Resumen época {epoch + 1}:")
-            print(f"      Train loss: {train_loss:.4f}")
-            print(f"      Val loss:   {val_loss:.4f}")
-            print(f"      Best val:   {self.best_val_loss:.4f}")
-            
-            # Perplexity
-            train_ppl = math.exp(train_loss) if train_loss < 100 else float('inf')
-            val_ppl = math.exp(val_loss) if val_loss < 100 else float('inf')
-            print(f"      Train PPL:  {train_ppl:.2f}")
-            print(f"      Val PPL:    {val_ppl:.2f}")
+        if "history" in ckpt:
+            self.history = ckpt["history"]
         
-        print("\n" + "=" * 70)
-        print("✅ Entrenamiento completado!")
-        print(f"   Mejor val loss: {self.best_val_loss:.4f}")
-        print(f"   Checkpoints en: {self.checkpoint_dir}")
-        print("=" * 70)
-        
-        return self.train_losses, self.val_losses
+        return ckpt.get("epoch", 0)
 
 
 # =============================================================================
-# Main
+# MAIN
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description='Entrenar PAMPAr-Coder')
-    
-    # Data
-    parser.add_argument('--train-data', type=str, default='data/code/train.jsonl')
-    parser.add_argument('--val-data', type=str, default='data/code/val.jsonl')
-    parser.add_argument('--tokenizer', type=str, default='data/tokenizer/code_tokenizer.model')
-    
-    # Model
-    parser.add_argument('--preset', type=str, default='4GB', 
-                        choices=['4GB', '8GB', '24GB'])
-    parser.add_argument('--checkpoint', type=str, default=None,
-                        help='Resume from checkpoint')
-    
-    # Training
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch-size', type=int, default=8)
-    parser.add_argument('--lr', type=float, default=2e-4)
-    parser.add_argument('--weight-decay', type=float, default=0.01)
-    parser.add_argument('--warmup-steps', type=int, default=100)
-    parser.add_argument('--max-samples', type=int, default=None)
-    
-    # Output
-    parser.add_argument('--checkpoint-dir', type=str, default='checkpoints')
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", default="data/code")
+    parser.add_argument("--tokenizer", default="data/tokenizer/code.model")
+    parser.add_argument("--preset", default="4GB", choices=["4GB", "8GB"])
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--grad-accum", type=int, default=4)
+    parser.add_argument("--resume", type=str, default=None)
+    parser.add_argument("--output", default="checkpoints")
+    parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
     
-    print("=" * 70)
-    print("🧠 PAMPAr-Coder - Entrenamiento")
-    print("=" * 70)
+    print("=" * 60)
+    print("🧠 PAMPAr-Coder v2 Training")
+    print("=" * 60)
     
-    # Configuración
-    config = {
-        'epochs': args.epochs,
-        'batch_size': args.batch_size,
-        'learning_rate': args.lr,
-        'weight_decay': args.weight_decay,
-        'warmup_steps': args.warmup_steps,
-        'checkpoint_dir': args.checkpoint_dir,
-        'use_amp': True,
-    }
+    # Directorio output
+    Path(args.output).mkdir(exist_ok=True)
     
-    print(f"\n⚙️ Configuración:")
-    for k, v in config.items():
-        print(f"   {k}: {v}")
+    # Tokenizer
+    print(f"\n📖 Loading tokenizer: {args.tokenizer}")
+    tokenizer = spm.SentencePieceProcessor()
+    tokenizer.Load(args.tokenizer)
     
-    # Crear modelo
-    print(f"\n🏗️ Creando modelo (preset={args.preset})...")
-    model = crear_modelo(args.preset)
+    # Modelo
+    print(f"\n📦 Creating model (preset: {args.preset})")
+    config = PRESET_4GB if args.preset == "4GB" else PRESET_8GB
+    model = crear_modelo(config)
     
-    params = model.count_parameters()
-    print(f"   Parámetros: {params['total']:,}")
+    params = model.count_params()
+    print(f"   Params: {params['total']:,}")
+    print(f"   Memory: {params['total'] * 2 / 1024**2:.1f} MB (FP16)")
     
-    # Actualizar vocab_size si hay tokenizer
-    tokenizer_path = Path(args.tokenizer)
-    if tokenizer_path.exists():
-        if str(tokenizer_path).endswith('.model'):
-            sp = spm.SentencePieceProcessor()
-            sp.load(str(tokenizer_path))
-            vocab_size = sp.get_piece_size()
-        else:
-            from tokenizers import Tokenizer
-            tok = Tokenizer.from_file(str(tokenizer_path))
-            vocab_size = tok.get_vocab_size()
+    # Dataset
+    print(f"\n📚 Loading data: {args.data}")
+    dataset = CodeDataset(args.data, tokenizer, max_len=config.max_seq_len)
+    
+    # Split
+    train_size = int(0.95 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_ds, val_ds = torch.utils.data.random_split(dataset, [train_size, val_size])
+    
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=args.batch_size)
+    
+    print(f"   Train: {len(train_ds):,} | Val: {len(val_ds):,}")
+    
+    # Trainer
+    trainer = Trainer(model, tokenizer, device=args.device)
+    
+    # Optimizer
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    
+    # Resume
+    start_epoch = 0
+    if args.resume:
+        print(f"\n🔄 Resuming from {args.resume}")
+        start_epoch = trainer.load(args.resume, optimizer)
+    
+    # Training
+    print(f"\n🚀 Training for {args.epochs} epochs...")
+    print("-" * 60)
+    
+    best_loss = float("inf")
+    
+    for epoch in range(start_epoch, args.epochs):
+        t0 = time.time()
         
-        if vocab_size != model.config.vocab_size:
-            print(f"   ⚠️ Ajustando vocab_size: {model.config.vocab_size} → {vocab_size}")
-            model.config.vocab_size = vocab_size
-            # Recrear modelo con vocab correcto
-            model = PampaRCoder(model.config)
+        # Train
+        train_loss = trainer.train_epoch(train_loader, optimizer, args.grad_accum)
+        
+        # Eval
+        val_loss = trainer.evaluate(val_loader)
+        
+        # Log
+        elapsed = time.time() - t0
+        print(f"Epoch {epoch+1:2d}/{args.epochs} | "
+              f"Train: {train_loss:.4f} | Val: {val_loss:.4f} | "
+              f"PPL: {torch.exp(torch.tensor(val_loss)):.1f} | "
+              f"Time: {elapsed:.0f}s")
+        
+        # History
+        trainer.history["train_loss"].append(train_loss)
+        trainer.history["val_loss"].append(val_loss)
+        trainer.history["epoch"].append(epoch + 1)
+        
+        # Save best
+        if val_loss < best_loss:
+            best_loss = val_loss
+            trainer.save(f"{args.output}/pampar_v2_best.pt", epoch + 1, optimizer, val_loss)
+            print(f"   ✨ New best!")
+        
+        # Save periodic
+        if (epoch + 1) % 5 == 0:
+            trainer.save(f"{args.output}/pampar_v2_epoch_{epoch+1}.pt", epoch + 1, optimizer, val_loss)
     
-    # Cargar checkpoint si existe
-    if args.checkpoint and Path(args.checkpoint).exists():
-        print(f"\n📂 Cargando checkpoint: {args.checkpoint}")
-        checkpoint = torch.load(args.checkpoint, map_location='cpu')
-        model.load_state_dict(checkpoint['model'])
+    # Final
+    trainer.save(f"{args.output}/pampar_v2_final.pt", args.epochs, optimizer, val_loss)
     
-    # Cargar datasets
-    print(f"\n📚 Cargando datasets...")
-    
-    train_dataset = CodeDataset(
-        Path(args.train_data),
-        tokenizer_path,
-        max_seq_len=model.config.max_seq_len,
-        max_samples=args.max_samples
-    )
-    
-    val_path = Path(args.val_data)
-    val_dataset = CodeDataset(
-        val_path,
-        tokenizer_path,
-        max_seq_len=model.config.max_seq_len,
-        max_samples=args.max_samples // 10 if args.max_samples else None
-    ) if val_path.exists() else None
-    
-    # Entrenar
-    trainer = Trainer(model, train_dataset, val_dataset, config)
-    train_losses, val_losses = trainer.train()
-    
-    # Guardar historial
-    history = {
-        'train_losses': train_losses,
-        'val_losses': val_losses,
-        'config': config,
-    }
-    history_path = Path(args.checkpoint_dir) / 'history.json'
-    with open(history_path, 'w') as f:
-        json.dump(history, f, indent=2)
-    print(f"\n📊 Historial guardado: {history_path}")
+    print("\n" + "=" * 60)
+    print(f"✅ Training complete! Best val loss: {best_loss:.4f}")
 
 
 if __name__ == "__main__":
