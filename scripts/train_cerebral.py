@@ -243,6 +243,19 @@ def log_metricas(fase, paso, metricas, log_file="checkpoints/cerebral/training_l
         f.write(json.dumps(metricas, ensure_ascii=False) + "\n")
 
 
+def collate_pad(batch):
+    """Pad variable-length sequences to same length in batch."""
+    max_len = max(b["input_ids"].size(0) for b in batch)
+    input_ids = torch.zeros(len(batch), max_len, dtype=torch.long)
+    targets = torch.full((len(batch), max_len), -100, dtype=torch.long)
+    for i, b in enumerate(batch):
+        L = b["input_ids"].size(0)
+        input_ids[i, :L] = b["input_ids"]
+        targets[i, :L] = b["targets"]
+    terr_target = torch.stack([b["terr_target"] for b in batch])
+    return {"input_ids": input_ids, "targets": targets, "terr_target": terr_target}
+
+
 # =============================================================================
 # FASE 1: INFANCIA — Curriculum Learning
 # =============================================================================
@@ -288,7 +301,6 @@ def fase_1_infancia(model, tokenizer, device, config):
     consolidacion = ConsolidacionHebbiana(
         learning_rate=config["fase4"]["hebbian_lr"],
     )
-    meta_loss = MetacognitiveLoss()
     
     paso_global = 0
     mejor_loss = float("inf")
@@ -305,18 +317,6 @@ def fase_1_infancia(model, tokenizer, device, config):
             max_seq_len=config["max_seq_len"],
             revision_ratio=cfg["revision_ratio"],
         )
-
-        def collate_pad(batch):
-            """Pad variable-length sequences to same length in batch."""
-            max_len = max(b["input_ids"].size(0) for b in batch)
-            input_ids = torch.zeros(len(batch), max_len, dtype=torch.long)
-            targets = torch.full((len(batch), max_len), -100, dtype=torch.long)  # -100 = ignore
-            for i, b in enumerate(batch):
-                L = b["input_ids"].size(0)
-                input_ids[i, :L] = b["input_ids"]
-                targets[i, :L] = b["targets"]
-            terr_target = torch.stack([b["terr_target"] for b in batch])
-            return {"input_ids": input_ids, "targets": targets, "terr_target": terr_target}
 
         dataloader = DataLoader(
             dataset,
@@ -745,7 +745,10 @@ def fase_4_sueno(model, tokenizer, device, config):
         revision_ratio=1.0,  # Todo incluido
     )
 
-    dataloader = DataLoader(dataset, batch_size=config["batch_size"], num_workers=0)
+    dataloader = DataLoader(
+        dataset, batch_size=config["batch_size"], num_workers=0,
+        collate_fn=collate_pad,
+    )
 
     model.eval()
     n_batches = 0
@@ -837,7 +840,10 @@ def fase_5_curiosidad(model, tokenizer, device, config):
         revision_ratio=1.0,
     )
 
-    dataloader = DataLoader(dataset, batch_size=config["batch_size"], num_workers=0)
+    dataloader = DataLoader(
+        dataset, batch_size=config["batch_size"], num_workers=0,
+        collate_fn=collate_pad,
+    )
 
     # Fase 1: Evaluar todo y encontrar puntos débiles
     print("  Evaluando dificultad de ejemplos...")
@@ -861,6 +867,7 @@ def fase_5_curiosidad(model, tokenizer, device, config):
     # Fase 2: Entrenar con ejemplos difíciles
     print("  Entrenando con ejemplos difíciles...")
     model.train()
+    mejor_loss = float("inf")
     
     for paso in range(cfg["steps"]):
         batch_dificil = learner.obtener_batch_dificil(
@@ -890,12 +897,15 @@ def fase_5_curiosidad(model, tokenizer, device, config):
             torch.nn.utils.clip_grad_norm_(model.parameters(), config["max_grad_norm"])
             optimizer.step()
 
+        if loss.item() < mejor_loss:
+            mejor_loss = loss.item()
+
         if paso % 100 == 0:
             print(f"    Paso {paso}/{cfg['steps']} | Loss: {loss.item():.4f}")
             log_metricas(5, paso, {"loss": loss.item()})
 
     guardar_checkpoint(
-        model, optimizer, 5, cfg["steps"], loss.item(),
+        model, optimizer, 5, cfg["steps"], mejor_loss,
         f"{config['checkpoint_dir']}/fase5_final.pt",
     )
 

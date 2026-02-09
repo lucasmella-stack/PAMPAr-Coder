@@ -123,21 +123,18 @@ class MetacognitiveLoss(nn.Module):
         
         Si dice "90% seguro" y acierta 90%, penalización baja.
         """
-        with torch.no_grad():
-            # Accuracy real
-            mask = targets != -100
-            preds = logits.argmax(dim=-1)
-            correct = (preds == targets) & mask
-            accuracy = correct.float().sum() / mask.float().sum().clamp(min=1)
+        # Accuracy diferenciable usando soft predictions
+        mask = targets != -100
+        probs = F.softmax(logits, dim=-1)  # [B, L, V]
+        # Gather prob of correct token
+        target_clamped = targets.clamp(min=0)  # Avoid -100 index
+        correct_probs = probs.gather(2, target_clamped.unsqueeze(-1)).squeeze(-1)  # [B, L]
+        # Soft accuracy: mean probability of correct token (differentiable)
+        soft_accuracy = (correct_probs * mask.float()).sum() / mask.float().sum().clamp(min=1)
         
-        # Diferencia entre confianza y accuracy real
-        # Usando squared error para penalizar sobreconfianza más
-        cal_error = (confianza - accuracy.item()) ** 2
-        
-        # Usar un parámetro que sí participe en el grafo computacional
-        # Multiplicar por la media de los logits para que el gradiente fluya
-        logit_mean = logits.mean() * 0.0 + 1.0  # grad-enabled identity
-        return cal_error * logit_mean
+        # Calibration: (confianza - soft_accuracy)^2
+        cal_error = (confianza - soft_accuracy) ** 2
+        return cal_error
     
     def _specialization_loss(
         self,

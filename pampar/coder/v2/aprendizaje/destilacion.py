@@ -725,9 +725,9 @@ def territory_aware_distillation(
     input_ids = torch.tensor([tokens], dtype=torch.long, device=device)
 
     # Forward pass para obtener activaciones territoriales
-    with torch.no_grad():
-        x = model.emb_drop(model.tok_emb(input_ids))
-        terr_acts, _ = model.talamo(x, input_ids)
+    # No usar torch.no_grad() para que el gradiente fluya
+    x = model.emb_drop(model.tok_emb(input_ids))
+    terr_acts, _ = model.talamo(x, input_ids)
 
     # Clasificar nivel (usar el provisto o auto-detectar)
     nivel_enum, _ = clasificar_dificultad(teacher_text)

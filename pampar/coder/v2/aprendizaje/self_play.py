@@ -611,14 +611,18 @@ def dpo_loss(
     pref_token_logprobs = gather_logprobs(pref_logprobs, preferred_ids)
     rej_token_logprobs = gather_logprobs(rej_logprobs, rejected_ids)
     
-    # Mask out prompt tokens (only score generation)
-    def mask_prompt(logprobs, prompt_lens, total_len):
-        mask = torch.arange(total_len - 1, device=logprobs.device).unsqueeze(0)
-        mask = mask >= prompt_lens.unsqueeze(1)  # [B, L-1]
+    # Mask out prompt tokens AND padding (only score generation, not pad)
+    def mask_prompt(logprobs, prompt_lens, ids):
+        total_len = ids.shape[1]
+        pos = torch.arange(total_len - 1, device=logprobs.device).unsqueeze(0)
+        prompt_mask = pos >= prompt_lens.unsqueeze(1)  # [B, L-1]
+        # Also mask padding tokens (token 0)
+        pad_mask = ids[:, 1:] != 0  # [B, L-1]
+        mask = prompt_mask & pad_mask
         return (logprobs * mask.float()).sum(dim=1)  # [B]
     
-    pref_sum = mask_prompt(pref_token_logprobs, prompt_lens, preferred_ids.shape[1])
-    rej_sum = mask_prompt(rej_token_logprobs, prompt_lens, rejected_ids.shape[1])
+    pref_sum = mask_prompt(pref_token_logprobs, prompt_lens, preferred_ids)
+    rej_sum = mask_prompt(rej_token_logprobs, prompt_lens, rejected_ids)
     
     # Reference model (if provided)
     if ref_model is not None:
@@ -631,11 +635,11 @@ def dpo_loss(
             
             ref_pref_sum = mask_prompt(
                 gather_logprobs(ref_pref_logprobs, preferred_ids),
-                prompt_lens, preferred_ids.shape[1]
+                prompt_lens, preferred_ids
             )
             ref_rej_sum = mask_prompt(
                 gather_logprobs(ref_rej_logprobs, rejected_ids),
-                prompt_lens, rejected_ids.shape[1]
+                prompt_lens, rejected_ids
             )
         
         # Full DPO with reference
