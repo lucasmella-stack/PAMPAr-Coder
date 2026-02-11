@@ -1,0 +1,1 @@
+{"query":"mutation{podResume(input:{podId:\"d5tcbhmj233gab\",gpuCount:1}){id desiredStatus}}"}

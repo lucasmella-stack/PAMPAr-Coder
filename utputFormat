@@ -1,0 +1,13 @@
+HTTP/1.1 500 Internal Server Error
+Date: Tue, 10 Feb 2026 18:13:51 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 21
+Connection: keep-alive
+x-powered-by: Express
+etag: W/"15-/6VXivhc2MKdLfIkLcUE47K6aH0"
+apigw-requestid: Yk9G9hB7IAMESVg=
+cf-cache-status: DYNAMIC
+Server: cloudflare
+CF-RAY: 9cbd95335fde6e11-BCN
+
+Internal Server Error

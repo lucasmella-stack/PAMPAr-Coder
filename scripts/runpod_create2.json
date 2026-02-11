@@ -1,0 +1,1 @@
+{"query":"mutation{podFindAndDeployOnDemand(input:{cloudType:ALL,gpuCount:1,volumeInGb:50,containerDiskInGb:20,gpuTypeId:\"NVIDIA RTX A5000\",name:\"pampar-train\",imageName:\"runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04\",startSsh:true,ports:\"22/tcp\",volumeMountPath:\"/workspace\"}){id runtime{ports{ip publicPort privatePort}}}}"}

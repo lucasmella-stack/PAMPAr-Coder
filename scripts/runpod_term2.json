@@ -1,0 +1,1 @@
+{"query":"mutation{podTerminate(input:{podId:\"d5tcbhmj233gab\"})}"}
