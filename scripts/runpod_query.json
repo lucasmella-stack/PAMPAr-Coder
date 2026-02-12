@@ -1,1 +1,0 @@
-{"query":"{pod(input:{podId:\"0owpvpn1n1180h\"}){id desiredStatus machine{gpuDisplayName} runtime{ports{ip publicPort privatePort}}}}"}

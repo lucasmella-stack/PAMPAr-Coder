@@ -1,1 +1,0 @@
-{"query":"mutation{podFindAndDeployOnDemand(input:{cloudType:SECURE,gpuCount:1,volumeInGb:50,containerDiskInGb:40,gpuTypeId:\"NVIDIA GeForce RTX 3090\",name:\"pampar-stable\",imageName:\"runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04\",startSsh:true,ports:\"22/tcp\",volumeMountPath:\"/workspace\"}){id}}"}

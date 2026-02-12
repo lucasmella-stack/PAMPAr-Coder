@@ -52,6 +52,13 @@ class ConfigV2:
     use_amp: bool = True
     use_checkpoint: bool = True
 
+    # --- Contexto de Routing ---
+    ventana_contexto: int = 32    # Tokens vecinos para contextualizar routing
+
+    # --- Relaciones Simbióticas ---
+    sym_factor: int = 8           # Bottleneck: dim // sym_factor
+    exit_percentile: float = 0.1  # Percentil para Early Exit (10% peor)
+
     def __post_init__(self):
         """Valida configuración."""
         assert self.dim % self.n_heads == 0, "dim debe ser divisible por n_heads"
@@ -92,13 +99,19 @@ class ConfigV2:
         # Exit head: dim → 1
         exit_head = self.dim + 1
 
-        per_capa = attn + ffn + mix + norms + exit_head
+        # Relaciones simbióticas por capa
+        sym_dim = self.dim // self.sym_factor
+        sym = self.dim * self.n_territorios * sym_dim + sym_dim * self.dim
+
+        per_capa = attn + ffn + mix + norms + exit_head + sym
 
         # Tálamo (once):
         # attn_proj: dim → dim//2 → n_zonas
         talamo = self.dim * (self.dim // 2) + (self.dim // 2) * self.n_zonas
         # terr_gate: n_territorios → n_territorios
         talamo += self.n_territorios * self.n_territorios
+        # Context conv (depthwise causal)
+        talamo += self.n_zonas * self.ventana_contexto
 
         # Final RMSNorm: dim
         final_norm = self.dim

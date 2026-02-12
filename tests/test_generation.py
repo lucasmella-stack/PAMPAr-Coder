@@ -72,7 +72,7 @@ def main():
         with torch.no_grad():
             generated = model.generate(
                 input_tensor,
-                max_new_tokens=80,
+                max_tokens=80,
                 temperature=0.8,
             )
 

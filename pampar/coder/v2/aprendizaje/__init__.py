@@ -53,6 +53,11 @@ from .aprendizaje_online import (
     crear_servidor,
 )
 
+from .memoria_errores import (
+    MemoriaErrores,
+    EntradaError,
+)
+
 __all__ = [
     # Curriculum
     "NivelDificultad",
@@ -83,4 +88,7 @@ __all__ = [
     "BufferExperiencia",
     "EntrenadorOnline",
     "crear_servidor",
+    # Memoria de Errores
+    "MemoriaErrores",
+    "EntradaError",
 ]

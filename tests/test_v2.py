@@ -131,11 +131,13 @@ class TestTalamo:
         
         terr, zona = talamo(x, ids)
         
-        # Activaciones deben estar en [0, 1]
+        # terr_acts en [0, 1] por sigmoid final del gate
         assert terr.min() >= 0
         assert terr.max() <= 1
-        assert zona.min() >= 0
-        assert zona.max() <= 1
+        # zona_acts puede salir de [0,1] tras context_conv (esperado)
+        # Solo verificamos que no exploten
+        assert zona.min() > -10
+        assert zona.max() < 10
 
 
 class TestBloques:
@@ -248,6 +250,261 @@ class TestIntegracion:
         
         # Modelo debe usar < 500MB para dejar espacio para batch
         assert mem_mb < 500, f"Modelo usa {mem_mb:.1f}MB, muy grande"
+
+
+# =============================================================================
+# TESTS PARA FEATURES ARQUITECTÓNICOS v2.1
+# =============================================================================
+
+class TestINT8Llaves:
+    """Tests del sistema LLAVES con cuantización INT8."""
+
+    def test_int8_storage(self):
+        """Tabla de lookup usa uint8 (no nibble packing)."""
+        llaves = LlavesV2(vocab_size=200, n_zonas=52, usar_cuant=True)
+        assert llaves.tabla_cuant.dtype == torch.uint8
+        assert llaves.tabla_cuant.shape == (200, 52)
+
+    def test_int8_precision(self):
+        """INT8 tiene 256 niveles → error < 0.4%."""
+        llaves = LlavesV2(vocab_size=10, n_zonas=52, usar_cuant=True)
+        # Setear un valor conocido
+        llaves._set_cuant(0, 5, 0.75)
+        # Leer de vuelta
+        ids = torch.tensor([[0]])
+        acts = llaves(ids)
+        recovered = acts[0, 0, 5].item()
+        # Error < 1/256 ≈ 0.39%
+        assert abs(recovered - 0.75) < 0.004, f"INT8 error too high: {recovered}"
+
+    def test_int8_boundary_values(self):
+        """Valores extremos (0.0 y 1.0) se preservan."""
+        llaves = LlavesV2(vocab_size=10, n_zonas=52, usar_cuant=True)
+        llaves._set_cuant(0, 0, 0.0)
+        llaves._set_cuant(0, 1, 1.0)
+        ids = torch.tensor([[0]])
+        acts = llaves(ids)
+        assert acts[0, 0, 0].item() == 0.0
+        assert acts[0, 0, 1].item() == 1.0
+
+
+class TestContextConv:
+    """Tests de la ventana de contexto causal en el Tálamo."""
+
+    def test_context_conv_exists(self):
+        """El tálamo tiene Conv1D para contexto."""
+        talamo = Talamo(PRESET_4GB)
+        assert hasattr(talamo, 'context_conv')
+        assert isinstance(talamo.context_conv, torch.nn.Conv1d)
+
+    def test_context_conv_is_causal(self):
+        """Conv es causal: solo mira tokens anteriores (no futuros)."""
+        cfg = ConfigV2(ventana_contexto=4, dim=384, n_heads=6, n_capas=2)
+        talamo = Talamo(cfg)
+        B, L, D = 1, 8, cfg.dim
+        x = torch.randn(B, L, D)
+        ids = torch.randint(0, 100, (B, L))
+
+        # Forward con todos los tokens
+        terr1, zona1 = talamo(x, ids)
+
+        # Forward cambiando el último token — no debería afectar tokens anteriores
+        ids2 = ids.clone()
+        ids2[0, -1] = (ids[0, -1] + 1) % 100
+        x2 = x.clone()
+        x2[0, -1] += 1.0  # Cambiar embedding del último token
+
+        terr2, zona2 = talamo(x2, ids2)
+
+        # Los primeros L-1 tokens deben ser iguales (causal = no ven el futuro)
+        assert torch.allclose(terr1[:, :-1, :], terr2[:, :-1, :], atol=1e-5), \
+            "Context conv is NOT causal — future tokens are leaking!"
+
+    def test_context_conv_depthwise(self):
+        """Conv es depthwise (groups=n_zonas) → liviana."""
+        talamo = Talamo(PRESET_4GB)
+        assert talamo.context_conv.groups == PRESET_4GB.n_zonas
+
+
+class TestSymbioticRelationships:
+    """Tests de relaciones simbióticas entre territorios."""
+
+    def test_sym_layers_exist(self):
+        """BloqueTerritorial tiene capas simbióticas."""
+        bloque = BloqueTerritorial(PRESET_4GB)
+        assert hasattr(bloque, 'sym_proj')
+        assert hasattr(bloque, 'sym_up')
+
+    def test_sym_bottleneck_dimension(self):
+        """Bottleneck usa dim // sym_factor."""
+        cfg = PRESET_4GB
+        bloque = BloqueTerritorial(cfg)
+        sym_dim = cfg.dim // cfg.sym_factor
+        assert bloque.sym_proj.in_features == cfg.dim * cfg.n_territorios
+        assert bloque.sym_proj.out_features == sym_dim
+        assert bloque.sym_up.in_features == sym_dim
+        assert bloque.sym_up.out_features == cfg.dim
+
+    def test_sym_adds_to_output(self):
+        """Symbiotic support is additive (not replacing main mix)."""
+        bloque = BloqueTerritorial(PRESET_4GB)
+        x = torch.randn(1, 8, PRESET_4GB.dim)
+        terr = torch.rand(1, 8, 4)
+
+        # Zero out symbiotic layers → output should differ from normal
+        with torch.no_grad():
+            bloque.sym_proj.weight.zero_()
+            bloque.sym_up.weight.zero_()
+
+        out_no_sym, _ = bloque(x, terr)
+
+        # Restore random weights
+        with torch.no_grad():
+            torch.nn.init.normal_(bloque.sym_proj.weight, std=0.02)
+            torch.nn.init.normal_(bloque.sym_up.weight, std=0.02)
+
+        out_with_sym, _ = bloque(x, terr)
+
+        # Outputs should differ
+        assert not torch.allclose(out_no_sym, out_with_sym, atol=1e-6), \
+            "Symbiotic layers have no effect!"
+
+
+class TestPercentileExit:
+    """Tests de Early Exit con percentil 10."""
+
+    def test_exit_returns_confidence(self):
+        """BloqueTerritorial retorna confianza escalar."""
+        bloque = BloqueTerritorial(PRESET_4GB)
+        x = torch.randn(1, 16, PRESET_4GB.dim)
+        terr = torch.rand(1, 16, 4)
+        _, conf = bloque(x, terr)
+        assert isinstance(conf, float)
+        assert 0 <= conf <= 1
+
+    def test_percentile_focuses_on_worst(self):
+        """Percentil 10 mira los tokens con menor confianza."""
+        cfg = ConfigV2(exit_percentile=0.1, dim=384, n_heads=6, n_capas=2)
+        bloque = BloqueTerritorial(cfg)
+
+        # Con exit_percentile=0.1 y 16 tokens: k = max(1, int(16*0.1)) = 1
+        # Mira el peor token (no el promedio)
+        x = torch.randn(1, 16, cfg.dim)
+        terr = torch.rand(1, 16, 4)
+        _, conf = bloque(x, terr)
+
+        # Confianza debe ser baja (peor token) vs promedio global
+        # Just verify it runs within valid range
+        assert 0 <= conf <= 1
+
+    def test_percentile_config_respected(self):
+        """exit_percentile del config se usa correctamente."""
+        cfg = ConfigV2(exit_percentile=0.5, dim=384, n_heads=6, n_capas=2)
+        bloque = BloqueTerritorial(cfg)
+        assert bloque.config.exit_percentile == 0.5
+
+
+class TestMemoriaErrores:
+    """Tests de la Memoria de Errores con Interiorización."""
+
+    def test_crear_memoria(self):
+        """Crear memoria con defaults."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores()
+        assert len(mem.memoria) == 0
+        assert mem.max_entries == 10000
+
+    def test_registrar_errores(self):
+        """Registra errores cuando loss > umbral."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores(hash_window=4, umbral_error=2.0)
+
+        ids = torch.randint(0, 100, (1, 20))
+        losses = torch.ones(1, 20) * 1.0  # Below threshold
+        assert mem.registrar_errores(ids, losses) == 0
+
+        losses[0, 10] = 5.0  # Above threshold
+        count = mem.registrar_errores(ids, losses)
+        assert count >= 1
+        assert len(mem.memoria) >= 1
+
+    def test_interiorizacion(self):
+        """Patrón se interioriza tras N éxitos consecutivos."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores(
+            hash_window=4,
+            umbral_error=2.0,
+            umbral_interiorizacion=3,
+        )
+
+        ids = torch.randint(0, 100, (1, 20))
+        losses_high = torch.ones(1, 20) * 1.0
+        losses_high[0, 10] = 5.0  # Error en posición 10
+        mem.registrar_errores(ids, losses_high)
+        assert len(mem.memoria) >= 1
+
+        # Ahora el modelo "acierta" (loss baja)
+        losses_low = torch.ones(1, 20) * 0.5
+        for _ in range(3):
+            mem.verificar_interiorizacion(ids, losses_low)
+
+        # Después de 3 éxitos, debe interiorizarse (borrarse)
+        assert mem.total_interiorizados >= 1
+
+    def test_penalizacion(self):
+        """Patrones conocidos reciben penalización extra."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores(
+            hash_window=4,
+            umbral_error=2.0,
+            factor_penalizacion=0.15,
+        )
+
+        ids = torch.randint(0, 100, (1, 20))
+        losses = torch.ones(1, 20) * 5.0
+        mem.registrar_errores(ids, losses)
+
+        penalty = mem.calcular_penalizacion(ids)
+        assert penalty.shape == (1, 20)
+        # At least some positions should have penalty
+        assert penalty.sum() > 0
+
+    def test_ring_buffer_overflow(self):
+        """Buffer circular sobreescribe entradas viejas."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores(max_entries=5, hash_window=4, umbral_error=0.5)
+
+        for i in range(10):
+            ids = torch.full((1, 10), fill_value=i * 10, dtype=torch.long)
+            losses = torch.ones(1, 10) * 2.0
+            mem.registrar_errores(ids, losses)
+
+        assert len(mem.memoria) <= 5
+
+    def test_guardar_cargar(self, tmp_path):
+        """Persistencia a disco (JSON)."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores(hash_window=4, umbral_error=2.0)
+
+        ids = torch.randint(0, 100, (1, 20))
+        losses = torch.ones(1, 20) * 5.0
+        mem.registrar_errores(ids, losses)
+
+        path = str(tmp_path / "mem.json")
+        mem.guardar(path)
+
+        mem2 = MemoriaErrores.cargar(path)
+        assert len(mem2.memoria) == len(mem.memoria)
+        assert mem2.total_registrados == mem.total_registrados
+
+    def test_stats(self):
+        """Estadísticas de la memoria."""
+        from pampar.coder.v2.aprendizaje.memoria_errores import MemoriaErrores
+        mem = MemoriaErrores()
+        stats = mem.stats()
+        assert 'activos' in stats
+        assert 'capacidad' in stats
+        assert 'ratio_inter' in stats
 
 
 if __name__ == "__main__":

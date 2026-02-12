@@ -124,16 +124,12 @@ class LlavesV2(nn.Module):
         # Tabla de lookup: vocab_size x n_zonas
         # Almacena la activación de cada zona para cada token
         if usar_cuant:
-            # Cuantizado: 4 bits por valor, empaquetados en int8
-            # 52 zonas = 26 bytes por token (vs 208 bytes en FP32)
-            n_bytes = (n_zonas + 1) // 2
+            # Cuantizado: 8 bits por valor (INT8)
+            # 52 zonas = 52 bytes por token (vs 208 bytes en FP32)
+            # Resolución: 256 niveles (error <0.4% vs INT4 ~11%)
             self.register_buffer(
                 "tabla_cuant",
-                torch.zeros(vocab_size, n_bytes, dtype=torch.uint8)
-            )
-            self.register_buffer(
-                "escala",
-                torch.ones(1)  # Factor de escala para INT4 -> FP
+                torch.zeros(vocab_size, n_zonas, dtype=torch.uint8)
             )
         else:
             self.register_buffer(
@@ -172,21 +168,9 @@ class LlavesV2(nn.Module):
         return count
     
     def _set_cuant(self, token_id: int, zona_idx: int, valor: float):
-        """Guarda valor cuantizado a INT4."""
-        # Cuantizar a 4 bits (0-15)
-        v_int = int(min(15, max(0, valor * 15)))
-        
-        byte_idx = zona_idx // 2
-        if zona_idx % 2 == 0:
-            # Nibble bajo
-            self.tabla_cuant[token_id, byte_idx] = (
-                (self.tabla_cuant[token_id, byte_idx] & 0xF0) | v_int
-            )
-        else:
-            # Nibble alto
-            self.tabla_cuant[token_id, byte_idx] = (
-                (self.tabla_cuant[token_id, byte_idx] & 0x0F) | (v_int << 4)
-            )
+        """Guarda valor cuantizado a INT8 (256 niveles, error <0.4%)."""
+        v_int = int(min(255, max(0, valor * 255)))
+        self.tabla_cuant[token_id, zona_idx] = v_int
     
     def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
         """
@@ -201,16 +185,8 @@ class LlavesV2(nn.Module):
         B, L = token_ids.shape
         
         if self.usar_cuant:
-            # Desempaquetar INT4 a FP
-            packed = self.tabla_cuant[token_ids]  # [B, L, n_bytes]
-            
-            # Separar nibbles
-            lo = (packed & 0x0F).float() / 15.0
-            hi = ((packed >> 4) & 0x0F).float() / 15.0
-            
-            # Intercalar
-            acts = torch.stack([lo, hi], dim=-1)  # [B, L, n_bytes, 2]
-            acts = acts.view(B, L, -1)[:, :, :self.n_zonas]
+            # INT8 → float: simple y preciso (256 niveles)
+            acts = self.tabla_cuant[token_ids].float() / 255.0  # [B, L, n_zonas]
         else:
             acts = self.tabla[token_ids]
         

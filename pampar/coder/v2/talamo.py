@@ -12,6 +12,7 @@ El tálamo decide qué territorios y zonas procesar cada token.
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .config import ConfigV2
 from .llaves import LlavesV2, agregar_zonas_a_territorios
@@ -49,6 +50,19 @@ class Talamo(nn.Module):
         
         # Proyección final a territorios
         self.terr_gate = nn.Linear(config.n_territorios, config.n_territorios)
+
+        # Ventana de contexto causal para routing contextualizado
+        # Cada token mira sus vecinos anteriores antes de decidir routing
+        # Evita routing ciego: "for" en "for x in range" ≠ "for" en "formula"
+        self.context_conv = nn.Conv1d(
+            in_channels=config.n_zonas,
+            out_channels=config.n_zonas,
+            kernel_size=config.ventana_contexto,
+            padding=0,  # Manual causal padding (solo izquierda)
+            groups=config.n_zonas,  # Depthwise: liviano (~1.6K params)
+            bias=False,
+        )
+        self.ventana = config.ventana_contexto
     
     def registrar_tokenizer(self, tokenizer) -> int:
         """Registra vocabulario en LLAVES."""
@@ -81,7 +95,15 @@ class Talamo(nn.Module):
             self.peso_llaves * llaves_acts +
             (1 - self.peso_llaves) * attn_acts
         )
-        
+
+        # 3.5. Contextualización causal: cada token mira vecinos anteriores
+        # Evita routing ciego — "for" en "for x in range" ≠ "for" en "formula"
+        zona_ctx = F.pad(
+            zona_acts.transpose(1, 2),   # [B, 52, L]
+            (self.ventana - 1, 0),        # Pad left only (causal)
+        )
+        zona_acts = self.context_conv(zona_ctx).transpose(1, 2)  # [B, L, 52]
+
         # 4. Agregar a territorios
         terr_acts = agregar_zonas_a_territorios(zona_acts)  # [B, L, 4]
         

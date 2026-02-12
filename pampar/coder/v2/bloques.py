@@ -246,6 +246,13 @@ class BloqueTerritorial(nn.Module):
         # Mezcla de territorios: D*4 → D
         self.mix = nn.Linear(config.dim * config.n_territorios, config.dim, bias=False)
 
+        # Relaciones simbióticas: apoyo complementario entre territorios
+        # Como el cerebro: ninguna zona se "apaga", las secundarias aportan
+        # contexto que refuerza al territorio dominante
+        sym_dim = config.dim // config.sym_factor
+        self.sym_proj = nn.Linear(config.dim * config.n_territorios, sym_dim, bias=False)
+        self.sym_up = nn.Linear(sym_dim, config.dim, bias=False)
+
         # Dropout residual
         self.drop = nn.Dropout(config.dropout)
 
@@ -273,21 +280,34 @@ class BloqueTerritorial(nn.Module):
         # 1. Atención + residual
         x = x + self.drop(self.attn(self.norm1(x), mask))
 
-        # 2. FFN por territorio, modulado por activaciones
+        # 2. FFN por territorio con relaciones simbióticas
         h = self.norm2(x)
-        outputs = []
 
-        for t, ffn in enumerate(self.ffns):
-            act = terr_acts[:, :, t:t+1]       # [B, L, 1]
-            outputs.append(ffn(h) * act)        # FFN modulado
+        # Todos los FFN producen su salida
+        ffn_outputs = [ffn(h) for ffn in self.ffns]
 
-        # 3. Concatenar y mezclar territorios
-        mixed = self.mix(torch.cat(outputs, dim=-1))  # [B, L, D*4] → [B, L, D]
+        # Principal: ponderado por activación territorial (dominante lidera)
+        weighted = [ffn_outputs[t] * terr_acts[:, :, t:t+1]
+                    for t in range(len(self.ffns))]
+        main_out = self.mix(torch.cat(weighted, dim=-1))  # [B, L, D*4] → [B, L, D]
+
+        # Relaciones simbióticas: todos los territorios aportan contexto
+        # complementario — como el cerebro, ninguna zona se apaga, las
+        # secundarias refuerzan al territorio dominante
+        sym_input = torch.cat(ffn_outputs, dim=-1)  # [B, L, D*4]
+        sym_support = self.sym_up(F.silu(self.sym_proj(sym_input)))  # [B, L, D]
+
+        # 3. Combinación: principal + apoyo simbiótico
+        mixed = main_out + sym_support
 
         # 4. Residual
         x = x + self.drop(mixed)
 
-        # 5. Confianza para Early Exit
-        conf = torch.sigmoid(self.exit_head(x.mean(dim=1))).mean().item()
+        # 5. Confianza para Early Exit (percentil 10 — foco en tokens difíciles)
+        # En vez de promediar todos, miramos el 10% con menor confianza
+        # Si un token duda, el modelo sigue procesando capas
+        per_token_conf = torch.sigmoid(self.exit_head(x)).squeeze(-1)  # [B, L]
+        k = max(1, int(per_token_conf.numel() * self.config.exit_percentile))
+        conf = per_token_conf.reshape(-1).topk(k, largest=False).values.mean().item()
 
         return x, conf
