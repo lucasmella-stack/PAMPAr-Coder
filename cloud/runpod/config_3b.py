@@ -98,32 +98,34 @@ class Config3B:
 
 @dataclass  
 class Config1_5B:
-    """Configuración para modelo de ~150M parámetros."""
+    """
+    Configuración de ENTRENAMIENTO para PAMPAr-Coder 1.5B.
     
-    vocab_size: int = 32000      # Tokenizer tiene 32K
-    dim: int = 512               # Más pequeño
-    n_heads: int = 8
-    n_capas: int = 12            # Menos capas
-    dropout: float = 0.1
-    max_seq_len: int = 512       # Contexto más corto
+    Optimizado para A5000 24GB VRAM.
+    La arquitectura del modelo se define en PRESET_1_5B (pampar.coder.v2.config).
+    """
     
-    n_zonas: int = 52
-    n_territorios: int = 4
-    peso_llaves: float = 0.80
-    usar_cuantizacion: bool = True  # Cuantizar LLAVES
+    # =========================================================================
+    # ENTRENAMIENTO
+    # =========================================================================
+    batch_size: int = 4          # Limitado por 24GB VRAM con 1.5B
+    gradient_accumulation: int = 8
+    effective_batch: int = 32    # batch_size * gradient_accumulation
+    max_seq_len: int = 512       # Limitado por VRAM (modelo soporta 4096)
     
-    use_gradient_checkpointing: bool = True
-    use_mixed_precision: bool = True
-    
-    batch_size: int = 32         # Batch grande
-    gradient_accumulation: int = 2
-    effective_batch: int = 64
-    
-    learning_rate: float = 1e-3  # Más alto para modelo pequeño
+    learning_rate: float = 3e-4  # Estándar para 1.5B
     weight_decay: float = 0.1
     warmup_steps: int = 200
-    max_steps: int = 30000
+    max_steps: int = 50000
     
+    # =========================================================================
+    # EFICIENCIA
+    # =========================================================================
+    use_amp: bool = True         # BF16 mixed precision
+    
+    # =========================================================================
+    # CHECKPOINTING
+    # =========================================================================
     save_every_steps: int = 500
     eval_every_steps: int = 250
     keep_checkpoints: int = 3

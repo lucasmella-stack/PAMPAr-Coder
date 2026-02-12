@@ -31,7 +31,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from pampar.coder.v2.modelo import PampaRCoderV2
-from pampar.coder.v2.config import ConfigV2
+from pampar.coder.v2.config import ConfigV2, PRESET_1_5B
 from pampar.coder.v2.zonas import Territorio
 from config_3b import Config3B, Config1_5B, CONFIGS
 
@@ -144,9 +144,11 @@ class CloudTrainer:
         output_dir: str = "checkpoints",
         use_wandb: bool = True,
         project_name: str = "pampar-coder-3b",
+        model_config: ConfigV2 = None,
     ):
         self.model = model
         self.config = config
+        self.model_config = model_config
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         
@@ -160,7 +162,7 @@ class CloudTrainer:
         model.registrar_tokenizer(self.tokenizer)
         
         # Mixed precision
-        self.scaler = GradScaler('cuda') if config.use_mixed_precision else None
+        self.scaler = GradScaler('cuda') if config.use_amp else None
         
         # Wandb
         self.use_wandb = use_wandb
@@ -391,7 +393,8 @@ class CloudTrainer:
             'global_step': self.global_step,
             'val_loss': val_loss,
             'best_val_loss': self.best_val_loss,
-            'config': asdict(self.config) if hasattr(self.config, '__dataclass_fields__') else vars(self.config),
+            'train_config': asdict(self.config) if hasattr(self.config, '__dataclass_fields__') else vars(self.config),
+            'model_config': asdict(self.model_config) if self.model_config else None,
         }, path)
         
         print(f"💾 Checkpoint: {path}")
@@ -454,21 +457,31 @@ def main():
     # Config
     config = CONFIGS[args.config]
     
+    # Model config — PRESET_1_5B para modelo real, Config3B para 3B
+    if args.config == "1.5B":
+        model_config = PRESET_1_5B
+    else:
+        model_config = ConfigV2(
+            vocab_size=config.vocab_size,
+            dim=config.dim,
+            n_heads=config.n_heads,
+            n_capas=config.n_capas,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
+            use_checkpoint=config.use_gradient_checkpointing,
+            use_amp=config.use_mixed_precision,
+        )
+    
     # Model
     print("\n📦 Creando modelo...")
-    model_config = ConfigV2(
-        vocab_size=config.vocab_size,
-        dim=config.dim,
-        n_heads=config.n_heads,
-        n_capas=config.n_capas,
-        max_seq_len=config.max_seq_len,
-        dropout=config.dropout,
-        use_gradient_checkpointing=config.use_gradient_checkpointing,
-        use_mixed_precision=config.use_mixed_precision,
-    )
     model = PampaRCoderV2(model_config)
-    params = model.count_parameters()
+    params = model.count_params()
     print(f"   Parámetros: {params['total']/1e9:.2f}B")
+    print(f"   Arquitectura: dim={model_config.dim}, capas={model_config.n_capas}, "
+          f"heads={model_config.n_heads}Q/{model_config.kv_heads}KV")
+    print(f"   Vocab: {model_config.vocab_size}, Seq: {config.max_seq_len}")
+    print(f"   Nuevas features v2.1: ventana_contexto={model_config.ventana_contexto}, "
+          f"sym_factor={model_config.sym_factor}, exit_percentile={model_config.exit_percentile}")
     
     # Dataset
     print("\n📚 Cargando datos...")
@@ -512,6 +525,7 @@ def main():
         tokenizer_path=args.tokenizer,
         output_dir=args.output,
         use_wandb=not args.no_wandb,
+        model_config=model_config,
     )
     
     # Train
