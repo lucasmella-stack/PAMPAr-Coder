@@ -27,6 +27,13 @@ from dataclasses import dataclass, asdict
 import sentencepiece as spm
 from tqdm import tqdm
 
+# 8-bit AdamW para reducir memoria del optimizer ~4x
+try:
+    import bitsandbytes as bnb
+    HAS_BNB = True
+except ImportError:
+    HAS_BNB = False
+
 # Agregar path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -193,13 +200,23 @@ class CloudTrainer:
     ):
         """Entrenamiento principal."""
         
-        # Optimizer
-        optimizer = torch.optim.AdamW(
-            self.model.parameters(),
-            lr=self.config.learning_rate,
-            weight_decay=self.config.weight_decay,
-            betas=(0.9, 0.95),
-        )
+        # Optimizer — 8-bit AdamW si disponible (reduce memoria ~4x)
+        if HAS_BNB:
+            print("   ⚡ Usando AdamW8bit (bitsandbytes)")
+            optimizer = bnb.optim.AdamW8bit(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+                weight_decay=self.config.weight_decay,
+                betas=(0.9, 0.95),
+            )
+        else:
+            print("   ⚠️  bitsandbytes no disponible, usando AdamW estándar")
+            optimizer = torch.optim.AdamW(
+                self.model.parameters(),
+                lr=self.config.learning_rate,
+                weight_decay=self.config.weight_decay,
+                betas=(0.9, 0.95),
+            )
         
         # Scheduler
         total_steps = len(train_loader) * epochs // self.config.gradient_accumulation

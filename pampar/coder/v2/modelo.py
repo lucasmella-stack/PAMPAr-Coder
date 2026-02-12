@@ -18,6 +18,7 @@ Ventajas sobre transformers estándar (Qwen, Llama):
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint
 import torch.nn.functional as F
 from typing import Dict, Optional, Tuple
 
