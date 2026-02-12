@@ -1,0 +1,3 @@
+{
+  "query": "mutation { podFindAndDeployOnDemand(input: { name: \"pampar-train\", gpuTypeId: \"NVIDIA GeForce RTX 3090\", gpuCount: 1, cloudType: SECURE, containerDiskInGb: 40, volumeInGb: 50, imageName: \"runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04\", ports: \"22/tcp,8888/http\" }) { id desiredStatus imageName machine { podHostId gpuDisplayName } } }"
+}

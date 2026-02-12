@@ -1,0 +1,3 @@
+{
+  "query": "{ pod(input: { podId: \"19lqkdmf4w0kyv\" }) { id desiredStatus runtime { uptimeInSeconds ports { ip isIpPublic publicPort privatePort } } } }"
+}
