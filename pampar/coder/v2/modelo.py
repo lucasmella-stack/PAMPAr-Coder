@@ -175,7 +175,16 @@ class PampaRCoderV2(nn.Module):
                 v, _ = logits.topk(top_k)
                 logits[logits < v[:, [-1]]] = float("-inf")
 
+            # Protect against NaN/Inf logits (common in early training)
+            if torch.isnan(logits).any() or torch.isinf(logits).any():
+                logits = torch.nan_to_num(logits, nan=0.0, posinf=1e4, neginf=-1e4)
+
             probs = F.softmax(logits, dim=-1)
+
+            # Ensure valid probability distribution
+            if torch.isnan(probs).any() or (probs < 0).any():
+                probs = torch.ones_like(probs) / probs.shape[-1]
+
             next_tok = torch.multinomial(probs, 1)
             generated = torch.cat([generated, next_tok], dim=1)
 
