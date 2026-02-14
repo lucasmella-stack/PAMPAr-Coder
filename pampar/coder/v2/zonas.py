@@ -137,64 +137,107 @@ ZONAS_POR_TERRITORIO: Dict[Territorio, Tuple[Zona, ...]] = {
 # PATRONES DE TOKENS POR ZONA
 # =============================================================================
 
+# PRINCIPIO: cada token tiene UNA zona primaria.
+# LLAVES busca en orden, la primera coincidencia gana.
+# Zonas ESTRUCTURALES y LOGICO usan patrones regex + contexto
+# (vía context_conv en el Tálamo), NO duplican tokens de SINTAXIS.
+
 ZONAS: Dict[Zona, Set[str]] = {
-    # SINTAXIS
-    Zona.B01_KW_DEF: {"def", "function", "fn", "func", "lambda"},
-    Zona.B02_KW_CLASS: {"class", "struct", "interface", "trait", "enum"},
-    Zona.B03_KW_IMPORT: {"import", "from", "require", "include", "use"},
-    Zona.B04_KW_RETURN: {"return", "yield", "raise", "throw"},
-    Zona.B05_KW_CONTROL: {"if", "else", "elif", "switch", "case", "match"},
-    Zona.B06_KW_LOOP: {"for", "while", "loop", "do", "foreach"},
-    Zona.B07_KW_EXCEPT: {"try", "except", "catch", "finally", "throw"},
-    Zona.B08_KW_ASYNC: {"async", "await", "spawn"},
-    Zona.B09_KW_MOD: {"public", "private", "protected", "static", "final"},
-    Zona.B10_KW_VAR: {"let", "const", "var", "mut"},
+    # =========================================================================
+    # SINTAXIS (15 zonas) — keywords y delimitadores del lenguaje
+    # Cada keyword pertenece a UNA sola zona primaria.
+    # =========================================================================
+    Zona.B01_KW_DEF: {"def", "lambda"},
+    Zona.B02_KW_CLASS: {"class"},
+    Zona.B03_KW_IMPORT: {"import", "from"},
+    Zona.B04_KW_RETURN: {"return", "yield"},
+    Zona.B05_KW_CONTROL: {"if", "else", "elif", "match", "case"},
+    Zona.B06_KW_LOOP: {"for", "while"},
+    Zona.B07_KW_EXCEPT: {"try", "except", "finally", "raise"},
+    Zona.B08_KW_ASYNC: {"async", "await"},
+    Zona.B09_KW_MOD: {"global", "nonlocal", "del", "with", "as"},
+    Zona.B10_KW_VAR: {"assert", "pass", "break", "continue"},
     Zona.B11_DELIM_PAREN: {"(", ")"},
     Zona.B12_DELIM_BRACK: {"[", "]"},
     Zona.B13_DELIM_BRACE: {"{", "}"},
-    Zona.B14_PUNCT: {",", ";", ":", ".", "..."},
-    Zona.B15_COMMENT: {"#", "//", "/*", "*/", "'''", '"""'},
+    Zona.B14_PUNCT: {",", ";", ":", "..."},
+    Zona.B15_COMMENT: {"#"},
     
-    # SEMANTICA
-    Zona.B16_ID_VAR: {"self", "this", "cls", "_"},
-    Zona.B17_ID_FUNC: {"main", "init", "setup", "run", "process", "handle"},
-    Zona.B18_ID_CLASS: {"Error", "Exception", "Base", "Abstract", "Mixin"},
-    Zona.B19_ID_PARAM: {"args", "kwargs", "key", "value", "index", "item"},
-    Zona.B20_ID_ATTR: {"name", "size", "length", "data", "result", "status"},
+    # =========================================================================
+    # SEMANTICA (15 zonas) — significado: identificadores, literales, tipos
+    # =========================================================================
+    Zona.B16_ID_VAR: {"self", "cls", "_"},
+    Zona.B17_ID_FUNC: {},       # Detectado por regex (snake_case seguido de "(")
+    Zona.B18_ID_CLASS: {},       # Detectado por regex (CamelCase, UPPER_CASE)
+    Zona.B19_ID_PARAM: {"args", "kwargs"},
+    Zona.B20_ID_ATTR: {},        # Detectado por contexto (después de ".")
     Zona.B21_LIT_INT: {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
     Zona.B22_LIT_FLOAT: {"0.0", "1.0", "0.5", "0.1", "3.14", "1e-5"},
     Zona.B23_LIT_STR: {"'", '"', "f'", 'f"', "r'", 'r"', "b'", 'b"'},
-    Zona.B24_LIT_BOOL: {"True", "False", "true", "false"},
-    Zona.B25_LIT_NONE: {"None", "null", "nil", "undefined"},
-    Zona.B26_TYPE_PRIM: {"int", "str", "float", "bool", "char", "byte"},
-    Zona.B27_TYPE_COLL: {"list", "dict", "set", "tuple", "array", "map"},
-    Zona.B28_TYPE_GEN: {"Optional", "List", "Dict", "Tuple", "Union", "Any"},
-    Zona.B29_BUILTIN: {"print", "len", "range", "open", "input", "type"},
-    Zona.B30_MAGIC: {"__init__", "__str__", "__repr__", "__len__", "__call__"},
+    Zona.B24_LIT_BOOL: {"True", "False"},
+    Zona.B25_LIT_NONE: {"None"},
+    Zona.B26_TYPE_PRIM: {"int", "str", "float", "bool", "bytes", "complex"},
+    Zona.B27_TYPE_COLL: {"list", "dict", "set", "tuple", "frozenset", "deque"},
+    Zona.B28_TYPE_GEN: {
+        "Optional", "List", "Dict", "Tuple", "Set", "Union", "Any",
+        "Callable", "Iterator", "Generator", "Iterable", "Sequence", "Mapping",
+    },
+    Zona.B29_BUILTIN: {
+        # Funciones built-in esenciales de Python
+        "print", "len", "range", "open", "input", "type", "isinstance",
+        "issubclass", "hasattr", "getattr", "setattr", "delattr",
+        "abs", "min", "max", "sum", "sorted", "reversed", "enumerate",
+        "zip", "map", "filter", "any", "all", "round", "pow",
+        # int/str/float/bool -> B26, list/dict/set/tuple -> B27 (no duplicar)
+        "repr", "hash", "id", "iter", "next", "callable", "super",
+        "property", "staticmethod", "classmethod", "object",
+        "format", "chr", "ord", "hex", "bin", "oct",
+        "ValueError", "TypeError", "KeyError", "IndexError", "AttributeError",
+        "RuntimeError", "StopIteration", "FileNotFoundError", "IOError",
+        "Exception", "BaseException", "NotImplementedError", "ZeroDivisionError",
+    },
+    Zona.B30_MAGIC: {
+        "__init__", "__str__", "__repr__", "__len__", "__call__",
+        "__enter__", "__exit__", "__iter__", "__next__", "__getitem__",
+        "__setitem__", "__delitem__", "__contains__", "__eq__", "__lt__",
+        "__gt__", "__le__", "__ge__", "__ne__", "__hash__",
+        "__add__", "__sub__", "__mul__", "__truediv__", "__floordiv__",
+        "__mod__", "__pow__", "__and__", "__or__", "__xor__",
+        "__bool__", "__int__", "__float__", "__index__",
+        "__new__", "__del__", "__slots__", "__dict__", "__class__",
+        "__name__", "__doc__", "__module__", "__file__", "__all__",
+    },
     
-    # LOGICO
+    # =========================================================================
+    # LOGICO (12 zonas) — operadores y razonamiento
+    # Sin duplicados de SINTAXIS. Keywords como "and", "or", "not", "in", "is"
+    # pertenecen aquí porque su función primaria es lógica.
+    # =========================================================================
     Zona.B31_OP_ARITH: {"+", "-", "*", "/", "%", "**", "//"},
-    Zona.B32_OP_COMP: {"==", "!=", "<", ">", "<=", ">=", "is", "in"},
-    Zona.B33_OP_LOGIC: {"and", "or", "not", "&&", "||", "!"},
+    Zona.B32_OP_COMP: {"==", "!=", "<", ">", "<=", ">=", "is", "in", "not"},
+    Zona.B33_OP_LOGIC: {"and", "or"},
     Zona.B34_OP_BIT: {"&", "|", "^", "~", "<<", ">>"},
-    Zona.B35_OP_ASSIGN: {"=", "+=", "-=", "*=", "/=", ":="},
-    Zona.B36_OP_MEMBER: {".", "->", "::"},
-    Zona.B37_OP_TERNARY: {"?", "if", "else"},
-    Zona.B38_FLOW_BRANCH: {"if", "elif", "else", "switch", "case"},
-    Zona.B39_FLOW_LOOP: {"for", "while", "do", "foreach"},
-    Zona.B40_FLOW_JUMP: {"break", "continue", "pass", "goto"},
-    Zona.B41_FLOW_CALL: {"(", ")", "call", "invoke"},
-    Zona.B42_FLOW_EXCEPT: {"try", "except", "catch", "finally", "raise"},
+    Zona.B35_OP_ASSIGN: {"=", "+=", "-=", "*=", "/=", ":=", "//=", "**=", "%="},
+    Zona.B36_OP_MEMBER: {"."},
+    Zona.B37_OP_TERNARY: {},     # "if/else" ya están en B05; ternario = contexto
+    Zona.B38_FLOW_BRANCH: {},    # Delegado a B05 + context_conv detecta branching
+    Zona.B39_FLOW_LOOP: {},      # Delegado a B06 + context_conv detecta iteración
+    Zona.B40_FLOW_JUMP: {},      # break/continue ya en B10
+    Zona.B41_FLOW_CALL: {},      # Detectado por contexto: id + "("
+    Zona.B42_FLOW_EXCEPT: {},    # Delegado a B07
     
-    # ESTRUCTURAL
-    Zona.B43_BLOCK_FUNC: {"def", "function", "fn", "->"},
-    Zona.B44_BLOCK_CLASS: {"class", "struct", "interface"},
-    Zona.B45_BLOCK_LOOP: {"for", "while", "do"},
-    Zona.B46_BLOCK_COND: {"if", "elif", "else", "match"},
+    # =========================================================================
+    # ESTRUCTURAL (10 zonas) — patrones y formato
+    # Formato/whitespace puro. No duplica keywords.
+    # =========================================================================
+    Zona.B43_BLOCK_FUNC: {"->"},  # Return type annotation arrow
+    Zona.B44_BLOCK_CLASS: {},      # class ya en B02
+    Zona.B45_BLOCK_LOOP: {},       # for/while ya en B06
+    Zona.B46_BLOCK_COND: {},       # if/elif/else ya en B05
     Zona.B47_INDENT: {"\t", "    "},
     Zona.B48_NEWLINE: {"\n", "\r\n"},
     Zona.B49_SPACE: {" ", "  "},
-    Zona.B50_PATTERN_LIST: {"[", "]", "for", "in"},
-    Zona.B51_PATTERN_DICT: {"{", "}", ":"},
-    Zona.B52_PATTERN_CALL: {"(", ")", ","},
+    Zona.B50_PATTERN_LIST: {},     # Detectado por contexto: "[" + "for" + "in"
+    Zona.B51_PATTERN_DICT: {},     # Detectado por contexto: "{" + ":" + "}"
+    Zona.B52_PATTERN_CALL: {},     # Detectado por contexto: id + "(" + args + ")"
 }

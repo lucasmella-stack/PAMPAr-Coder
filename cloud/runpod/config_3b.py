@@ -108,10 +108,10 @@ class Config1_5B:
     # =========================================================================
     # ENTRENAMIENTO
     # =========================================================================
-    batch_size: int = 2          # Reducido para 24GB VRAM con 1.5B + 8-bit AdamW
-    gradient_accumulation: int = 16
+    batch_size: int = 1          # 1 para seq_len=1024 + 1.5B + 8-bit AdamW en 24GB
+    gradient_accumulation: int = 32
     effective_batch: int = 32    # batch_size * gradient_accumulation
-    max_seq_len: int = 256       # Reducido para caber en 24GB VRAM
+    max_seq_len: int = 1024      # 1024 tokens — funciones completas caben
     
     learning_rate: float = 3e-4  # Estándar para 1.5B
     weight_decay: float = 0.1

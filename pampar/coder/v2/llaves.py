@@ -27,7 +27,6 @@ _PREFIXES = ("▁", "Ġ", "Ċ", "##", "Ã", "Â")
 # Patrones para clasificación
 _PAT_INT = re.compile(r"^-?\d+$")
 _PAT_FLOAT = re.compile(r"^-?\d+\.\d*$")
-_PAT_MAGIC = re.compile(r"^__\w+__$")
 _PAT_UPPER = re.compile(r"^[A-Z][A-Z0-9_]*$")
 _PAT_CAMEL = re.compile(r"^[A-Z][a-z]+")
 _PAT_ID = re.compile(r"^[a-z_][a-z0-9_]*$", re.IGNORECASE)
@@ -50,9 +49,22 @@ def normalizar(token: str) -> str:
     return t
 
 
+# Patrones adicionales para Python
+_PAT_DUNDER = re.compile(r"^__[a-z][a-z0-9_]*__$")
+_PAT_SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
+_PAT_DECORATOR = re.compile(r"^@[a-zA-Z]")
+_PAT_FSTRING = re.compile(r"^[fFrRbB]['\"]")
+
+
 def clasificar_token(token: str) -> Tuple[Zona, float]:
     """
     Clasifica un token en su zona correspondiente.
+    
+    Orden de prioridad:
+    1. Exact match en ZONAS (keywords, operadores, delimitadores)
+    2. Regex patterns (números, magic methods, strings)
+    3. Convenciones de naming (CamelCase, snake_case, UPPER_CASE)
+    4. Default: variable genérica
     
     Args:
         token: Token a clasificar
@@ -65,36 +77,58 @@ def clasificar_token(token: str) -> Tuple[Zona, float]:
     if not t:
         return Zona.B49_SPACE, 0.5
     
-    # 1. Búsqueda exacta en lookup tables
+    # — Whitespace puro —
+    if t in ("\n", "\r\n"):
+        return Zona.B48_NEWLINE, 1.0
+    if t in ("\t", "    "):
+        return Zona.B47_INDENT, 1.0
+    if t.strip() == "":
+        return Zona.B49_SPACE, 0.8
+    
+    # 1. Búsqueda exacta en lookup tables (solo zonas no vacías)
     for zona, patrones in ZONAS.items():
+        if not patrones:
+            continue
         if t in patrones or t.lower() in patrones:
             return zona, 1.0
     
-    # 2. Patrones regex
+    # 2. Dunder / magic methods
+    if _PAT_DUNDER.match(t):
+        return Zona.B30_MAGIC, 0.95
+    
+    # 3. Números
     if _PAT_INT.match(t):
         return Zona.B21_LIT_INT, 0.95
-    
     if _PAT_FLOAT.match(t):
         return Zona.B22_LIT_FLOAT, 0.95
     
-    if _PAT_MAGIC.match(t):
-        return Zona.B30_MAGIC, 0.9
-    
-    # 3. Strings (comillas)
-    if t.startswith(('"', "'", '`', 'f"', "f'", 'r"', "r'")):
+    # 4. Strings (comillas, f-strings)
+    if _PAT_FSTRING.match(t):
+        return Zona.B23_LIT_STR, 0.9
+    if t.startswith(('"', "'", '`')):
         return Zona.B23_LIT_STR, 0.9
     
-    # 4. Identificadores por convención
-    if _PAT_UPPER.match(t):
-        return Zona.B18_ID_CLASS, 0.7  # CONSTANTE o Clase
+    # 5. Decorators (@)
+    if _PAT_DECORATOR.match(t):
+        return Zona.B29_BUILTIN, 0.7
     
-    if _PAT_CAMEL.match(t):
-        return Zona.B18_ID_CLASS, 0.8  # ClassName
+    # 6. Identificadores por convención de naming
+    if _PAT_UPPER.match(t) and len(t) > 1:
+        # ALL_CAPS = constante o excepción (ej: HTTP_ERROR)
+        return Zona.B18_ID_CLASS, 0.7
+    
+    if _PAT_CAMEL.match(t) and len(t) > 1:
+        # CamelCase = clase
+        return Zona.B18_ID_CLASS, 0.85
+    
+    if _PAT_SNAKE.match(t):
+        # snake_case = variable o función (contexto distingue)
+        return Zona.B16_ID_VAR, 0.6
     
     if _PAT_ID.match(t):
-        return Zona.B16_ID_VAR, 0.6  # variable genérica
+        return Zona.B16_ID_VAR, 0.5
     
-    # 5. Default: semántica general
+    # 7. Default: semántica general con baja confianza
     return Zona.B16_ID_VAR, 0.3
 
 
