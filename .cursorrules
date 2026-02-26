@@ -1,0 +1,250 @@
+# PAMPAr-Coder — AI Instructions
+
+> Consolidación de instrucciones para Cursor/Copilot en el proyecto PAMPAr-Coder.
+> "El Linux de la IA" - LLM de código con arquitectura cerebral.
+
+---
+
+## Proyecto
+
+**PAMPAr-Coder** es un LLM de código 1.5B-3B con arquitectura inspirada en las 52 zonas de Brodmann.
+
+### Quick Reference
+
+| Area | Convention |
+|------|------------|
+| Language | Python 3.11+ |
+| Framework | PyTorch 2.x |
+| Tokenizer | SentencePiece BPE (48K vocab) |
+| Testing | pytest |
+| Type hints | Siempre requeridos |
+| Docstrings | Google style |
+| Cloud | RunPod (RTX A5000 / A40 / A100) |
+
+---
+
+## Arquitectura Cerebral
+
+```
+Input → Embedding → [BloqueTerrritorial ×N] → LM Head → Output
+                          ↓
+              TálamoBrodmann (LLAVES 80% + Atención 20%)
+              + Conv1D causal (ventana 32 tokens)
+                          ↓
+    ┌─────────────────────┴─────────────────────┐
+    ▼                                           ▼
+┌───────────────┐                    ┌───────────────┐
+│   SINTAXIS    │◄── simbiosis ────►│   SEMÁNTICA   │
+│  Zonas 1-15   │                    │  Zonas 16-30  │
+└───────────────┘                    └───────────────┘
+    ▼                                           ▼
+┌───────────────┐                    ┌───────────────┐
+│    LÓGICO     │◄── simbiosis ────►│ ESTRUCTURAL   │
+│  Zonas 31-42  │                    │  Zonas 43-52  │
+└───────────────┘                    └───────────────┘
+```
+
+### Sistema LLAVES (80% del peso)
+
+Las LLAVES son **patrones regex que clasifican tokens en zonas de Brodmann**:
+
+```python
+# CRÍTICO: LLAVES son regex, NUNCA entrenables
+LLAVES = {
+    'B06_KEYWORDS_IMPORT': ['import', 'from', 'require'],
+    'B17_LITERAL_STRING': [r'".*"', r"'.*'", 'f"'],
+    'B35_IDENTIFICADOR_VAR': [r'[a-z_][a-z0-9_]*'],
+    # ... 52 zonas total
+}
+# INT8 cuantizado (256 niveles, <0.4% error)
+```
+
+### 4 Territorios
+
+| Territorio   | Zonas   | Responsabilidad           |
+| ------------ | ------- | ------------------------- |
+| SINTAXIS     | 1-15    | Estructura, indentación   |
+| SEMÁNTICA    | 16-30   | Significado, contexto     |
+| LÓGICO       | 31-42   | Flujo, condiciones        |
+| ESTRUCTURAL  | 43-52   | Arquitectura, módulos     |
+
+---
+
+## Estructura del Proyecto
+
+```
+PAMPAr-Coder/
+├── pampar/coder/v2/
+│   ├── modelo.py          # PampaRCoderV2 principal
+│   ├── config.py          # ConfigPampaRCoderV2 + presets
+│   ├── talamo.py          # TálamoBrodmann orquestador
+│   ├── llaves.py          # LLAVES INT8 lookup tables
+│   ├── zonas.py           # 52 zonas de Brodmann
+│   ├── bloques.py         # BloqueTerrritorial + FFN simbiótico
+│   └── aprendizaje/       # Subsistemas de aprendizaje
+├── cloud/runpod/          # Scripts entrenamiento cloud
+├── data/                  # Datos y tokenizer
+├── checkpoints/           # Modelos guardados
+├── scripts/               # Scripts utilidad
+└── tests/                 # Tests pytest
+```
+
+---
+
+## Reglas Críticas
+
+1. **LLAVES son regex** — NUNCA entrenarlas
+2. **Territorios en paralelo** — combinan via soporte simbiótico
+3. **INT8 para LLAVES** — lookup tables cuantizadas (256 niveles)
+4. **Pesos en FP16/BF16** — nunca INT8
+5. **Gradient checkpointing** — obligatorio para >500M params
+6. **vocab_size = 48000** — debe coincidir con tokenizer.GetPieceSize()
+7. **Ventana contexto = 32** — convolución causal, pad izquierdo
+
+---
+
+## Convenciones de Código
+
+### Naming
+
+| Tipo | Convención | Ejemplo |
+|------|------------|---------|
+| Dominio | Español | `Talamo`, `MemoriaErrores` |
+| ML estándar | Inglés | `forward`, `hidden_states` |
+| Config | `Config` + nombre | `ConfigPampaRCoderV2` |
+| Presets | `PRESET_` + capacidad | `PRESET_1_5B` |
+
+### Type Hints (OBLIGATORIO)
+
+```python
+def forward(
+    self,
+    input_ids: Tensor,
+    attention_mask: Optional[Tensor] = None,
+    labels: Optional[Tensor] = None,
+) -> Tuple[Tensor, Optional[Tensor]]:
+    """Forward pass del modelo."""
+    ...
+```
+
+### Docstrings (Google Style)
+
+```python
+class PampaRCoderV2(nn.Module):
+    """
+    Modelo principal PAMPAr-Coder V2.
+
+    Attributes:
+        config: Configuración del modelo.
+        embedding: Capa de embedding.
+
+    Example:
+        >>> config = ConfigPampaRCoderV2.from_preset("1.5B")
+        >>> model = PampaRCoderV2(config)
+    """
+```
+
+---
+
+## Patrones PyTorch
+
+### Training Loop
+
+```python
+from torch.cuda.amp import autocast, GradScaler
+
+scaler = GradScaler()
+for batch in dataloader:
+    with autocast(dtype=torch.bfloat16):
+        loss = model(**batch).loss / accumulation_steps
+    
+    scaler.scale(loss).backward()
+    
+    if (step + 1) % accumulation_steps == 0:
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        scaler.step(optimizer)
+        scaler.update()
+        optimizer.zero_grad()
+```
+
+### Checkpoint
+
+```python
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    "epoch": epoch,
+    "loss": loss,
+}, "checkpoint.pt")
+```
+
+---
+
+## Testing (pytest)
+
+```python
+@pytest.fixture
+def small_config():
+    return ConfigPampaRCoderV2(
+        vocab_size=1000, hidden_size=64, num_layers=2
+    )
+
+class TestPampaRCoderV2:
+    def test_forward_shape(self, small_config):
+        model = PampaRCoderV2(small_config)
+        input_ids = torch.randint(0, 1000, (2, 16))
+        output = model(input_ids)
+        assert output.logits.shape == (2, 16, 1000)
+```
+
+---
+
+## Cloud Training (RunPod)
+
+```bash
+# Conectar
+ssh root@IP -p PORT
+
+# Lanzar con screen
+cd /workspace/PAMPAr-Coder
+screen -S train
+python3 cloud/runpod/train_cloud.py --config 1_5B > training.log 2>&1
+
+# Monitorear
+tail -f training.log
+nvidia-smi -l 5
+```
+
+| Config | Params | VRAM | GPU |
+|--------|--------|------|-----|
+| 1.5B | ~230M | 8GB | A5000 |
+| 3B | ~3B | 24GB | A40/A100 |
+
+---
+
+## Git Workflow
+
+```bash
+# Conventional commits
+feat(model): add early exit mechanism
+fix(llaves): correct zona classification for imports
+test(talamo): add gradient flow tests
+refactor(bloques): extract symbiotic support
+
+# Branch naming
+feat/early-exit
+fix/llaves-imports
+```
+
+---
+
+## Anti-patterns (NUNCA)
+
+- `any` en type hints → usar `Union`, `Optional`, etc.
+- LLAVES entrenables → son regex, siempre fijos
+- Cuantizar gradientes → solo LLAVES lookup
+- Archivos >300 líneas → dividir en módulos
+- Tests sin fixture → usar `small_config`
+- `print()` en producción → usar `logging`
+- Secrets en código → usar variables de entorno
