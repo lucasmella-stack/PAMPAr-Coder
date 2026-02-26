@@ -65,6 +65,11 @@ from .memoria_jerarquica import (
     EntradaMemoria,
 )
 
+from .curiosidad import (
+    MotorCuriosidad,
+    PerfilTema,
+)
+
 __all__ = [
     # Curriculum
     "NivelDificultad",
@@ -102,4 +107,7 @@ __all__ = [
     "MemoriaJerarquica",
     "NivelMemoria",
     "EntradaMemoria",
+    # Motor de Curiosidad
+    "MotorCuriosidad",
+    "PerfilTema",
 ]

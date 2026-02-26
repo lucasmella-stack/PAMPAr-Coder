@@ -1,0 +1,250 @@
+{
+  "version": "1.0",
+  "descripcion": "Biblioteca de conocimiento para PAMPAr — viaje intelectual autónomo",
+  "python_basico": [
+    {
+      "nombre": "variables_y_tipos",
+      "nivel": 1,
+      "archivo": "python_basico/variables_y_tipos.jsonl"
+    },
+    {
+      "nombre": "strings_y_formato",
+      "nivel": 1,
+      "archivo": "python_basico/strings_y_formato.jsonl"
+    },
+    {
+      "nombre": "listas_y_tuplas",
+      "nivel": 1,
+      "archivo": "python_basico/listas_y_tuplas.jsonl"
+    },
+    {
+      "nombre": "diccionarios_y_sets",
+      "nivel": 2,
+      "archivo": "python_basico/diccionarios_y_sets.jsonl"
+    },
+    {
+      "nombre": "control_de_flujo",
+      "nivel": 2,
+      "archivo": "python_basico/control_de_flujo.jsonl"
+    },
+    {
+      "nombre": "comprensiones",
+      "nivel": 2,
+      "archivo": "python_basico/comprensiones.jsonl"
+    },
+    {
+      "nombre": "funciones_basicas",
+      "nivel": 3,
+      "archivo": "python_basico/funciones_basicas.jsonl"
+    },
+    {
+      "nombre": "funciones_avanzadas",
+      "nivel": 3,
+      "archivo": "python_basico/funciones_avanzadas.jsonl"
+    },
+    {
+      "nombre": "decoradores",
+      "nivel": 4,
+      "archivo": "python_basico/decoradores.jsonl"
+    },
+    {
+      "nombre": "generadores",
+      "nivel": 4,
+      "archivo": "python_basico/generadores.jsonl"
+    },
+    {
+      "nombre": "context_managers",
+      "nivel": 4,
+      "archivo": "python_basico/context_managers.jsonl"
+    },
+    {
+      "nombre": "clases_y_oop",
+      "nivel": 4,
+      "archivo": "python_basico/clases_y_oop.jsonl"
+    },
+    {
+      "nombre": "herencia_y_polimorfismo",
+      "nivel": 4,
+      "archivo": "python_basico/herencia_y_polimorfismo.jsonl"
+    },
+    {
+      "nombre": "manejo_de_errores",
+      "nivel": 3,
+      "archivo": "python_basico/manejo_de_errores.jsonl"
+    },
+    {
+      "nombre": "modulos_y_paquetes",
+      "nivel": 3,
+      "archivo": "python_basico/modulos_y_paquetes.jsonl"
+    },
+    {
+      "nombre": "type_hints",
+      "nivel": 3,
+      "archivo": "python_basico/type_hints.jsonl"
+    },
+    {
+      "nombre": "async_y_await",
+      "nivel": 5,
+      "archivo": "python_basico/async_y_await.jsonl"
+    }
+  ],
+  "algoritmos": [
+    {
+      "nombre": "busqueda_binaria",
+      "nivel": 3,
+      "archivo": "algoritmos/busqueda_binaria.jsonl"
+    },
+    {
+      "nombre": "sorting_clasico",
+      "nivel": 3,
+      "archivo": "algoritmos/sorting_clasico.jsonl"
+    },
+    {
+      "nombre": "recursion",
+      "nivel": 4,
+      "archivo": "algoritmos/recursion.jsonl"
+    },
+    {
+      "nombre": "programacion_dinamica",
+      "nivel": 5,
+      "archivo": "algoritmos/programacion_dinamica.jsonl"
+    },
+    {
+      "nombre": "grafos_bfs_dfs",
+      "nivel": 5,
+      "archivo": "algoritmos/grafos_bfs_dfs.jsonl"
+    },
+    {
+      "nombre": "arboles_binarios",
+      "nivel": 5,
+      "archivo": "algoritmos/arboles_binarios.jsonl"
+    },
+    {
+      "nombre": "heap_y_cola_prioridad",
+      "nivel": 5,
+      "archivo": "algoritmos/heap_y_cola_prioridad.jsonl"
+    },
+    {
+      "nombre": "two_pointers",
+      "nivel": 4,
+      "archivo": "algoritmos/two_pointers.jsonl"
+    },
+    {
+      "nombre": "sliding_window",
+      "nivel": 4,
+      "archivo": "algoritmos/sliding_window.jsonl"
+    },
+    {
+      "nombre": "backtracking",
+      "nivel": 5,
+      "archivo": "algoritmos/backtracking.jsonl"
+    }
+  ],
+  "patrones_diseno": [
+    {
+      "nombre": "singleton_factory",
+      "nivel": 5,
+      "archivo": "patrones_diseno/singleton_factory.jsonl"
+    },
+    {
+      "nombre": "observer_strategy",
+      "nivel": 5,
+      "archivo": "patrones_diseno/observer_strategy.jsonl"
+    },
+    {
+      "nombre": "decorator_pattern",
+      "nivel": 5,
+      "archivo": "patrones_diseno/decorator_pattern.jsonl"
+    },
+    {
+      "nombre": "command_pattern",
+      "nivel": 6,
+      "archivo": "patrones_diseno/command_pattern.jsonl"
+    },
+    {
+      "nombre": "iterator_pattern",
+      "nivel": 5,
+      "archivo": "patrones_diseno/iterator_pattern.jsonl"
+    }
+  ],
+  "stdlib_python": [
+    {
+      "nombre": "pathlib_y_os",
+      "nivel": 3,
+      "archivo": "stdlib_python/pathlib_y_os.jsonl"
+    },
+    {
+      "nombre": "collections",
+      "nivel": 3,
+      "archivo": "stdlib_python/collections.jsonl"
+    },
+    {
+      "nombre": "itertools",
+      "nivel": 4,
+      "archivo": "stdlib_python/itertools.jsonl"
+    },
+    {
+      "nombre": "functools",
+      "nivel": 4,
+      "archivo": "stdlib_python/functools.jsonl"
+    },
+    {
+      "nombre": "json_y_csv",
+      "nivel": 2,
+      "archivo": "stdlib_python/json_y_csv.jsonl"
+    },
+    {
+      "nombre": "dataclasses",
+      "nivel": 3,
+      "archivo": "stdlib_python/dataclasses.jsonl"
+    },
+    {
+      "nombre": "threading_multiprocess",
+      "nivel": 5,
+      "archivo": "stdlib_python/threading_multiprocess.jsonl"
+    },
+    {
+      "nombre": "unittest_pytest",
+      "nivel": 3,
+      "archivo": "stdlib_python/unittest_pytest.jsonl"
+    },
+    { "nombre": "regex", "nivel": 4, "archivo": "stdlib_python/regex.jsonl" },
+    {
+      "nombre": "logging",
+      "nivel": 3,
+      "archivo": "stdlib_python/logging.jsonl"
+    }
+  ],
+  "ingenieria_software": [
+    {
+      "nombre": "solid_principles",
+      "nivel": 5,
+      "archivo": "ingenieria_software/solid_principles.jsonl"
+    },
+    {
+      "nombre": "clean_code",
+      "nivel": 4,
+      "archivo": "ingenieria_software/clean_code.jsonl"
+    },
+    {
+      "nombre": "testing_avanzado",
+      "nivel": 5,
+      "archivo": "ingenieria_software/testing_avanzado.jsonl"
+    },
+    {
+      "nombre": "refactoring",
+      "nivel": 5,
+      "archivo": "ingenieria_software/refactoring.jsonl"
+    },
+    {
+      "nombre": "git_y_ci_cd",
+      "nivel": 4,
+      "archivo": "ingenieria_software/git_y_ci_cd.jsonl"
+    },
+    {
+      "nombre": "api_design_rest",
+      "nivel": 5,
+      "archivo": "ingenieria_software/api_design_rest.jsonl"
+    }
+  ]
+}
