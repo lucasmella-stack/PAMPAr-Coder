@@ -284,10 +284,11 @@ class MotorCuriosidad:
             Score [0, ∞) — mayor = más prioritario para estudiar.
         """
         # Exploración garantizada para temas poco visitados:
-        # los primeros 3 encuentros no dependen del nivel ni del ZPD.
+        # las primeras 6 sesiones no dependen del nivel ni del ZPD puro.
         # Esto evita que temas con loss alta o nivel alto queden en curiosidad=0.
-        if tema.n_sesiones <= 2:
-            zpd = 0.6      # curiosidad base alta para temas nuevos
+        if tema.n_sesiones <= 5:
+            # Curiosidad decreciente: 0.6 en sesión 0 → 0.18 en sesión 5
+            zpd = max(0.18, 0.6 - tema.n_sesiones * 0.07)
             nivel_ok = 0.5  # no penalizar nivel en temas que apenas se conocen
         else:
             zpd = self._curiosidad_zona_proximal(tema.loss_media)
