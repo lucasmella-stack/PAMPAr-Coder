@@ -12,7 +12,7 @@ Estado actual: **42M params, vocab 16K, entrenamiento activo con Viaje Intelectu
 
 ## Arquitectura Territorial
 
-`
+```
 Input → Embedding → [BloqueTerrritorial ×6] → LM Head → Output
                           ↓
               Tálamo (LLAVES 80% + Atención 20%)
@@ -31,7 +31,7 @@ Input → Embedding → [BloqueTerrritorial ×6] → LM Head → Output
 │    LOGICO     │◄───── Frontera ───►│ ESTRUCTURAL   │
 │ Control Flow  │                    │ Bloques/Scope │
 └───────────────┘                    └───────────────┘
-`
+```
 
 ### Los 4 Territorios
 
@@ -81,11 +81,11 @@ Si la confianza de un token > 90%, salta capas restantes — código Python es p
 
 ## Instalación
 
-`bash
+```bash
 git clone https://github.com/lucasmella-stack/PAMPAr-Coder.git
 cd PAMPAr-Coder
 pip install -r requirements.txt
-`
+```
 
 ---
 
@@ -93,7 +93,7 @@ pip install -r requirements.txt
 
 ### Lanzar entrenamiento autónomo
 
-`powershell
+```powershell
 # Smoke test primero (12 checks, ~15 segundos)
 python scripts/smoke_test_viaje.py --checkpoint checkpoints/pampar_v2_best.pt
 
@@ -102,11 +102,11 @@ python scripts/aprender_solo.py `
   --checkpoint checkpoints/pampar_v2_best.pt `
   --tokenizer data/tokenizer/code_tokenizer.model `
   --batch-size 2 --seq-len 512 --lr 5e-5 --guardar-cada 500
-`
+```
 
 ### Probar el modelo
 
-`powershell
+```powershell
 # Test automático (6 prompts, devuelve % score)
 python scripts/probar_modelo.py --auto
 
@@ -115,11 +115,11 @@ python scripts/probar_modelo.py --prompt "def fibonacci("
 
 # Modo interactivo (REPL)
 python scripts/probar_modelo.py
-`
+```
 
 ### Usar desde Python
 
-`python
+```python
 from pampar.coder.v2.modelo import PampaRCoderV2
 from pampar.coder.v2.config import ConfigV2, PRESET_4GB
 import sentencepiece as spm
@@ -136,22 +136,22 @@ ids = tok.encode("def fibonacci(")
 logits, _, _ = model(torch.tensor([ids]))
 next_token = logits[0, -1].argmax().item()
 print(tok.decode([next_token]))
-`
+```
 
 ---
 
 ## Tests
 
-`powershell
+```powershell
 python -m pytest tests/ -v
 # 130/130 passing
-`
+```
 
 ---
 
 ## Estructura del Proyecto
 
-`
+```
 PAMPAr-Coder/
 ├── pampar/coder/v2/
 │   ├── modelo.py              # PampaRCoderV2 (42M params, PRESET_4GB)
@@ -177,7 +177,7 @@ PAMPAr-Coder/
 │   └── probar_modelo.py       # Testing
 ├── tests/                     # 130 tests pytest
 └── versions/legacy-v1/        # Código v1 archivado
-`
+```
 
 ---
 

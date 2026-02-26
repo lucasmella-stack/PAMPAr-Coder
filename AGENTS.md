@@ -131,32 +131,8 @@ python scripts/probar_modelo.py --auto
 python scripts/probar_modelo.py --prompt "def fibonacci("
 ```
 
-## Common Tasks
-
-### Train locally
-
-```bash
-python scripts/train.py --config 1.5B --epochs 10
-```
-
-### Train on RunPod
-
-```bash
-ssh root@IP -p PORT
-cd /workspace/PAMPAr-Coder
-screen -S train
-python3 cloud/runpod/train_cloud.py --config 1_5B > training.log 2>&1
-```
-
-### Run tests
-
-```bash
-pytest tests/ -v
-```
-
 ## Instructions Files
 
 Detailed instructions in `.github/instructions/`:
 
 - `pampar-architecture.instructions.md` - Brodmann zones, LLAVES, territories
-- `cloud-training.instructions.md` - RunPod training guide
