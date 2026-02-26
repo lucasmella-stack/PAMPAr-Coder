@@ -247,6 +247,8 @@ class ViajeIntelectual:
     def _tema_a_archivo(self, nombre_tema: str) -> Optional[str]:
         """Encuentra la ruta del archivo de un tema en el índice."""
         for categoria, temas in self.indice.items():
+            if not isinstance(temas, list):
+                continue  # Ignorar meta-keys como "version", "descripcion"
             for tema in temas:
                 if tema["nombre"] == nombre_tema:
                     return tema["archivo"]
@@ -260,7 +262,7 @@ class ViajeIntelectual:
         input_ids = tokens[:, :-1]
         targets = tokens[:, 1:]
 
-        logits, info, _ = self.modelo(input_ids, targets=targets)
+        logits, _loss_model, info = self.modelo(input_ids, targets=targets)
 
         B, L, V = logits.shape
         loss = F.cross_entropy(
@@ -273,9 +275,10 @@ class ViajeIntelectual:
         torch.nn.utils.clip_grad_norm_(self.modelo.parameters(), 1.0)
         self.optimizer.step()
 
+        terr_acts = info.get("terr_acts") if isinstance(info, dict) else None
         return {
             "loss": loss.item(),
-            "terr_acts": info.get("terr_acts"),
+            "terr_acts": terr_acts,
         }
 
     def _paso_replay(self) -> Optional[float]:
@@ -322,7 +325,7 @@ class ViajeIntelectual:
             )
             # También guardar estado de memoria
             ruta_mem = self.ruta_checkpoint.with_suffix(".memoria.json")
-            self.memoria.guardar_estado(ruta_mem)
+            self.memoria.guardar(str(ruta_mem))
 
         if self.ruta_estado_motor:
             self.motor.guardar(self.ruta_estado_motor)
@@ -419,7 +422,7 @@ class ViajeIntelectual:
                             self.modelo.eval()
                             inp = tokens[:, :-1].to(self.device)
                             tgt = tokens[:, 1:].to(self.device)
-                            lg, info2, _ = self.modelo(inp)
+                            lg, _loss_eval, info2 = self.modelo(inp)
                             B2, L2, V2 = lg.shape
                             ptl = F.cross_entropy(
                                 lg.reshape(B2 * L2, V2),
@@ -430,8 +433,9 @@ class ViajeIntelectual:
                             # Pad primera columna
                             pad = torch.zeros(B2, 1, device=self.device)
                             ptl_padded = torch.cat([pad, ptl], dim=1)
+                            terr_acts2 = info2.get("terr_acts") if isinstance(info2, dict) else None
                             self.memoria.procesar_batch(
-                                tokens, ptl_padded, info2.get("terr_acts")
+                                tokens, ptl_padded, terr_acts2
                             )
                             self.modelo.train()
 
@@ -562,17 +566,75 @@ def main() -> None:
         sys.exit(1)
     tokenizer = spm.SentencePieceProcessor()
     tokenizer.Load(str(args.tokenizer))
-    log("OK", f"Tokenizer cargado: {tokenizer.GetPieceSize():,} vocab")
+    tok_vocab = tokenizer.GetPieceSize()
+    log("OK", f"Tokenizer cargado: {tok_vocab:,} vocab")
 
     # ── Modelo ───────────────────────────────────────────────────────────────
+    from pampar.coder.v2.config import (
+        ConfigV2, PRESET_1_5B, PRESET_4GB, PRESET_8GB, PRESET_24GB,
+    )
+    PRESET_MAP = {
+        "4GB": PRESET_4GB, "8GB": PRESET_8GB,
+        "24GB": PRESET_24GB, "1_5B": PRESET_1_5B,
+    }
+
     config = PRESET_1_5B
+    if args.checkpoint.exists():
+        ckpt_meta = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
+        raw_cfg = ckpt_meta.get("config")
+        state_for_infer = ckpt_meta.get("modelo", ckpt_meta.get("model", ckpt_meta))
+        if isinstance(raw_cfg, ConfigV2):
+            config = raw_cfg
+        elif isinstance(raw_cfg, dict):
+            preset_name = raw_cfg.get("preset")
+            if preset_name and preset_name in PRESET_MAP:
+                preset = PRESET_MAP[preset_name]
+                emb = state_for_infer.get("tok_emb.weight")
+                if emb is not None and emb.shape[1] != preset.dim:
+                    # Inferir config de los pesos reales
+                    import dataclasses
+                    valid = {f.name for f in dataclasses.fields(ConfigV2)}
+                    config = ConfigV2(
+                        vocab_size=int(emb.shape[0]),
+                        dim=int(emb.shape[1]),
+                        n_capas=sum(1 for k in state_for_infer
+                                    if k.startswith("capas.") and k.endswith(".ln1.weight")),
+                    )
+                else:
+                    config = preset
+            else:
+                import dataclasses
+                valid = {f.name for f in dataclasses.fields(ConfigV2)}
+                filtered = {k: v for k, v in raw_cfg.items() if k in valid}
+                if filtered:
+                    config = ConfigV2(**filtered)
+
+    # Validar que tokenizer y modelo tienen el mismo vocab
+    if config.vocab_size != tok_vocab:
+        log("ERROR",
+            f"Vocab mismatch: tokenizer={tok_vocab} vs modelo={config.vocab_size}")
+        log("ERROR",
+            f"Usa el tokenizer correcto para vocab_size={config.vocab_size}")
+        # Intentar auto-selección
+        auto_toks = {
+            16000: Path("data/tokenizer/code_tokenizer.model"),
+            48000: Path("data/tokenizer/pampar_48k.model"),
+        }
+        sugerido = auto_toks.get(config.vocab_size)
+        if sugerido and sugerido.exists():
+            log("INFO", f"Sugerencia: --tokenizer {sugerido}")
+        sys.exit(1)
+
     modelo = PampaRCoderV2(config).to(device)
 
     if args.checkpoint.exists():
-        ckpt = torch.load(args.checkpoint, map_location=device, weights_only=True)
-        state = ckpt.get("modelo", ckpt)
-        modelo.load_state_dict(state, strict=False)
-        log("OK", f"Modelo cargado desde {args.checkpoint}")
+        ckpt = torch.load(args.checkpoint, map_location=device, weights_only=False)
+        state = ckpt.get("modelo", ckpt.get("model", ckpt))
+        missing, unexpected = modelo.load_state_dict(state, strict=False)
+        bad = [k for k in unexpected if "." in k]
+        if bad:
+            log("WARN", f"{len(bad)} pesos legacy ignorados: {bad[:2]}")
+        log("OK", f"Modelo cargado desde {args.checkpoint} ({config.vocab_size:,} vocab, {sum(p.numel() for p in modelo.parameters())/1e6:.0f}M params)")
     else:
         log("WARN", f"Checkpoint no encontrado — iniciando desde cero: {args.checkpoint}")
 
@@ -596,7 +658,7 @@ def main() -> None:
     )
     ruta_mem = args.checkpoint.with_suffix(".memoria.json")
     if ruta_mem.exists():
-        memoria.cargar_estado(ruta_mem)
+        memoria = MemoriaJerarquica.cargar(str(ruta_mem))
         log("OK", "Estado de memoria cargado")
 
     # ── Motor de curiosidad ───────────────────────────────────────────────────

@@ -222,6 +222,8 @@ class MotorCuriosidad:
         """
         nuevos = 0
         for categoria, temas in indice.items():
+            if not isinstance(temas, list):
+                continue  # Ignorar meta-keys como "version", "descripcion"
             for tema in temas:
                 nombre = tema["nombre"]
                 if nombre not in self.temas:

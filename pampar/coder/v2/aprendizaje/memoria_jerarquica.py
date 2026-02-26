@@ -358,7 +358,9 @@ class MemoriaJerarquica:
                 # Territorio dominante
                 terr_dom = -1
                 if terr_acts is not None:
-                    terr_dom = int(terr_acts[b, pos].argmax().item())
+                    # terr_acts puede tener L' < L (computado sobre input_ids[:, :-1])
+                    terr_pos = min(pos, terr_acts.shape[1] - 1)
+                    terr_dom = int(terr_acts[b, terr_pos].argmax().item())
 
                 # Embedding comprimido (promedio de la ventana)
                 emb = None

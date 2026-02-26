@@ -136,8 +136,8 @@ class PampaRCoderV2(nn.Module):
         loss = None
         if targets is not None:
             loss = F.cross_entropy(
-                logits.view(-1, self.config.vocab_size),
-                targets.view(-1),
+                logits.reshape(-1, self.config.vocab_size),
+                targets.reshape(-1),
                 ignore_index=-100,
             )
 
