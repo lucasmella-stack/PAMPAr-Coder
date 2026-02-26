@@ -658,6 +658,22 @@ def main() -> None:
                 filtered = {k: v for k, v in raw_cfg.items() if k in valid}
                 if filtered:
                     config = ConfigV2(**filtered)
+        else:
+            # No config key en el checkpoint — inferir de los pesos
+            emb = state_for_infer.get("tok_emb.weight") if isinstance(state_for_infer, dict) else None
+            if emb is not None:
+                inferred_vocab = int(emb.shape[0])
+                inferred_dim   = int(emb.shape[1])
+                import dataclasses
+                matched = False
+                for candidate in (PRESET_4GB, PRESET_8GB, PRESET_24GB, PRESET_1_5B):
+                    if candidate.dim == inferred_dim:
+                        config = dataclasses.replace(candidate, vocab_size=inferred_vocab)
+                        matched = True
+                        break
+                if not matched:
+                    config = ConfigV2(vocab_size=inferred_vocab, dim=inferred_dim)
+                log("WARN", f"Sin 'config' en checkpoint — inferido: dim={inferred_dim}, vocab={inferred_vocab:,}")
 
     # Validar que tokenizer y modelo tienen el mismo vocab
     if config.vocab_size != tok_vocab:
