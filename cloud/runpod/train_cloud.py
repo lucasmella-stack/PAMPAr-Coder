@@ -18,6 +18,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch.amp import autocast, GradScaler
 from pathlib import Path
@@ -40,6 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from pampar.coder.v2.modelo import PampaRCoderV2
 from pampar.coder.v2.config import ConfigV2, PRESET_1_5B
 from pampar.coder.v2.zonas import Territorio
+from pampar.coder.v2.aprendizaje.memoria_jerarquica import MemoriaJerarquica
 from config_3b import Config3B, Config1_5B, CONFIGS
 
 
@@ -152,6 +154,8 @@ class CloudTrainer:
         use_wandb: bool = True,
         project_name: str = "pampar-coder-3b",
         model_config: ConfigV2 = None,
+        use_memoria: bool = True,
+        memoria_config: Optional[Dict] = None,
     ):
         self.model = model
         self.config = config
@@ -170,6 +174,25 @@ class CloudTrainer:
         
         # Mixed precision
         self.scaler = GradScaler('cuda') if config.use_amp else None
+        
+        # --- Memoria Jerárquica Pareto ---
+        self.use_memoria = use_memoria
+        if use_memoria:
+            mem_cfg = memoria_config or {}
+            self.memoria = MemoriaJerarquica(
+                capacidad_l0=mem_cfg.get("capacidad_l0", 4096),
+                capacidad_l1=mem_cfg.get("capacidad_l1", 10000),
+                capacidad_l2=mem_cfg.get("capacidad_l2", 5000),
+                ventana_tokens=mem_cfg.get("ventana", 16),
+                umbral_loss_alta=mem_cfg.get("umbral_loss", 3.0),
+                lr_interiorizacion=mem_cfg.get("lr_interiorizacion", 1e-5),
+            )
+            self.replay_every = mem_cfg.get("replay_every", 100)
+            self.consolidar_every = mem_cfg.get("consolidar_every", 500)
+            self.replay_batch_size = mem_cfg.get("replay_batch_size", 8)
+            print("   🧠 Memoria Jerárquica activada ")
+        else:
+            self.memoria = None
         
         # Wandb
         self.use_wandb = use_wandb
@@ -313,14 +336,39 @@ class CloudTrainer:
             # Forward
             if self.scaler:
                 with autocast('cuda'):
-                    logits, loss, _ = self.model(input_ids, labels)
+                    logits, loss, info = self.model(input_ids, labels)
                 self.scaler.scale(loss / self.config.gradient_accumulation).backward()
             else:
-                logits, loss, _ = self.model(input_ids, labels)
+                logits, loss, info = self.model(input_ids, labels)
                 (loss / self.config.gradient_accumulation).backward()
             
             total_loss += loss.item()
             num_batches += 1
+            
+            # --- Memoria Jerárquica: capturar patrones difíciles ---
+            if self.use_memoria and self.memoria is not None:
+                with torch.no_grad():
+                    # Per-token loss para identificar dónde falla el modelo
+                    per_token_loss = F.cross_entropy(
+                        logits[:, :-1].reshape(-1, logits.size(-1)),
+                        labels[:, 1:].reshape(-1),
+                        ignore_index=-100,
+                        reduction='none',
+                    ).reshape(input_ids.size(0), -1)  # [B, L-1]
+                    
+                    # Pad para que coincida con input_ids shape [B, L]
+                    pad = torch.zeros(
+                        input_ids.size(0), 1,
+                        device=per_token_loss.device,
+                    )
+                    per_token_loss = torch.cat([pad, per_token_loss], dim=1)
+                    
+                    terr_acts = info.get("terr_acts")
+                    self.memoria.procesar_batch(
+                        input_ids=input_ids,
+                        per_token_loss=per_token_loss,
+                        terr_acts=terr_acts,
+                    )
             
             # Gradient step
             if (i + 1) % self.config.gradient_accumulation == 0:
@@ -342,6 +390,33 @@ class CloudTrainer:
                 optimizer.zero_grad()
                 scheduler.step()
                 self.global_step += 1
+                
+                # --- Memoria: replay de patrones difíciles ---
+                if (
+                    self.use_memoria
+                    and self.memoria is not None
+                    and self.global_step % self.replay_every == 0
+                ):
+                    self._replay_step(optimizer)
+                
+                # --- Memoria: consolidación periódica ---
+                if (
+                    self.use_memoria
+                    and self.memoria is not None
+                    and self.global_step % self.consolidar_every == 0
+                ):
+                    consolidacion = self.memoria.consolidar(model=self.model)
+                    if self.use_wandb:
+                        mem_stats = self.memoria.stats()
+                        self.wandb.log({
+                            "memoria/l0_uso": mem_stats["niveles"]["l0"]["uso_pct"],
+                            "memoria/l1_uso": mem_stats["niveles"]["l1"]["uso_pct"],
+                            "memoria/l2_uso": mem_stats["niveles"]["l2"]["uso_pct"],
+                            "memoria/interiorizados_l3": mem_stats["total_interiorizados_l3"],
+                            "memoria/tokens_procesados": mem_stats["total_tokens_procesados"],
+                            "memoria/compresion_pct": mem_stats["ratio_compresion_efectiva"],
+                        }, step=self.global_step)
+                    print(f"   🧠 Consolidación @ step {self.global_step}: {self.memoria}")
                 
                 # Checkpoint periódico
                 if self.global_step % self.config.save_every_steps == 0:
@@ -402,7 +477,7 @@ class CloudTrainer:
         
         path = self.output_dir / filename
         
-        torch.save({
+        checkpoint_data = {
             'model': self.model.state_dict(),
             'optimizer': optimizer.state_dict(),
             'scheduler': scheduler.state_dict(),
@@ -412,7 +487,13 @@ class CloudTrainer:
             'best_val_loss': self.best_val_loss,
             'train_config': asdict(self.config) if hasattr(self.config, '__dataclass_fields__') else vars(self.config),
             'model_config': asdict(self.model_config) if self.model_config else None,
-        }, path)
+        }
+        torch.save(checkpoint_data, path)
+        
+        # Guardar memoria jerárquica por separado (JSON, más portable)
+        if self.use_memoria and self.memoria is not None:
+            mem_path = path.with_suffix('.memoria.json')
+            self.memoria.guardar(str(mem_path))
         
         print(f"💾 Checkpoint: {path}")
         
@@ -434,8 +515,44 @@ class CloudTrainer:
         self.global_step = checkpoint.get('global_step', 0)
         self.best_val_loss = checkpoint.get('best_val_loss', float('inf'))
         
+        # Restaurar memoria jerárquica si existe
+        if self.use_memoria:
+            mem_path = Path(path).with_suffix('.memoria.json')
+            if mem_path.exists():
+                self.memoria = MemoriaJerarquica.cargar(str(mem_path))
+                print(f"   🧠 Memoria restaurada: {self.memoria}")
+        
         return checkpoint.get('epoch', 0)
     
+    def _replay_step(self, optimizer: torch.optim.Optimizer) -> None:
+        """Entrena un micro-step con patrones difíciles de la memoria."""
+        assert self.memoria is not None
+
+        replay_batch = self.memoria.get_replay_batch(
+            batch_size=self.replay_batch_size,
+            nivel="l1",
+            strategy="hardest",
+        )
+        if replay_batch is None:
+            return
+
+        replay_ids = replay_batch.to(self.device)
+        # Targets = shifted input_ids
+        replay_targets = replay_ids.clone()
+        replay_targets[:, :-1] = replay_ids[:, 1:]
+        replay_targets[:, -1] = -100
+
+        self.model.train()
+        if self.scaler:
+            with autocast('cuda'):
+                _, replay_loss, _ = self.model(replay_ids, replay_targets)
+            if replay_loss is not None:
+                self.scaler.scale(replay_loss * 0.1).backward()
+        else:
+            _, replay_loss, _ = self.model(replay_ids, replay_targets)
+            if replay_loss is not None:
+                (replay_loss * 0.1).backward()
+
     def _cleanup_checkpoints(self):
         """Mantiene solo los últimos N checkpoints."""
         checkpoints = sorted(
@@ -464,6 +581,14 @@ def main():
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--resume", type=str, default=None)
     parser.add_argument("--no-wandb", action="store_true")
+    parser.add_argument("--no-memoria", action="store_true",
+                        help="Desactivar memoria jerárquica Pareto")
+    parser.add_argument("--mem-replay-every", type=int, default=100,
+                        help="Steps entre replay batches")
+    parser.add_argument("--mem-consolidar-every", type=int, default=500,
+                        help="Steps entre consolidaciones")
+    parser.add_argument("--mem-umbral-loss", type=float, default=3.0,
+                        help="Loss mínima para considerar patrón importante")
     
     args = parser.parse_args()
     
@@ -535,6 +660,13 @@ def main():
     print(f"   Train: {len(train_dataset)}")
     print(f"   Val: {len(val_dataset)}")
     
+    # Config de memoria jerárquica
+    memoria_config = {
+        "replay_every": args.mem_replay_every,
+        "consolidar_every": args.mem_consolidar_every,
+        "umbral_loss": args.mem_umbral_loss,
+    }
+    
     # Trainer
     trainer = CloudTrainer(
         model=model,
@@ -543,6 +675,8 @@ def main():
         output_dir=args.output,
         use_wandb=not args.no_wandb,
         model_config=model_config,
+        use_memoria=not args.no_memoria,
+        memoria_config=memoria_config,
     )
     
     # Train

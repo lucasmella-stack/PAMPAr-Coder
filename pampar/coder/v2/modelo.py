@@ -111,7 +111,7 @@ class PampaRCoderV2(nn.Module):
         terr_acts, zona_acts = self.talamo(x, input_ids)
 
         # 3. Bloques territoriales con Early Exit
-        info = {"exit_capa": self.config.n_capas}
+        info: Dict = {"exit_capa": self.config.n_capas, "terr_acts": terr_acts}
         mask = self.mask[:L, :L]
 
         for i, bloque in enumerate(self.bloques):
