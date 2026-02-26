@@ -3084,6 +3084,1506 @@ print(three_sum([-1, 0, 1, 2, -1, -4]))
 
 
 # =============================================================================
+# =============================================================================
+# GENERADORES PARA TEMAS FALTANTES (añadidos en Feb 2026)
+# =============================================================================
+
+def generar_json_y_csv(n: int) -> list[str]:
+    """Genera ejemplos de json y csv con la stdlib."""
+    examples = [
+        """import json
+
+data = {"nombre": "Alice", "edad": 30, "activo": True}
+serializado = json.dumps(data, ensure_ascii=False, indent=2)
+print(serializado)
+recuperado = json.loads(serializado)
+print(recuperado["nombre"])  # Alice""",
+
+        """import json
+from pathlib import Path
+
+def cargar_config(ruta: str) -> dict:
+    \"\"\"Carga un archivo JSON de configuración.\"\"\"
+    with open(ruta, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def guardar_config(ruta: str, config: dict) -> None:
+    \"\"\"Guarda configuración como JSON indentado.\"\"\"
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)""",
+
+        """import json
+
+# Manejo de tipos no serializables
+from datetime import datetime, date
+
+class EncoderPersonalizado(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+evento = {"fecha": datetime(2025, 1, 15), "nombre": "lanzamiento"}
+resultado = json.dumps(evento, cls=EncoderPersonalizado)
+print(resultado)""",
+
+        """import csv
+import io
+
+# Escribir CSV en memoria
+output = io.StringIO()
+writer = csv.DictWriter(output, fieldnames=["nombre", "edad", "ciudad"])
+writer.writeheader()
+writer.writerows([
+    {"nombre": "Alice", "edad": 30, "ciudad": "Madrid"},
+    {"nombre": "Bob",   "edad": 25, "ciudad": "Buenos Aires"},
+])
+print(output.getvalue())""",
+
+        """import csv
+from pathlib import Path
+
+def leer_csv(ruta: str) -> list[dict]:
+    \"\"\"Lee un CSV y retorna lista de dicts.\"\"\"
+    with open(ruta, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+def escribir_csv(ruta: str, filas: list[dict], campos: list[str]) -> None:
+    \"\"\"Escribe una lista de dicts como CSV.\"\"\"
+    with open(ruta, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=campos)
+        writer.writeheader()
+        writer.writerows(filas)""",
+
+        """import json
+
+# json.JSONDecodeError
+def parsear_seguro(texto: str) -> dict | None:
+    \"\"\"Parsea JSON con manejo de error.\"\"\"
+    try:
+        return json.loads(texto)
+    except json.JSONDecodeError as e:
+        print(f"JSON inválido: {e}")
+        return None
+
+print(parsear_seguro('{"ok": 1}'))   # {'ok': 1}
+print(parsear_seguro("no es json"))  # None""",
+
+        """import csv
+import sys
+
+# Leer CSV desde stdin (útil en pipelines)
+reader = csv.DictReader(sys.stdin)
+for fila in reader:
+    print(fila["nombre"], fila["valor"])""",
+
+        """import json
+
+# Filtrar y transformar JSON lines (JSONL)
+def procesar_jsonl(ruta_entrada: str, ruta_salida: str, filtro) -> int:
+    escritos = 0
+    with open(ruta_entrada, encoding="utf-8") as fin, \
+         open(ruta_salida, "w", encoding="utf-8") as fout:
+        for linea in fin:
+            obj = json.loads(linea)
+            if filtro(obj):
+                fout.write(json.dumps(obj, ensure_ascii=False) + "\\n")
+                escritos += 1
+    return escritos""",
+
+        """import csv
+from collections import defaultdict
+
+def agrupar_csv_por_columna(ruta: str, columna: str) -> dict[str, list[dict]]:
+    \"\"\"Agrupa filas de un CSV por el valor de una columna.\"\"\"
+    grupos: dict[str, list[dict]] = defaultdict(list)
+    with open(ruta, newline="", encoding="utf-8") as f:
+        for fila in csv.DictReader(f):
+            grupos[fila[columna]].append(fila)
+    return dict(grupos)""",
+
+        """import json
+
+# Pretty-print anidado con sorted keys
+config = {"z": 3, "a": [1, 2], "m": {"x": 0}}
+bonito = json.dumps(config, indent=4, sort_keys=True)
+print(bonito)
+# {
+#     "a": [1, 2],
+#     "m": {"x": 0},
+#     "z": 3
+# }""",
+    ]
+    return [jsonl_entry(e, "json_y_csv") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_logging(n: int) -> list[str]:
+    """Genera ejemplos del módulo logging."""
+    examples = [
+        """import logging
+
+# Configuración básica
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s — %(levelname)s — %(message)s",
+)
+
+logging.debug("Detalle de depuración")
+logging.info("Aplicación iniciada")
+logging.warning("Recurso bajo")
+logging.error("Error al conectarse a DB")
+logging.critical("Sistema crítico caído")""",
+
+        """import logging
+from pathlib import Path
+
+def crear_logger(nombre: str, archivo: str) -> logging.Logger:
+    \"\"\"Crea un logger con handler de archivo y consola.\"\"\"
+    logger = logging.getLogger(nombre)
+    logger.setLevel(logging.DEBUG)
+
+    # Handler archivo
+    fh = logging.FileHandler(archivo, encoding="utf-8")
+    fh.setLevel(logging.DEBUG)
+
+    # Handler consola
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+
+    fmt = logging.Formatter("%(name)s — %(levelname)s — %(message)s")
+    fh.setFormatter(fmt)
+    ch.setFormatter(fmt)
+
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger""",
+
+        """import logging
+
+# Logger por módulo (buena práctica)
+logger = logging.getLogger(__name__)
+
+def procesar(item: dict) -> None:
+    logger.debug("Procesando item id=%s", item.get("id"))
+    try:
+        resultado = item["valor"] * 2
+        logger.info("Item %s procesado: resultado=%d", item["id"], resultado)
+    except KeyError:
+        logger.exception("Item sin clave 'valor': %s", item)""",
+
+        """import logging
+
+# Filtro personalizado
+class FiltroAplicacion(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not record.getMessage().startswith("DEBUG_VERBOSE:")
+
+logger = logging.getLogger("app")
+logger.addFilter(FiltroAplicacion())""",
+
+        """import logging
+import json
+
+class JSONFormatter(logging.Formatter):
+    \"\"\"Formatea logs como JSON (útil para sistemas de monitoreo).\"\"\"
+    def format(self, record: logging.LogRecord) -> str:
+        return json.dumps({
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "module": record.module,
+            "line": record.lineno,
+        }, ensure_ascii=False)""",
+
+        """import logging
+from logging.handlers import RotatingFileHandler
+
+# Log con rotación: máximo 5 MB, guarda 3 backups
+handler = RotatingFileHandler(
+    "app.log", maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+)
+handler.setFormatter(logging.Formatter("%(asctime)s — %(message)s"))
+
+logger = logging.getLogger("rotante")
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)""",
+
+        """import logging
+
+# Niveles personalizados
+TRACE = 5
+logging.addLevelName(TRACE, "TRACE")
+
+def trace(self, message, *args, **kws):
+    if self.isEnabledFor(TRACE):
+        self._log(TRACE, message, args, **kws)
+
+logging.Logger.trace = trace
+
+logger = logging.getLogger("custom")
+logger.setLevel(TRACE)
+logger.trace("Mensaje muy detallado")""",
+
+        """import logging
+import contextlib
+
+@contextlib.contextmanager
+def log_duracion(operacion: str):
+    \"\"\"Context manager que loguea el tiempo de una operación.\"\"\"
+    import time
+    logger = logging.getLogger("timer")
+    inicio = time.perf_counter()
+    logger.info("Iniciando: %s", operacion)
+    try:
+        yield
+    finally:
+        dur = time.perf_counter() - inicio
+        logger.info("Finalizado: %s (%.3fs)", operacion, dur)
+
+with log_duracion("cálculo pesado"):
+    sum(range(10_000_000))""",
+
+        """import logging
+
+# Configurar con dictConfig
+import logging.config
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "formatters": {"default": {"format": "%(levelname)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "default"}},
+    "root": {"level": "INFO", "handlers": ["console"]},
+}
+logging.config.dictConfig(LOGGING_CONFIG)
+logging.info("Configurado con dictConfig")""",
+    ]
+    return [jsonl_entry(e, "logging") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_threading_multiprocess(n: int) -> list[str]:
+    """Genera ejemplos de threading y multiprocessing."""
+    examples = [
+        """import threading
+import time
+
+def tarea(nombre: str, segundos: float) -> None:
+    print(f"{nombre} iniciando")
+    time.sleep(segundos)
+    print(f"{nombre} terminado")
+
+hilos = [threading.Thread(target=tarea, args=(f"Hilo-{i}", i * 0.5)) for i in range(4)]
+for h in hilos:
+    h.start()
+for h in hilos:
+    h.join()
+print("Todos los hilos terminaron")""",
+
+        """import threading
+
+# Lock para evitar race conditions
+contador = 0
+lock = threading.Lock()
+
+def incrementar(n: int) -> None:
+    global contador
+    for _ in range(n):
+        with lock:
+            contador += 1
+
+hilos = [threading.Thread(target=incrementar, args=(1000,)) for _ in range(5)]
+for h in hilos:
+    h.start()
+for h in hilos:
+    h.join()
+print(f"Contador final: {contador}")  # 5000""",
+
+        """from multiprocessing import Pool
+import math
+
+def calcular_factorial(n: int) -> int:
+    return math.factorial(n)
+
+numeros = [10, 20, 30, 40, 50]
+with Pool(processes=4) as pool:
+    resultados = pool.map(calcular_factorial, numeros)
+print(resultados)""",
+
+        """import threading
+from queue import Queue
+
+def productor(q: Queue, items: list) -> None:
+    for item in items:
+        q.put(item)
+    q.put(None)  # Señal de fin
+
+def consumidor(q: Queue) -> list:
+    resultados = []
+    while True:
+        item = q.get()
+        if item is None:
+            break
+        resultados.append(item * 2)
+    return resultados
+
+q: Queue = Queue()
+t1 = threading.Thread(target=productor, args=(q, list(range(10))))
+t1.start()
+t1.join()
+print(consumidor(q))""",
+
+        """from multiprocessing import Process, Queue
+
+def trabajador(nombre: str, cola: Queue) -> None:
+    cola.put(f"{nombre}: resultado={42}")
+
+cola: Queue = Queue()
+procs = [Process(target=trabajador, args=(f"Worker-{i}", cola)) for i in range(3)]
+for p in procs:
+    p.start()
+for p in procs:
+    p.join()
+
+while not cola.empty():
+    print(cola.get())""",
+
+        """import threading
+
+class HiloWorker(threading.Thread):
+    \"\"\"Thread personalizado con retorno de resultado.\"\"\"
+
+    def __init__(self, fn, *args):
+        super().__init__()
+        self.fn = fn
+        self.args = args
+        self.resultado = None
+        self.error = None
+
+    def run(self) -> None:
+        try:
+            self.resultado = self.fn(*self.args)
+        except Exception as e:
+            self.error = e""",
+
+        """from concurrent.futures import ThreadPoolExecutor, as_completed
+import urllib.request
+
+def descargar(url: str) -> str:
+    with urllib.request.urlopen(url, timeout=5) as resp:
+        return resp.read(200).decode()
+
+urls = ["http://httpbin.org/get", "http://httpbin.org/ip"]
+with ThreadPoolExecutor(max_workers=4) as ex:
+    futuros = {ex.submit(descargar, u): u for u in urls}
+    for fut in as_completed(futuros):
+        try:
+            print(futuros[fut], "OK")
+        except Exception as e:
+            print(futuros[fut], "ERROR:", e)""",
+
+        """from concurrent.futures import ProcessPoolExecutor
+
+def es_primo(n: int) -> bool:
+    if n < 2:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+numeros = list(range(10_000, 10_100))
+with ProcessPoolExecutor() as ex:
+    primos = list(filter(None, ex.map(es_primo, numeros)))
+print(f"Primos encontrados: {len(primos)}")""",
+
+        """import threading
+
+# Evento para coordinar hilos
+evento = threading.Event()
+
+def esperador(nombre: str) -> None:
+    print(f"{nombre} esperando señal...")
+    evento.wait()
+    print(f"{nombre} continúa")
+
+hilos = [threading.Thread(target=esperador, args=(f"W{i}",)) for i in range(3)]
+for h in hilos:
+    h.start()
+
+import time; time.sleep(0.5)
+print("Enviando señal")
+evento.set()
+for h in hilos:
+    h.join()""",
+
+        """import multiprocessing
+import os
+
+def info_proceso() -> None:
+    print(f"PID: {os.getpid()}, PPID: {os.getppid()}")
+
+if __name__ == "__main__":
+    procs = [multiprocessing.Process(target=info_proceso) for _ in range(3)]
+    for p in procs: p.start()
+    for p in procs: p.join()""",
+    ]
+    return [jsonl_entry(e, "threading_multiprocess") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_git_y_ci_cd(n: int) -> list[str]:
+    """Genera ejemplos de git y CI/CD con Python (subprocess, GitHub Actions, etc.)."""
+    examples = [
+        """import subprocess
+
+def git_status() -> str:
+    \"\"\"Retorna el estado del repositorio git.\"\"\"
+    result = subprocess.run(
+        ["git", "status", "--short"],
+        capture_output=True, text=True, check=True
+    )
+    return result.stdout
+
+def git_log(n: int = 10) -> list[str]:
+    \"\"\"Retorna los últimos n commits.\"\"\"
+    result = subprocess.run(
+        ["git", "log", f"--max-count={n}", "--oneline"],
+        capture_output=True, text=True, check=True
+    )
+    return result.stdout.strip().splitlines()""",
+
+        """import subprocess
+from pathlib import Path
+
+def git_commit(mensaje: str, archivos: list[str] | None = None) -> None:
+    \"\"\"Stage y commit de archivos con un mensaje convencional.\"\"\"
+    if archivos:
+        subprocess.run(["git", "add"] + archivos, check=True)
+    else:
+        subprocess.run(["git", "add", "-A"], check=True)
+    subprocess.run(["git", "commit", "-m", mensaje], check=True)
+
+def git_push(remote: str = "origin", rama: str = "main") -> None:
+    subprocess.run(["git", "push", remote, rama], check=True)""",
+
+        """# GitHub Actions workflow (YAML generado desde Python)
+import yaml
+from pathlib import Path
+
+workflow = {
+    "name": "CI",
+    "on": ["push", "pull_request"],
+    "jobs": {
+        "test": {
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                {"uses": "actions/checkout@v4"},
+                {"uses": "actions/setup-python@v5", "with": {"python-version": "3.13"}},
+                {"run": "pip install -r requirements.txt"},
+                {"run": "pytest --tb=short"},
+            ]
+        }
+    }
+}
+Path(".github/workflows/ci.yml").parent.mkdir(parents=True, exist_ok=True)
+Path(".github/workflows/ci.yml").write_text(yaml.dump(workflow), encoding="utf-8")""",
+
+        """import subprocess
+
+def rama_actual() -> str:
+    return subprocess.run(
+        ["git", "branch", "--show-current"],
+        capture_output=True, text=True
+    ).stdout.strip()
+
+def crear_rama(nombre: str) -> None:
+    subprocess.run(["git", "checkout", "-b", nombre], check=True)
+
+def hay_cambios_sin_commitear() -> bool:
+    r = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+    return bool(r.stdout.strip())""",
+
+        """import subprocess
+import re
+
+def ultimo_tag() -> str | None:
+    \"\"\"Retorna el último tag semver o None.\"\"\"
+    try:
+        out = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True, text=True, check=True
+        ).stdout.strip()
+        return out
+    except subprocess.CalledProcessError:
+        return None
+
+def siguiente_version_patch(tag: str) -> str:
+    \"\"\"Incrementa el patch de un tag semver (v1.2.3 → v1.2.4).\"\"\"
+    m = re.match(r"v?(\\d+)\\.(\\d+)\\.(\\d+)", tag)
+    if not m:
+        raise ValueError(f"Tag no semver: {tag}")
+    major, minor, patch = m.groups()
+    return f"v{major}.{minor}.{int(patch)+1}\"""",
+
+        """import subprocess
+from datetime import datetime
+
+def changelog_desde(tag: str) -> str:
+    \"\"\"Genera un changelog desde un tag hasta HEAD.\"\"\"
+    result = subprocess.run(
+        ["git", "log", f"{tag}..HEAD", "--pretty=format:- %s (%an)"],
+        capture_output=True, text=True, check=True
+    )
+    fecha = datetime.now().strftime("%Y-%m-%d")
+    return f"## [{fecha}]\\n\\n{result.stdout}\\n""",
+
+        """import subprocess
+
+def archivos_modificados_entre(ref_a: str, ref_b: str = "HEAD") -> list[str]:
+    \"\"\"Lista archivos Python modificados entre dos refs.\"\"\"
+    r = subprocess.run(
+        ["git", "diff", "--name-only", ref_a, ref_b],
+        capture_output=True, text=True, check=True
+    )
+    return [f for f in r.stdout.splitlines() if f.endswith(".py")]
+
+# Uso: solo correr lint sobre archivos cambiados
+cambiados = archivos_modificados_entre("origin/main")
+if cambiados:
+    subprocess.run(["ruff", "check"] + cambiados)""",
+
+        """# pre-commit hook en Python
+# Guardar como .git/hooks/pre-commit y dar permisos de ejecución
+
+import subprocess
+import sys
+
+def ejecutar(cmd: list[str]) -> int:
+    return subprocess.run(cmd).returncode
+
+errores = 0
+errores += ejecutar(["ruff", "check", "."])
+errores += ejecutar(["mypy", "--ignore-missing-imports", "."])
+errores += ejecutar(["pytest", "-q", "--tb=short"])
+
+if errores:
+    print("Pre-commit falló — commit cancelado")
+    sys.exit(1)""",
+
+        """import subprocess
+
+class GitRepo:
+    \"\"\"Wrapper mínimo de operaciones git.\"\"\"
+
+    def __init__(self, directorio: str = "."):
+        self.dir = directorio
+
+    def _run(self, *args: str) -> str:
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True,
+            check=True, cwd=self.dir
+        ).stdout.strip()
+
+    def status(self) -> str:
+        return self._run("status", "--short")
+
+    def log(self, n: int = 5) -> list[str]:
+        return self._run("log", f"-{n}", "--oneline").splitlines()
+
+    def push(self) -> None:
+        self._run("push")""",
+
+        """# Detector de secretos en staged files
+import subprocess
+import re
+import sys
+
+PATRONES = [
+    r"(?i)api[_-]?key\\s*=\\s*['\"][^'\"]{10,}",
+    r"(?i)password\\s*=\\s*['\"][^'\"]{4,}",
+    r"(?i)secret\\s*=\\s*['\"][^'\"]{10,}",
+]
+
+def detectar_secretos() -> list[str]:
+    diff = subprocess.run(
+        ["git", "diff", "--cached", "--unified=0"],
+        capture_output=True, text=True
+    ).stdout
+    encontrados = []
+    for linea in diff.splitlines():
+        if linea.startswith("+"):
+            for pat in PATRONES:
+                if re.search(pat, linea):
+                    encontrados.append(linea)
+    return encontrados
+
+secretos = detectar_secretos()
+if secretos:
+    print("SECRETOS detectados en staged files:")
+    for s in secretos:
+        print(" ", s)
+    sys.exit(1)""",
+    ]
+    return [jsonl_entry(e, "git_y_ci_cd") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_iterator_pattern(n: int) -> list[str]:
+    """Genera ejemplos del patrón Iterator en Python."""
+    examples = [
+        """class RangeIterator:
+    \"\"\"Implementación manual del patrón Iterator.\"\"\"
+
+    def __init__(self, inicio: int, fin: int, paso: int = 1):
+        self._actual = inicio
+        self._fin = fin
+        self._paso = paso
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> int:
+        if self._actual >= self._fin:
+            raise StopIteration
+        valor = self._actual
+        self._actual += self._paso
+        return valor
+
+for n in RangeIterator(0, 10, 2):
+    print(n)  # 0 2 4 6 8""",
+
+        """from typing import Iterator, TypeVar
+
+T = TypeVar("T")
+
+class ListaDobleEnlazada:
+    \"\"\"Lista con iterador explicit.\"\"\"
+
+    class Nodo:
+        def __init__(self, valor):
+            self.valor = valor
+            self.siguiente = None
+
+    def __init__(self):
+        self._cabeza = None
+
+    def agregar(self, valor) -> None:
+        nodo = self.Nodo(valor)
+        nodo.siguiente = self._cabeza
+        self._cabeza = nodo
+
+    def __iter__(self) -> Iterator:
+        actual = self._cabeza
+        while actual:
+            yield actual.valor
+            actual = actual.siguiente""",
+
+        """class ArbolBinario:
+    def __init__(self, valor, izq=None, der=None):
+        self.valor = valor
+        self.izq = izq
+        self.der = der
+
+    def __iter__(self):
+        \"\"\"Recorrido inorden usando yield.\"\"\"
+        if self.izq:
+            yield from self.izq
+        yield self.valor
+        if self.der:
+            yield from self.der
+
+arbol = ArbolBinario(4, ArbolBinario(2, ArbolBinario(1), ArbolBinario(3)), ArbolBinario(6))
+print(list(arbol))  # [1, 2, 3, 4, 6]""",
+
+        """from abc import ABC, abstractmethod
+from typing import Iterator, Any
+
+class Coleccion(ABC):
+    @abstractmethod
+    def crear_iterador(self) -> Iterator[Any]: ...
+
+class ColeccionFiltrada(Coleccion):
+    def __init__(self, items: list, predicado):
+        self._items = items
+        self._pred = predicado
+
+    def crear_iterador(self) -> Iterator[Any]:
+        return (x for x in self._items if self._pred(x))
+
+pares = ColeccionFiltrada(range(10), lambda x: x % 2 == 0)
+print(list(pares.crear_iterador()))  # [0, 2, 4, 6, 8]""",
+
+        """class GeneradorInfinito:
+    \"\"\"Iterador infinito de Fibonacci.\"\"\"
+
+    def __iter__(self):
+        return self
+
+    def __init__(self):
+        self._a, self._b = 0, 1
+
+    def __next__(self) -> int:
+        valor = self._a
+        self._a, self._b = self._b, self._a + self._b
+        return valor
+
+import itertools
+primeros_10 = list(itertools.islice(GeneradorInfinito(), 10))
+print(primeros_10)  # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]""",
+
+        """from typing import Iterator
+
+def csv_iterator(ruta: str) -> Iterator[dict]:
+    \"\"\"Itera sobre filas de un CSV sin cargar todo en RAM.\"\"\"
+    import csv
+    with open(ruta, newline="", encoding="utf-8") as f:
+        yield from csv.DictReader(f)
+
+# Uso: procesar CSV de 10 GB línea a línea
+for fila in csv_iterator("datos.csv"):
+    procesar(fila)""",
+
+        """class IteradorConEstado:
+    \"\"\"Iterador que admite reset.\"\"\"
+
+    def __init__(self, datos: list):
+        self._datos = datos
+        self._indice = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._indice >= len(self._datos):
+            raise StopIteration
+        v = self._datos[self._indice]
+        self._indice += 1
+        return v
+
+    def reset(self) -> None:
+        self._indice = 0""",
+
+        """# Iterador de paginación de API
+from typing import Iterator
+import urllib.request, json
+
+def paginar(url_base: str, pagina: int = 1) -> Iterator[list]:
+    \"\"\"Itera sobre páginas de una API REST.\"\"\"
+    while True:
+        url = f"{url_base}?page={pagina}&per_page=20"
+        with urllib.request.urlopen(url) as resp:
+            data = json.loads(resp.read())
+        if not data:
+            break
+        yield data
+        pagina += 1""",
+    ]
+    return [jsonl_entry(e, "iterator_pattern") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_command_pattern(n: int) -> list[str]:
+    """Genera ejemplos del patrón Command en Python."""
+    examples = [
+        """from abc import ABC, abstractmethod
+
+class Comando(ABC):
+    @abstractmethod
+    def ejecutar(self) -> None: ...
+
+    @abstractmethod
+    def deshacer(self) -> None: ...
+
+class Receptor:
+    def __init__(self):
+        self.texto = ""
+
+    def agregar(self, texto: str) -> None:
+        self.texto += texto
+        print(f"Texto: {self.texto!r}")
+
+    def eliminar(self, n: int) -> None:
+        self.texto = self.texto[:-n]
+        print(f"Texto: {self.texto!r}")
+
+class ComandoAgregar(Comando):
+    def __init__(self, receptor: Receptor, texto: str):
+        self._r = receptor
+        self._txt = texto
+
+    def ejecutar(self) -> None:
+        self._r.agregar(self._txt)
+
+    def deshacer(self) -> None:
+        self._r.eliminar(len(self._txt))""",
+
+        """from collections import deque
+from typing import Protocol
+
+class Comando(Protocol):
+    def ejecutar(self) -> None: ...
+    def deshacer(self) -> None: ...
+
+class HistorialComandos:
+    \"\"\"Invocador con soporte de undo/redo.\"\"\"
+
+    def __init__(self):
+        self._historial: deque[Comando] = deque()
+        self._rehace: deque[Comando] = deque()
+
+    def ejecutar(self, cmd: Comando) -> None:
+        cmd.ejecutar()
+        self._historial.append(cmd)
+        self._rehace.clear()
+
+    def deshacer(self) -> None:
+        if self._historial:
+            cmd = self._historial.pop()
+            cmd.deshacer()
+            self._rehace.append(cmd)
+
+    def rehacer(self) -> None:
+        if self._rehace:
+            cmd = self._rehace.pop()
+            cmd.ejecutar()
+            self._historial.append(cmd)""",
+
+        """from dataclasses import dataclass, field
+from typing import Callable
+
+@dataclass
+class ComandoFuncion:
+    \"\"\"Comando implementado con funciones (sin clases extra).\"\"\"
+    ejecutar: Callable[[], None]
+    deshacer: Callable[[], None]
+    descripcion: str = ""
+
+# Uso
+valores: list[int] = []
+cmd = ComandoFuncion(
+    ejecutar=lambda: valores.append(42),
+    deshacer=lambda: valores.pop(),
+    descripcion="Agregar 42",
+)
+cmd.ejecutar()
+print(valores)  # [42]
+cmd.deshacer()
+print(valores)  # []""",
+
+        """# Command + Queue: procesamiento asíncrono
+from queue import Queue
+from threading import Thread
+from abc import ABC, abstractmethod
+
+class Tarea(ABC):
+    @abstractmethod
+    def ejecutar(self) -> None: ...
+
+class ColaTareas:
+    def __init__(self):
+        self._q: Queue[Tarea | None] = Queue()
+
+    def encolar(self, tarea: Tarea) -> None:
+        self._q.put(tarea)
+
+    def procesar(self) -> None:
+        while True:
+            tarea = self._q.get()
+            if tarea is None:
+                break
+            tarea.ejecutar()
+            self._q.task_done()
+
+    def iniciar_worker(self) -> Thread:
+        t = Thread(target=self.procesar, daemon=True)
+        t.start()
+        return t""",
+
+        """# Command para operaciones de base de datos con transacción
+from typing import Any
+
+class ComandoDB:
+    def __init__(self, conexion):
+        self._conn = conexion
+        self._historial: list[tuple[str, tuple]] = []
+
+    def ejecutar(self, sql: str, params: tuple = ()) -> Any:
+        self._historial.append((sql, params))
+        return self._conn.execute(sql, params)
+
+    def rollback(self) -> None:
+        # Deshacer en orden inverso
+        for sql, params in reversed(self._historial):
+            if sql.startswith("INSERT"):
+                self._conn.execute("DELETE WHERE id = ?", (params[0],))
+        self._historial.clear()""",
+
+        """from typing import Callable
+from functools import partial
+
+# Command como callable (estilo funcional)
+def mover_archivo(origen: str, destino: str) -> None:
+    import shutil; shutil.move(origen, destino)
+
+def crear_comando(fn: Callable, *args, **kwargs) -> Callable[[], None]:
+    return partial(fn, *args, **kwargs)
+
+# Cola de comandos diferidos
+pendientes: list[Callable] = [
+    crear_comando(mover_archivo, "a.txt", "tmp/a.txt"),
+    crear_comando(print, "Archivos movidos"),
+]
+
+for cmd in pendientes:
+    cmd()""",
+
+        """# Macro: secuencia de comandos
+from abc import ABC, abstractmethod
+
+class Comando(ABC):
+    @abstractmethod
+    def ejecutar(self) -> None: ...
+
+class Macro(Comando):
+    \"\"\"Compone múltiples comandos en uno.\"\"\"
+
+    def __init__(self, *comandos: Comando):
+        self._cmds = list(comandos)
+
+    def ejecutar(self) -> None:
+        for cmd in self._cmds:
+            cmd.ejecutar()
+
+    def agregar(self, cmd: Comando) -> "Macro":
+        self._cmds.append(cmd)
+        return self""",
+    ]
+    return [jsonl_entry(e, "command_pattern") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_refactoring(n: int) -> list[str]:
+    """Genera ejemplos de refactoring con antes/despues en Python."""
+    examples = [
+        """# ANTES: función larga con múltiples responsabilidades
+def procesar_pedido(pedido):
+    # Validar
+    if not pedido.get("items"):
+        raise ValueError("Sin items")
+    if pedido.get("total", 0) <= 0:
+        raise ValueError("Total inválido")
+    # Calcular descuento
+    descuento = 0
+    if pedido["total"] > 100:
+        descuento = pedido["total"] * 0.1
+    # Guardar en DB
+    import sqlite3
+    conn = sqlite3.connect("db.sqlite3")
+    conn.execute("INSERT INTO pedidos VALUES (?, ?)", (pedido["id"], pedido["total"] - descuento))
+    conn.commit()
+    return pedido["total"] - descuento
+
+# DESPUÉS: funciones con responsabilidad única
+def validar_pedido(pedido: dict) -> None:
+    if not pedido.get("items"):
+        raise ValueError("Sin items")
+    if pedido.get("total", 0) <= 0:
+        raise ValueError("Total inválido")
+
+def calcular_descuento(total: float) -> float:
+    return total * 0.1 if total > 100 else 0.0
+
+def guardar_pedido(conn, pedido_id: int, total_final: float) -> None:
+    conn.execute("INSERT INTO pedidos VALUES (?, ?)", (pedido_id, total_final))
+    conn.commit()""",
+
+        """# ANTES: números mágicos
+def calcular_precio(cantidad, precio):
+    if cantidad > 10:
+        return cantidad * precio * 0.85
+    return cantidad * precio * 1.21
+
+# DESPUÉS: constantes con nombre descriptivo
+DESCUENTO_VOLUMEN = 0.85    # 15% de descuento para > 10 unidades
+IVA = 1.21                  # IVA del 21%
+UMBRAL_VOLUMEN = 10
+
+def calcular_precio(cantidad: int, precio: float) -> float:
+    if cantidad > UMBRAL_VOLUMEN:
+        return cantidad * precio * DESCUENTO_VOLUMEN
+    return cantidad * precio * IVA""",
+
+        """# ANTES: condicionales anidadas (arrow anti-pattern)
+def procesar(usuario, pedido, pago):
+    if usuario:
+        if usuario.activo:
+            if pedido:
+                if pedido.items:
+                    if pago:
+                        return pago.cobrar(pedido.total)
+    return None
+
+# DESPUÉS: guard clauses (early return)
+def procesar(usuario, pedido, pago):
+    if not usuario or not usuario.activo:
+        return None
+    if not pedido or not pedido.items:
+        return None
+    if not pago:
+        return None
+    return pago.cobrar(pedido.total)""",
+
+        """# ANTES: duplicación de código (DRY violation)
+def area_circulo(r):
+    return 3.14159 * r * r
+
+def perimetro_circulo(r):
+    return 2 * 3.14159 * r
+
+def volumen_esfera(r):
+    return (4 / 3) * 3.14159 * r ** 3
+
+# DESPUÉS: constante y funciones cohesivas
+import math
+
+def area_circulo(radio: float) -> float:
+    return math.pi * radio ** 2
+
+def perimetro_circulo(radio: float) -> float:
+    return 2 * math.pi * radio
+
+def volumen_esfera(radio: float) -> float:
+    return (4 / 3) * math.pi * radio ** 3""",
+
+        """# ANTES: clase con demasiados campos (Feature Envy / Large Class)
+class Pedido:
+    def __init__(self, id, cliente_nombre, cliente_email, cliente_dir, items, total):
+        self.id = id
+        self.cliente_nombre = cliente_nombre
+        self.cliente_email = cliente_email
+        self.cliente_dir = cliente_dir
+        self.items = items
+        self.total = total
+
+# DESPUÉS: extraer clase Cliente
+from dataclasses import dataclass
+
+@dataclass
+class Cliente:
+    nombre: str
+    email: str
+    direccion: str
+
+@dataclass
+class Pedido:
+    id: int
+    cliente: Cliente
+    items: list
+    total: float""",
+
+        """# ANTES: string concatenación ilegible
+def construir_query(tabla, columnas, condicion):
+    q = "SELECT "
+    for i, c in enumerate(columnas):
+        q += c
+        if i < len(columnas) - 1:
+            q += ", "
+    q += " FROM " + tabla
+    if condicion:
+        q += " WHERE " + condicion
+    return q
+
+# DESPUÉS: f-string y join
+def construir_query(tabla: str, columnas: list[str], condicion: str = "") -> str:
+    cols = ", ".join(columnas)
+    base = f"SELECT {cols} FROM {tabla}"
+    return f"{base} WHERE {condicion}" if condicion else base""",
+
+        """# ANTES: parámetro booleano que bifurca comportamiento
+def enviar_email(destinatario, asunto, cuerpo, es_html):
+    if es_html:
+        # lógica HTML
+        headers = {"Content-Type": "text/html"}
+    else:
+        headers = {"Content-Type": "text/plain"}
+    # ...enviar...
+
+# DESPUÉS: dos funciones con nombres claros
+def enviar_email_texto(destinatario: str, asunto: str, cuerpo: str) -> None:
+    _enviar(destinatario, asunto, cuerpo, content_type="text/plain")
+
+def enviar_email_html(destinatario: str, asunto: str, html: str) -> None:
+    _enviar(destinatario, asunto, html, content_type="text/html")
+
+def _enviar(dest, asunto, body, content_type): ...""",
+
+        """# ANTES: comentarios que explican código oscuro
+def calc(d, r):
+    # d es descuento en %, r es precio base
+    # Convertir porcentaje a decimal y restar
+    return r - (r * (d / 100))
+
+# DESPUÉS: código auto-documentado, sin comentarios redundantes
+def aplicar_descuento(precio_base: float, descuento_pct: float) -> float:
+    \"\"\"Retorna el precio con el descuento aplicado.\"\"\"
+    return precio_base * (1 - descuento_pct / 100)""",
+
+        """# ANTES: abuso de excepciones para control de flujo
+def buscar_usuario(id_: int) -> dict:
+    try:
+        return DB.get(id_)
+    except KeyError:
+        return {}
+    except Exception:
+        return {}
+
+# DESPUÉS: control explícito con Optional
+from typing import Optional
+
+def buscar_usuario(id_: int) -> Optional[dict]:
+    \"\"\"Retorna el usuario o None si no existe.\"\"\"
+    return DB.get(id_)  # dict.get retorna None si no existe""",
+    ]
+    return [jsonl_entry(e, "refactoring") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_testing_avanzado(n: int) -> list[str]:
+    """Genera ejemplos de testing avanzado con pytest."""
+    examples = [
+        """import pytest
+from unittest.mock import MagicMock, patch
+
+def enviar_notificacion(servicio, usuario_id: int) -> bool:
+    usuario = servicio.obtener(usuario_id)
+    if not usuario:
+        return False
+    servicio.notificar(usuario["email"], "Bienvenido")
+    return True
+
+def test_enviar_notificacion_usuario_existente():
+    servicio = MagicMock()
+    servicio.obtener.return_value = {"email": "a@test.com"}
+    assert enviar_notificacion(servicio, 1) is True
+    servicio.notificar.assert_called_once_with("a@test.com", "Bienvenido")
+
+def test_enviar_notificacion_usuario_inexistente():
+    servicio = MagicMock()
+    servicio.obtener.return_value = None
+    assert enviar_notificacion(servicio, 99) is False
+    servicio.notificar.assert_not_called()""",
+
+        """import pytest
+
+@pytest.mark.parametrize("entrada,esperado", [
+    ("hola", "HOLA"),
+    ("mundo", "MUNDO"),
+    ("", ""),
+    ("  espacios  ", "  ESPACIOS  "),
+])
+def test_upper(entrada: str, esperado: str) -> None:
+    assert entrada.upper() == esperado
+
+@pytest.mark.parametrize("a,b,resultado", [
+    (1, 2, 3),
+    (0, 0, 0),
+    (-1, 1, 0),
+    (100, -50, 50),
+])
+def test_suma(a: int, b: int, resultado: int) -> None:
+    assert a + b == resultado""",
+
+        """import pytest
+from unittest.mock import patch, AsyncMock
+import asyncio
+
+async def fetch_data(url: str) -> dict:
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            return await resp.json()
+
+@pytest.mark.asyncio
+async def test_fetch_data():
+    mock_resp = AsyncMock()
+    mock_resp.json.return_value = {"status": "ok"}
+    mock_session = AsyncMock()
+    mock_session.__aenter__.return_value.get.return_value.__aenter__.return_value = mock_resp
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await fetch_data("http://example.com")
+    assert result == {"status": "ok"}""",
+
+        """import pytest
+from unittest.mock import patch
+import time
+
+# Fixture con scope compartido
+@pytest.fixture(scope="module")
+def config_test():
+    return {"db": "sqlite:///:memory:", "debug": True}
+
+# Fixture con teardown
+@pytest.fixture
+def archivo_temporal(tmp_path):
+    archivo = tmp_path / "test.txt"
+    archivo.write_text("contenido inicial")
+    yield archivo
+    # teardown automático al salir de tmp_path
+
+def test_modificar_archivo(archivo_temporal):
+    archivo_temporal.write_text("nuevo contenido")
+    assert archivo_temporal.read_text() == "nuevo contenido\"""",
+
+        """import pytest
+
+class TestCalculadora:
+    \"\"\"Suite completa con setup/teardown de clase.\"\"\"
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.calc = Calculadora()
+        yield
+        # teardown si hace falta
+
+    def test_suma(self):
+        assert self.calc.sumar(2, 3) == 5
+
+    def test_division(self):
+        assert self.calc.dividir(10, 2) == 5.0
+
+    def test_division_por_cero(self):
+        with pytest.raises(ZeroDivisionError):
+            self.calc.dividir(5, 0)
+
+    @pytest.mark.slow
+    def test_operacion_pesada(self):
+        assert self.calc.factorial(20) > 0""",
+
+        """import pytest
+from unittest.mock import patch, call
+
+def procesar_batch(items: list[int], procesador) -> list[int]:
+    return [procesador(i) for i in items]
+
+def test_procesador_llamado_con_cada_item():
+    mock_proc = MagicMock(side_effect=lambda x: x * 2)
+    resultado = procesar_batch([1, 2, 3], mock_proc)
+    assert resultado == [2, 4, 6]
+    assert mock_proc.call_count == 3
+    mock_proc.assert_has_calls([call(1), call(2), call(3)])
+
+def test_procesador_lanza_excepcion():
+    mock_proc = MagicMock(side_effect=ValueError("error"))
+    with pytest.raises(ValueError, match="error"):
+        procesar_batch([1], mock_proc)""",
+
+        """import pytest
+from unittest.mock import patch
+import json
+
+# Test con captura de stdout
+def imprimir_reporte(datos: list[dict]) -> None:
+    for item in datos:
+        print(f"{item['nombre']}: {item['valor']}")
+
+def test_reporte_imprime_correctamente(capsys):
+    datos = [{"nombre": "A", "valor": 1}, {"nombre": "B", "valor": 2}]
+    imprimir_reporte(datos)
+    output = capsys.readouterr().out
+    assert "A: 1" in output
+    assert "B: 2" in output""",
+
+        """import pytest
+
+# Markers personalizados
+def pytest_configure(config):
+    config.addinivalue_line("markers", "integracion: tests de integración lentos")
+    config.addinivalue_line("markers", "smoke: tests de humo rápidos")
+
+@pytest.mark.smoke
+def test_main_importa():
+    import main  # Solo verifica que no hay errores de importación
+
+@pytest.mark.integracion
+def test_flujo_completo(db_session):
+    usuario = crear_usuario(db_session, "Alice")
+    assert usuario.id is not None
+    assert db_session.query(Usuario).count() == 1""",
+
+        """import pytest
+from hypothesis import given, strategies as st
+
+# Property-based testing con Hypothesis
+@given(st.lists(st.integers()))
+def test_sort_idempotente(lista):
+    \"\"\"Ordenar dos veces da el mismo resultado que una vez.\"\"\"
+    assert sorted(sorted(lista)) == sorted(lista)
+
+@given(st.text())
+def test_upper_lower_roundtrip(texto):
+    \"\"\"upper().lower() preserva len pero case puede diferir.\"\"\"
+    assert len(texto.upper()) == len(texto)
+
+@given(st.integers(min_value=0, max_value=1000))
+def test_factorial_positivo(n):
+    import math
+    assert math.factorial(n) >= 1""",
+    ]
+    return [jsonl_entry(e, "testing_avanzado") for e in shuffle_and_sample(examples, n)]
+
+
+def generar_arboles_binarios_extra(n: int) -> list[str]:
+    """Genera ejemplos adicionales de árboles binarios."""
+    examples = [
+        """class Nodo:
+    def __init__(self, valor: int):
+        self.valor = valor
+        self.izq: "Nodo | None" = None
+        self.der: "Nodo | None" = None
+
+class BST:
+    \"\"\"Árbol Binario de Búsqueda.\"\"\"
+
+    def __init__(self):
+        self.raiz: Nodo | None = None
+
+    def insertar(self, valor: int) -> None:
+        if not self.raiz:
+            self.raiz = Nodo(valor)
+        else:
+            self._insertar(self.raiz, valor)
+
+    def _insertar(self, nodo: Nodo, valor: int) -> None:
+        if valor < nodo.valor:
+            if nodo.izq is None:
+                nodo.izq = Nodo(valor)
+            else:
+                self._insertar(nodo.izq, valor)
+        else:
+            if nodo.der is None:
+                nodo.der = Nodo(valor)
+            else:
+                self._insertar(nodo.der, valor)""",
+
+        """from collections import deque
+
+class Nodo:
+    def __init__(self, val: int, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def bfs(raiz: Nodo | None) -> list[list[int]]:
+    \"\"\"Recorrido por niveles (BFS).\"\"\"
+    if not raiz:
+        return []
+    resultado = []
+    cola = deque([raiz])
+    while cola:
+        nivel = []
+        for _ in range(len(cola)):
+            nodo = cola.popleft()
+            nivel.append(nodo.val)
+            if nodo.izq: cola.append(nodo.izq)
+            if nodo.der: cola.append(nodo.der)
+        resultado.append(nivel)
+    return resultado""",
+
+        """class Nodo:
+    def __init__(self, val, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def altura(nodo: "Nodo | None") -> int:
+    if nodo is None:
+        return 0
+    return 1 + max(altura(nodo.izq), altura(nodo.der))
+
+def esta_balanceado(nodo: "Nodo | None") -> bool:
+    if nodo is None:
+        return True
+    dif = abs(altura(nodo.izq) - altura(nodo.der))
+    return dif <= 1 and esta_balanceado(nodo.izq) and esta_balanceado(nodo.der)
+
+raiz = Nodo(1, Nodo(2, Nodo(4)), Nodo(3))
+print(esta_balanceado(raiz))  # True""",
+
+        """class Nodo:
+    def __init__(self, val, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def invertir(nodo: "Nodo | None") -> "Nodo | None":
+    \"\"\"Invierte un árbol binario (mirror).\"\"\"
+    if nodo is None:
+        return None
+    nodo.izq, nodo.der = invertir(nodo.der), invertir(nodo.izq)
+    return nodo
+
+def inorden(nodo, acc=None) -> list[int]:
+    if acc is None: acc = []
+    if nodo:
+        inorden(nodo.izq, acc)
+        acc.append(nodo.val)
+        inorden(nodo.der, acc)
+    return acc""",
+
+        """class Nodo:
+    def __init__(self, val, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def lca(raiz: "Nodo | None", p: int, q: int) -> "Nodo | None":
+    \"\"\"Least Common Ancestor en BST.\"\"\"
+    if raiz is None:
+        return None
+    if p < raiz.val and q < raiz.val:
+        return lca(raiz.izq, p, q)
+    if p > raiz.val and q > raiz.val:
+        return lca(raiz.der, p, q)
+    return raiz
+
+raiz = Nodo(6, Nodo(2, Nodo(0), Nodo(4)), Nodo(8, Nodo(7), Nodo(9)))
+print(lca(raiz, 2, 8).val)  # 6
+print(lca(raiz, 0, 4).val)  # 2""",
+
+        """class Nodo:
+    def __init__(self, val, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def serializar(raiz: "Nodo | None") -> str:
+    \"\"\"Serializa árbol a string (preorden con None=N).\"\"\"
+    if raiz is None:
+        return "N"
+    return f"{raiz.val},{serializar(raiz.izq)},{serializar(raiz.der)}"
+
+def deserializar(data: str) -> "Nodo | None":
+    tokens = iter(data.split(","))
+    def helper():
+        val = next(tokens)
+        if val == "N":
+            return None
+        nodo = Nodo(int(val))
+        nodo.izq = helper()
+        nodo.der = helper()
+        return nodo
+    return helper()""",
+
+        """class Nodo:
+    def __init__(self, val, izq=None, der=None):
+        self.val, self.izq, self.der = val, izq, der
+
+def max_path_sum(nodo: "Nodo | None") -> int:
+    \"\"\"Suma máxima de camino en árbol binario.\"\"\"
+    max_total = float("-inf")
+
+    def helper(n: "Nodo | None") -> int:
+        nonlocal max_total
+        if n is None:
+            return 0
+        izq = max(helper(n.izq), 0)
+        der = max(helper(n.der), 0)
+        max_total = max(max_total, n.val + izq + der)
+        return n.val + max(izq, der)
+
+    helper(nodo)
+    return int(max_total)
+
+raiz = Nodo(-10, Nodo(9), Nodo(20, Nodo(15), Nodo(7)))
+print(max_path_sum(raiz))  # 42""",
+    ]
+    return [jsonl_entry(e, "arboles_binarios") for e in shuffle_and_sample(examples, n)]
+
+
 # MAPA DE GENERADORES Y ARCHIVOS DESTINO
 # =============================================================================
 
@@ -3104,6 +4604,16 @@ GENERADORES = {
     "herencia_y_polimorfismo":(generar_herencia_y_polimorfismo, "python_basico/herencia_y_polimorfismo.jsonl"),
     "async_y_await":          (generar_async_y_await,        "python_basico/async_y_await.jsonl"),
     "two_pointers":           (generar_two_pointers,         "algoritmos/two_pointers.jsonl"),
+    # --- Temas faltantes (Feb 2026) ---
+    "json_y_csv":             (generar_json_y_csv,           "stdlib_python/json_y_csv.jsonl"),
+    "logging":                (generar_logging,              "stdlib_python/logging.jsonl"),
+    "threading_multiprocess": (generar_threading_multiprocess, "python_basico/threading_multiprocess.jsonl"),
+    "git_y_ci_cd":            (generar_git_y_ci_cd,          "ingenieria_software/git_y_ci_cd.jsonl"),
+    "iterator_pattern":       (generar_iterator_pattern,     "patrones_diseno/iterator_pattern.jsonl"),
+    "command_pattern":        (generar_command_pattern,      "patrones_diseno/command_pattern.jsonl"),
+    "refactoring":            (generar_refactoring,          "ingenieria_software/refactoring.jsonl"),
+    "testing_avanzado":       (generar_testing_avanzado,     "ingenieria_software/testing_avanzado.jsonl"),
+    "arboles_binarios":       (generar_arboles_binarios_extra, "algoritmos/arboles_binarios.jsonl"),
 }
 
 
