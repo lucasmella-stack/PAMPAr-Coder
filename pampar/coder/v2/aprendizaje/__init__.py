@@ -3,13 +3,14 @@
 """
 Aprendizaje Cerebral: Paradigma de entrenamiento bio-inspirado.
 
-6 fases que imitan cómo aprende el cerebro humano:
+7 fases que imitan cómo aprende el cerebro humano:
 1. Infancia    — Curriculum Learning (simple → complejo)
 2. Experimentar — Self-Play con ejecución de código
 3. Filosofar   — Knowledge Distillation (profesor → alumno)
 4. Sueño       — Consolidación Hebbiana
 5. Curiosidad  — Active Learning metacognitivo
 6. Social      — Online Learning de interacciones con usuarios
+7. Memoria     — Compresión Pareto jerárquica (recordar lo esencial)
 """
 
 from .curriculum import (
@@ -58,6 +59,12 @@ from .memoria_errores import (
     EntradaError,
 )
 
+from .memoria_jerarquica import (
+    MemoriaJerarquica,
+    NivelMemoria,
+    EntradaMemoria,
+)
+
 __all__ = [
     # Curriculum
     "NivelDificultad",
@@ -91,4 +98,8 @@ __all__ = [
     # Memoria de Errores
     "MemoriaErrores",
     "EntradaError",
+    # Memoria Jerárquica (Pareto)
+    "MemoriaJerarquica",
+    "NivelMemoria",
+    "EntradaMemoria",
 ]
