@@ -43,6 +43,7 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 import sentencepiece as spm
+from contextlib import nullcontext
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -236,6 +237,9 @@ class ViajeIntelectual:
         self.guardar_cada = guardar_cada
         self.ruta_checkpoint = ruta_checkpoint
         self.ruta_estado_motor = ruta_estado_motor
+        self.teacher: Optional[PampaRCoderV2] = None  # Se asigna desde fuera
+        self.alpha_distil: float = 0.3                # Peso KL vs CE
+        self.temp_distil: float = 4.0                 # Temperatura de destilación
 
         self.paso_global = 0
         self.inicio = time.time()
@@ -254,8 +258,28 @@ class ViajeIntelectual:
                     return tema["archivo"]
         return None
 
+    def _distillation_loss(
+        self,
+        student_logits: torch.Tensor,
+        teacher_logits: torch.Tensor,
+    ) -> torch.Tensor:
+        """KL divergence entre student y teacher con temperatura.
+
+        loss_kl = T² × KL(softmax(S/T) ‖ softmax(T_teacher/T))
+        Escalado por T² para que los gradientes tengan la misma
+        magnitud independientemente de la temperatura.
+        """
+        T = self.temp_distil
+        s = F.log_softmax(student_logits / T, dim=-1)
+        t = F.softmax(teacher_logits / T, dim=-1)
+        return F.kl_div(s, t, reduction="batchmean") * (T ** 2)
+
     def _paso_entrenamiento(self, tokens: torch.Tensor) -> dict:
-        """Un paso de gradiente sobre un batch de tokens."""
+        """Un paso de gradiente sobre un batch de tokens.
+
+        Si hay teacher cargado, combina:
+          loss = (1 - α) * cross_entropy + α * KL_divergence(student, teacher)
+        """
         self.modelo.train()
         self.optimizer.zero_grad()
 
@@ -265,11 +289,22 @@ class ViajeIntelectual:
         logits, _loss_model, info = self.modelo(input_ids, targets=targets)
 
         B, L, V = logits.shape
-        loss = F.cross_entropy(
+        loss_ce = F.cross_entropy(
             logits.reshape(B * L, V),
             targets.reshape(B * L),
             ignore_index=0,
         )
+
+        if self.teacher is not None:
+            with torch.no_grad():
+                t_logits, _, _ = self.teacher(input_ids)
+            loss_kl = self._distillation_loss(
+                logits.reshape(B * L, V),
+                t_logits.reshape(B * L, V),
+            )
+            loss = (1.0 - self.alpha_distil) * loss_ce + self.alpha_distil * loss_kl
+        else:
+            loss = loss_ce
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.modelo.parameters(), 1.0)
@@ -277,7 +312,8 @@ class ViajeIntelectual:
 
         terr_acts = info.get("terr_acts") if isinstance(info, dict) else None
         return {
-            "loss": loss.item(),
+            "loss": loss_ce.item(),  # Reportar CE puro para comparabilidad
+            "loss_total": loss.item(),
             "terr_acts": terr_acts,
         }
 
@@ -363,6 +399,8 @@ class ViajeIntelectual:
             max_pasos: Número máximo de pasos (None = infinito, hasta Ctrl+C).
         """
         log("LIBRO", "Iniciando viaje intelectual autónomo...")
+        if self.teacher is not None:
+            log("OK", f"Destilación activa: α={self.alpha_distil} T={self.temp_distil} → aprendiendo del teacher")
         log("INFO", f"Device: {self.device} | Temas: {len(self.motor.temas)}")
 
         try:
@@ -535,6 +573,18 @@ def main() -> None:
         help="Máximo de pasos (None = infinito)",
     )
     parser.add_argument(
+        "--teacher", type=Path, default=None,
+        help="Checkpoint del modelo teacher para destilación (ej: checkpoints/pampar_v2_epoch_3.pt)",
+    )
+    parser.add_argument(
+        "--alpha-distil", type=float, default=0.3,
+        help="Peso de la loss de destilación KL vs cross-entropy (0=solo CE, 1=solo KL, default=0.3)",
+    )
+    parser.add_argument(
+        "--temp-distil", type=float, default=4.0,
+        help="Temperatura de destilación — valores más altos dan distribuciones más suaves (default=4.0)",
+    )
+    parser.add_argument(
         "--seq-len", type=int, default=512,
         help="Longitud máxima de secuencia (default=512 para CPU)",
     )
@@ -686,6 +736,42 @@ def main() -> None:
     )
 
     # ── Viaje Intelectual ────────────────────────────────────────────────────
+    # ── Teacher (opcional, para destilación) ────────────────────────────────
+    teacher_modelo = None
+    if args.teacher is not None:
+        if not args.teacher.exists():
+            log("ERROR", f"Teacher no encontrado: {args.teacher}")
+            sys.exit(1)
+        log("INFO", f"Cargando teacher desde {args.teacher}...")
+        ck_t = torch.load(args.teacher, map_location=device, weights_only=False)
+        state_t = ck_t.get("modelo", ck_t.get("model", ck_t))
+        # Inferir config del teacher desde sus pesos
+        emb_t = state_t.get("tok_emb.weight")
+        if emb_t is not None:
+            n_capas_t = sum(1 for k in state_t if k.startswith("capas.") and k.endswith(".ln1.weight"))
+            config_t = ConfigV2(
+                vocab_size=int(emb_t.shape[0]),
+                dim=int(emb_t.shape[1]),
+                n_capas=n_capas_t or config.n_capas,
+            )
+        else:
+            config_t = config  # Asumir misma config
+        if config_t.vocab_size != config.vocab_size:
+            log("ERROR",
+                f"Teacher vocab ({config_t.vocab_size}) != Student vocab ({config.vocab_size}) — "
+                f"deben compartir el mismo tokenizer")
+            sys.exit(1)
+        teacher_modelo = PampaRCoderV2(config_t).to(device)
+        missing_t, _ = teacher_modelo.load_state_dict(state_t, strict=False)
+        teacher_modelo.eval()
+        for p in teacher_modelo.parameters():
+            p.requires_grad_(False)
+        t_params = sum(p.numel() for p in teacher_modelo.parameters()) / 1e6
+        log("OK",
+            f"Teacher listo: {t_params:.0f}M params | "
+            f"α={args.alpha_distil} T={args.temp_distil} | "
+            f"Pesos CONGELADOS (no se entrena)")
+
     viaje = ViajeIntelectual(
         modelo=modelo,
         optimizer=optimizer,
@@ -701,6 +787,10 @@ def main() -> None:
         ruta_checkpoint=args.checkpoint,
         ruta_estado_motor=args.estado,
     )
+    if teacher_modelo is not None:
+        viaje.teacher = teacher_modelo
+        viaje.alpha_distil = args.alpha_distil
+        viaje.temp_distil = args.temp_distil
 
     viaje.estudiar(max_pasos=args.max_pasos)
 
