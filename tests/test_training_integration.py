@@ -261,3 +261,161 @@ class TestTrainingIntegration:
         final_stats = memoria.stats()
         assert final_stats["total_tokens_procesados"] > 0
         print(f"\n   Simulación completa: {memoria}")
+
+
+# =============================================================================
+# SMOKE TEST — KNOWLEDGE DISTILLATION
+# =============================================================================
+
+class TestDistillationSmoke:
+    """
+    Verifica que el pipeline de Knowledge Distillation es correcto:
+    - Teacher congelado: gradientes cero, params sin cambiar
+    - Loss combinada (CE + KL) es finita y permite backward
+    - Student sí actualiza sus parámetros
+    """
+
+    def _distillation_loss(
+        self,
+        student_logits: torch.Tensor,
+        teacher_logits: torch.Tensor,
+        alpha: float = 0.3,
+        temperature: float = 4.0,
+    ) -> torch.Tensor:
+        """Réplica exacta de _distillation_loss() en aprender_solo.py."""
+        T = temperature
+        s_log = F.log_softmax(student_logits / T, dim=-1)
+        t_prob = F.softmax(teacher_logits / T, dim=-1)
+        kl = F.kl_div(s_log, t_prob, reduction="batchmean")
+        return (T ** 2) * kl
+
+    def test_teacher_frozen_no_grad(self, small_model):
+        """Teacher no debe acumular gradientes en ningún parámetro."""
+        teacher = PampaRCoderV2(small_model.config)
+        teacher.eval()
+        teacher.requires_grad_(False)
+
+        # Verificar que todos los params tienen requires_grad=False
+        for name, param in teacher.named_parameters():
+            assert not param.requires_grad, (
+                f"Teacher param '{name}' aún tiene requires_grad=True"
+            )
+
+    def test_combined_loss_finite(self, small_model):
+        """La combinación CE + KL debe ser finita y permitir backward."""
+        teacher = PampaRCoderV2(small_model.config)
+        teacher.eval()
+        teacher.requires_grad_(False)
+
+        alpha = 0.3
+        temperature = 4.0
+
+        input_ids = torch.randint(0, 500, (2, 16))
+        labels = input_ids.clone()
+        labels[:, 1:] = input_ids[:, :-1]
+
+        small_model.train()
+        student_logits, loss_ce, _ = small_model(input_ids, labels)
+
+        with torch.no_grad():
+            teacher_logits, _, _ = teacher(input_ids)
+
+        # Alinear shapes (student y teacher pueden tener L ligeramente distinto)
+        L = min(student_logits.size(1), teacher_logits.size(1))
+        s_log = student_logits[:, :L, :]
+        t_log = teacher_logits[:, :L, :]
+
+        kl_loss = self._distillation_loss(s_log, t_log, alpha, temperature)
+
+        if loss_ce is not None:
+            total_loss = (1 - alpha) * loss_ce + alpha * kl_loss
+        else:
+            total_loss = kl_loss
+
+        assert torch.isfinite(total_loss), (
+            f"Loss combinada no es finita: {total_loss.item()}"
+        )
+        assert total_loss.item() > 0, "Loss combinada debe ser positiva"
+
+        # Backward debe funcionar sin errores
+        total_loss.backward()
+
+    def test_teacher_params_unchanged_after_backward(self, small_model):
+        """Los params del teacher NO deben cambiar tras el backward del student."""
+        teacher = PampaRCoderV2(small_model.config)
+        teacher.eval()
+        teacher.requires_grad_(False)
+
+        # Snapshot de weights del teacher antes
+        teacher_weights_before = {
+            name: param.clone()
+            for name, param in teacher.named_parameters()
+        }
+
+        optimizer = torch.optim.Adam(small_model.parameters(), lr=1e-3)
+
+        input_ids = torch.randint(0, 500, (2, 16))
+        labels = input_ids.clone()
+        labels[:, 1:] = input_ids[:, :-1]
+
+        small_model.train()
+        student_logits, loss_ce, _ = small_model(input_ids, labels)
+
+        with torch.no_grad():
+            teacher_logits, _, _ = teacher(input_ids)
+
+        L = min(student_logits.size(1), teacher_logits.size(1))
+        kl_loss = self._distillation_loss(
+            student_logits[:, :L, :], teacher_logits[:, :L, :]
+        )
+
+        total = (0.7 * loss_ce + 0.3 * kl_loss) if loss_ce is not None else kl_loss
+        total.backward()
+        optimizer.step()
+
+        # Verificar que teacher NO cambió
+        for name, param in teacher.named_parameters():
+            before = teacher_weights_before[name]
+            assert torch.equal(param, before), (
+                f"Teacher param '{name}' cambió tras el backward del student!"
+            )
+
+    def test_student_params_updated(self, small_model):
+        """El student SÍ debe actualizar sus parámetros tras optimizer.step()."""
+        teacher = PampaRCoderV2(small_model.config)
+        teacher.eval()
+        teacher.requires_grad_(False)
+
+        # Snapshot de weights del student antes
+        student_weights_before = {
+            name: param.clone()
+            for name, param in small_model.named_parameters()
+        }
+
+        optimizer = torch.optim.Adam(small_model.parameters(), lr=1e-3)
+
+        input_ids = torch.randint(0, 500, (2, 16))
+        labels = input_ids.clone()
+        labels[:, 1:] = input_ids[:, :-1]
+
+        small_model.train()
+        student_logits, loss_ce, _ = small_model(input_ids, labels)
+
+        with torch.no_grad():
+            teacher_logits, _, _ = teacher(input_ids)
+
+        L = min(student_logits.size(1), teacher_logits.size(1))
+        kl_loss = self._distillation_loss(
+            student_logits[:, :L, :], teacher_logits[:, :L, :]
+        )
+
+        total = (0.7 * loss_ce + 0.3 * kl_loss) if loss_ce is not None else kl_loss
+        total.backward()
+        optimizer.step()
+
+        # Al menos 1 parámetro del student debe haber cambiado
+        changed = sum(
+            0 if torch.equal(param, student_weights_before[name]) else 1
+            for name, param in small_model.named_parameters()
+        )
+        assert changed > 0, "Ningún parámetro del student se actualizó"
