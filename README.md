@@ -1,16 +1,244 @@
 # PAMPAr-Coder 🧠⚡
 
-> **"Un cerebro artificial donde el tálamo orquesta tokens hacia territorios especializados para generar código — y aprende solo."**
+> **"Una grilla 2D de streams corticales donde cada token es clasificado por el Tálamo y refinado en paralelo por 4 streams especializados a lo largo de 5 niveles de profundidad."**
 
 ## ¿Qué es PAMPAr-Coder?
 
-PAMPAr-Coder es un **modelo de lenguaje cerebral especializado en programación**, diseñado para correr en hardware consumer (GTX 1650, 4GB VRAM) y **aprender de forma completamente autónoma** a través de un sistema de curiosidad inspirado en Vygotsky.
+PAMPAr-Coder es un **modelo de lenguaje cerebral especializado en programación**, diseñado para correr en hardware consumer (GTX 1650, 4 GB VRAM) y **aprender de forma completamente autónoma** a través de un sistema de curiosidad inspirado en Vygotsky.
 
-Estado actual: **42M params, vocab 16K, entrenamiento activo con Viaje Intelectual.**
+**Estado actual: PamparV3 — 108.3M params, vocab 48K, arquitectura lista para entrenamiento.**
 
 ---
 
-## Arquitectura Territorial
+## Arquitectura 2D (v3)
+
+```
+Input [B, L]
+  → tok_emb [48K × 640]
+    → TalamoInicial  (LLAVES 80% + attn_proj + context_conv)
+        ↓ terr_acts [B, L, 4]   ↓ zona_acts [B, L, 52]
+    → 4 streams (dim=640 cada uno, inicializados desde tok_emb)
+
+    ┌────────────── NivelProfundo × 5 ──────────────┐
+    │                                               │
+    │  GQA Atención compartida (8Q / 2KV heads)     │
+    │  Re-routing ligero del Tálamo                 │
+    │                                               │
+    │  ┌──────────┬──────────┬──────────┬──────────┐│
+    │  │ SINTAXIS │SEMÁNTICA │  LÓGICO  │ESTRUCTUR.││
+    │  │  SwiGLU  │  SwiGLU  │  SwiGLU  │  SwiGLU  ││
+    │  └────┬─────┴────┬─────┴────┬─────┴────┬─────┘│
+    │       └──── Lateral Gates (fibras blancas) ───┘│
+    └───────────────────────────────────────────────┘
+
+  → norm_f (RMSNorm) → lm_head (weight-tied con tok_emb)
+```
+
+### Los 4 Streams / Territorios
+
+| Stream          | Zonas de Brodmann | Procesa                                |
+| --------------- | ----------------- | -------------------------------------- |
+| **SINTAXIS**    | 1–15              | Keywords, operadores, puntuación       |
+| **SEMÁNTICA**   | 16–30             | Tipos, nombres de variables, literales |
+| **LÓGICO**      | 31–42             | Control flow, condicionales, bucles    |
+| **ESTRUCTURAL** | 43–52             | Bloques, indentación, scope            |
+
+---
+
+## Innovaciones Clave
+
+### 🔑 Sistema LLAVES (TalamoInicial)
+
+- **80% reglas explícitas**: routing basado en patrones de código (INT8, pre-computado)
+- **20% atención aprendida**: ajuste fino para casos ambiguos
+- Produce `terr_acts` [B, L, 4] y `zona_acts` [B, L, 52] — sin overhead en inferencia
+
+### 🧠 Arquitectura Cortical 2D
+
+- **4 streams** × **5 niveles** = grilla donde filas especializan y columnas refinan
+- **GQA 4:1** (8 Q heads, 2 KV heads): menor VRAM, misma calidad
+- **Lateral gates** (bottleneck 128): los streams se comunican como fibras blancas
+- **Re-routing** por nivel: el Tálamo adapta qué stream lidera según contexto acumulado
+
+### ⚡ Early Exit
+
+Si la confianza de un token > 90%, salta los niveles restantes — el código es estructuralmente predecible.
+
+### 🛠️ Agente con Skills
+
+El módulo `runtime.Agente` puede leer archivos, ejecutar código y correr tests — usando los outputs del modelo para tomar decisiones reales.
+
+---
+
+## Hardware y Presets
+
+| Preset            | Params   | VRAM fp16  | VRAM training | vocab | Uso                          |
+| ----------------- | -------- | ---------- | ------------- | ----- | ---------------------------- |
+| `PRESET_V3_SMALL` | ~60M     | ~115 MB    | ~810 MB       | 48K   | Experimentación rápida       |
+| `PRESET_V3`       | **108M** | **200 MB** | **~1.4 GB**   | 48K   | **Modelo activo (GTX 1650)** |
+| `PRESET_V3_LARGE` | ~220M    | ~420 MB    | ~2.9 GB       | 48K   | Cloud / 24 GB VRAM           |
+
+> Entrenamiento completamente **local**. Sin cloud, sin RunPod.
+
+---
+
+## Instalación
+
+```bash
+git clone https://github.com/lucasmella-stack/PAMPAr-Coder.git
+cd PAMPAr-Coder
+pip install -r requirements.txt
+```
+
+---
+
+## Uso
+
+### Instanciar el modelo
+
+```python
+from pampar.coder.v3 import PamparV3, PRESET_V3
+import torch
+
+model = PamparV3(PRESET_V3)
+model.eval()
+
+# Forward pass
+ids = torch.randint(0, 48_000, (1, 64))
+with torch.no_grad():
+    logits, loss, info = model(ids)
+# logits: [1, 64, 48000]
+# info: {"exit_nivel": int, "terr_acts": Tensor}
+
+# Generación autoregresiva
+gen = model.generate(ids, max_tokens=100, temperature=0.8, top_k=50)
+```
+
+### Verificar el modelo
+
+```powershell
+# 109/109 tests pasando (arquitectura, memoria, skills, runtime)
+python -m pytest tests/ -v
+
+# Test de inferencia rápido
+python _test_inferencia.py
+```
+
+---
+
+## Estructura del Proyecto
+
+```
+PAMPAr-Coder/
+├── pampar/
+│   ├── coder/
+│   │   ├── v3/                    # ← ARQUITECTURA ACTIVA
+│   │   │   ├── modelo.py          # PamparV3 (108.3M params)
+│   │   │   ├── config.py          # ConfigV3 + PRESET_V3/SMALL/LARGE
+│   │   │   ├── talamo.py          # TalamoInicial (LLAVES + atención)
+│   │   │   └── bloques.py         # NivelProfundo: GQA + StreamFFN + LateralGates
+│   │   └── deprecated/            # v2 (42M, 16K vocab) — preservado como referencia
+│   ├── memoria/
+│   │   ├── clasificador.py        # ClasificadorPareto (niveles 0-3 de importancia)
+│   │   ├── rag.py                 # RAGResidual (recuperación por similitud)
+│   │   └── cola_finetune.py       # ColaFinetune (batches candidatos a fine-tuning)
+│   ├── skills/
+│   │   ├── lector_archivos.py     # LectorArchivos (lee .py, .json, .md — sandboxed)
+│   │   └── ejecutar_codigo.py     # EjecutorCodigo (subprocess con timeout)
+│   └── runtime/
+│       └── agente.py              # Agente (loop inferencia + herramientas)
+├── biblioteca/
+│   ├── indice.json                # 39 temas Python, niveles 1-6, 5 categorías
+│   └── *.jsonl                    # ~140 MB de ejemplos
+├── data/
+│   └── tokenizer/
+│       ├── pampar_48k.model       # ← TOKENIZER ACTIVO (vocab 48K)
+│       └── code_tokenizer.model   # 16K — solo para deprecated v2
+├── checkpoints/                   # Futuros checkpoints de v3
+├── scripts/                       # Utilidades (datacuration, evaluación, etc.)
+└── tests/                         # 109 tests pytest
+    ├── test_v3_arquitectura.py
+    ├── test_memoria.py
+    ├── test_skills.py
+    └── test_runtime.py
+```
+
+---
+
+## Tokenizer — Regla crítica
+
+| Archivo                | Vocab   | Usar con                     |
+| ---------------------- | ------- | ---------------------------- |
+| `pampar_48k.model`     | **48K** | **PamparV3 — modelo activo** |
+| `code_tokenizer.model` | 16K     | Solo deprecated v2           |
+
+**El vocab del tokenizer DEBE coincidir con `config.vocab_size` del modelo.**
+
+---
+
+## Interpretar el Loss
+
+| Loss  | Significado                    |
+| ----- | ------------------------------ |
+| ~10.7 | Sin entrenar (log 48000)       |
+| ~7–8  | Pesos aleatorios (visto en v3) |
+| 5–7   | Comenzando a aprender          |
+| 2–4   | Aprendizaje activo             |
+| 1.5–2 | Zona óptima de ZPD (Vygotsky)  |
+| < 1.5 | Tema bien aprendido            |
+| < 0.7 | Tema dominado                  |
+
+---
+
+## Tests
+
+```powershell
+python -m pytest tests/ -v
+# 109/109 passing (4.2s)
+```
+
+Cobertura:
+
+- `test_v3_arquitectura.py` — ConfigV3, forward pass, early exit, generación
+- `test_memoria.py` — ClasificadorPareto, RAGResidual, ColaFinetune
+- `test_skills.py` — LectorArchivos, EjecutorCodigo
+- `test_runtime.py` — SYSTEM_PROMPT, Agente (métodos lógicos), acciones
+
+---
+
+## Filosofía
+
+> _"No necesitas 72 billones de parámetros. Necesitas la arquitectura correcta y la curiosidad correcta."_
+
+1. **El código es estructurado** → 4 streams especializados + LLAVES 80% reglas
+2. **El código es predecible** → Early exit agresivo (umbral 90%)
+3. **El conocimiento es jerárquico** → 5 niveles de profundidad refinan el token
+4. **Los contextos se comunican** → Lateral gates en cada nivel (fibras blancas)
+5. **Hardware consumer** → 1.4 GB VRAM total para entrenamiento fp16
+
+---
+
+## Roadmap
+
+- [x] Arquitectura territorial (52 zonas de Brodmann, 4 streams)
+- [x] Sistema LLAVES (routing INT8, 80% reglas)
+- [x] Tokenizer BPE 48K especializado en código
+- [x] Arquitectura 2D (4 streams × 5 niveles, GQA, SwiGLU, lateral gates)
+- [x] Early Exit (umbral 90%, mínimo 2 niveles)
+- [x] Módulo memoria (ClasificadorPareto, RAG, ColaFinetune)
+- [x] Skills (LectorArchivos, EjecutorCodigo)
+- [x] Runtime.Agente (loop con herramientas)
+- [x] Test suite completo (109/109)
+- [ ] Script de entrenamiento autónomo para v3
+- [ ] Checkpoint v3 entrenado sobre biblioteca/
+- [ ] Benchmarks vs CodeLlama/StarCoder small
+- [ ] Integración VS Code (extensión)
+
+---
+
+## Licencia
+
+AGPL-3.0-or-later — Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 
 ```
 Input → Embedding → [BloqueTerrritorial ×6] → LM Head → Output
