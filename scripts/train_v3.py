@@ -39,6 +39,7 @@ sys.path.insert(0, str(ROOT))
 
 from pampar.coder.v3 import PamparV3, ConfigV3, PRESET_V3
 from pampar.training import MotorCuriosidad, LectorBiblioteca
+from pampar.memoria import ClasificadorPareto
 
 logging.basicConfig(
     level=logging.INFO,
@@ -88,6 +89,88 @@ def _pp_loss(loss: float) -> str:
 # ViajeIntelectualV3 — bucle de entrenamiento autónomo
 # ─────────────────────────────────────────────────────────────────────────────
 
+class ReplayPareto:
+    """
+    Buffer de replay con prioridad Pareto.
+
+    En lugar de un deque FIFO, guarda los N tensores MÁS importantes
+    según ClasificadorPareto (densidad de patrones + novedad + loss).
+    Cuando está lleno, descarta el de menor importancia.
+    """
+
+    def __init__(self, maxlen: int = 256, tokenizer=None):
+        self._buffer: list[tuple[float, torch.Tensor]] = []  # (importancia, tensor)
+        self._maxlen = maxlen
+        self._clasificador = ClasificadorPareto()
+        self._tok = tokenizer
+        self._textos_recientes: list[str] = []  # Para calcular novedad
+
+    def _decodificar(self, tensor: torch.Tensor) -> str:
+        """Decodifica el primer ejemplo del batch a texto para clasificar."""
+        if self._tok is None:
+            return ""
+        try:
+            ids = tensor[0].tolist()
+            ids = [i for i in ids if i > 0][:200]
+            return self._tok.Decode(ids)
+        except Exception:
+            return ""
+
+    def agregar(self, tensor: torch.Tensor, loss: float) -> None:
+        """Clasifica el batch y lo añade si supera el umbral L1 de Pareto."""
+        texto = self._decodificar(tensor)
+        entrada = self._clasificador.clasificar(
+            texto,
+            tipo="codigo",
+            loss_modelo=loss,
+            fragmentos_existentes=self._textos_recientes[-20:],
+        )
+
+        if entrada.nivel < 1:  # Descarta nivel 0 (no importante)
+            return
+
+        # Actualizar lista de textos recientes para cálculo de novedad
+        if texto:
+            self._textos_recientes.append(texto)
+            if len(self._textos_recientes) > 100:
+                self._textos_recientes.pop(0)
+
+        self._buffer.append((entrada.importancia, tensor.cpu()))
+
+        # Si supera capacidad, descartar el menos importante
+        if len(self._buffer) > self._maxlen:
+            self._buffer.sort(key=lambda x: x[0], reverse=True)
+            self._buffer = self._buffer[:self._maxlen]
+
+    def sample(self, device: torch.device) -> Optional[torch.Tensor]:
+        """Devuelve un tensor aleatorio sesgado hacia alta importancia."""
+        if not self._buffer:
+            return None
+        # Muestreo ponderado por importancia
+        pesos = [imp for imp, _ in self._buffer]
+        total = sum(pesos) or 1.0
+        rand = torch.rand(1).item() * total
+        acum = 0.0
+        for imp, tensor in self._buffer:
+            acum += imp
+            if rand <= acum:
+                return tensor.to(device)
+        return self._buffer[-1][1].to(device)
+
+    def __len__(self) -> int:
+        return len(self._buffer)
+
+    def stats(self) -> dict:
+        if not self._buffer:
+            return {"size": 0, "imp_media": 0.0, "imp_max": 0.0}
+        imps = [imp for imp, _ in self._buffer]
+        return {
+            "size": len(self._buffer),
+            "imp_media": round(sum(imps) / len(imps), 3),
+            "imp_max": round(max(imps), 3),
+        }
+
+
 class ViajeIntelectualV3:
     """
     Orquesta el ciclo estudiar → retroalimentar → avanzar de PamparV3.
@@ -106,6 +189,7 @@ class ViajeIntelectualV3:
         pasos_por_tema: Gradients steps por sesión de tema.
         max_grad_norm: Clip de gradiente.
         replay_size:   Nº muestras máximas en el buffer de replay.
+        tokenizer:     SentencePieceProcessor para decodificar textos en el replay.
     """
 
     def __init__(
@@ -122,7 +206,8 @@ class ViajeIntelectualV3:
         guardar_cada: int = 200,
         pasos_por_tema: int = 20,
         max_grad_norm: float = 1.0,
-        replay_size: int = 512,
+        replay_size: int = 256,
+        tokenizer=None,
     ) -> None:
         self.modelo = modelo
         self.optimizer = optimizer
@@ -138,8 +223,8 @@ class ViajeIntelectualV3:
         self.pasos_por_tema = pasos_por_tema
         self.max_grad_norm = max_grad_norm
 
-        # Replay buffer: almacena tensores [B, L] de sesiones difíciles
-        self._replay_buffer: deque[torch.Tensor] = deque(maxlen=replay_size)
+        # Replay buffer con prioridad Pareto (reemplaza el deque simple)
+        self._replay_buffer = ReplayPareto(maxlen=replay_size, tokenizer=tokenizer)
 
         # Historial de losses para el banner
         self._historial_loss: deque[float] = deque(maxlen=100)
@@ -187,21 +272,16 @@ class ViajeIntelectualV3:
     # ── Paso de replay ────────────────────────────────────────────────────────
 
     def _paso_replay(self) -> Optional[float]:
-        """Repasa muestras del buffer de experiencias. None si está vacío."""
-        if not self._replay_buffer:
+        """Repasa una muestra del buffer Pareto (sesgado a alta importancia)."""
+        batch = self._replay_buffer.sample(self.device)
+        if batch is None:
             return None
-
-        batch = self._replay_buffer[
-            int(torch.randint(0, len(self._replay_buffer), (1,)))
-        ].to(self.device)
-
         metricas = self._gradiente(batch)
         return metricas["loss"]
 
-    def _agregar_a_replay(self, tokens: torch.Tensor, loss: float, umbral: float = 3.5) -> None:
-        """Solo guarda en el buffer si la sesión fue difícil."""
-        if loss > umbral:
-            self._replay_buffer.append(tokens.cpu())
+    def _agregar_a_replay(self, tokens: torch.Tensor, loss: float) -> None:
+        """Clasifica el batch con Pareto y lo añade si es suficientemente importante."""
+        self._replay_buffer.agregar(tokens, loss)
 
     # ── Guardado ──────────────────────────────────────────────────────────────
 
@@ -306,7 +386,7 @@ class ViajeIntelectualV3:
                 losses_sesion.append(loss)
                 self.paso_global += 1
 
-                # ── 2c. REPLAY BUFFER
+                # ── 2c. REPLAY BUFFER (clasificado con Pareto)
                 self._agregar_a_replay(tokens, loss)
 
                 # ── 2d. REPLAY periódico
@@ -331,6 +411,12 @@ class ViajeIntelectualV3:
 
                 if self._temas_estudiados % 5 == 0:
                     self._banner(nombre_tema, loss_media)
+                    replay_st = self._replay_buffer.stats()
+                    if replay_st["size"] > 0:
+                        logger.info(
+                            "ReplayPareto: %d muestras  imp_media=%.3f  imp_max=%.3f",
+                            replay_st["size"], replay_st["imp_media"], replay_st["imp_max"]
+                        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -491,6 +577,7 @@ def main() -> None:
         pasos_por_tema=args.pasos_por_tema,
         max_grad_norm=args.max_grad_norm,
         replay_size=args.replay_size,
+        tokenizer=tok,
     )
 
     viaje.estudiar(max_pasos=args.max_pasos, ruta_motor=ruta_motor)
