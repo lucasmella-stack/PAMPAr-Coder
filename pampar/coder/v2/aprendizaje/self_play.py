@@ -24,15 +24,11 @@ Inspirado en:
 """
 
 import ast
-import io
 import json
-import multiprocessing
 import os
-import signal
 import subprocess
 import sys
 import tempfile
-import traceback
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -327,16 +323,6 @@ PROMPTS_POR_NIVEL = {
         "# Implementa el patrón Observer\nclass EventEmitter:\n",
     ],
 }
-
-# Resultados esperados para verificación automática
-VERIFICACIONES = {
-    "Hola Mundo": "Hola Mundo",
-    "suma de dos": "8",  # 5+3
-    "Celsius a Fahrenheit": "77.0",  # 25*9/5+32
-    "par o impar": "impar",  # 7
-    "factorial de 5": "120",
-}
-
 
 # =============================================================================
 # MOTOR DE SELF-PLAY

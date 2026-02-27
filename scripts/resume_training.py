@@ -151,7 +151,7 @@ def main():
     parser.add_argument("--checkpoint", type=str, default=None)
     parser.add_argument("--fase", type=int, default=None,
                        help="Fase a ejecutar (override auto-detection)")
-    parser.add_argument("--preset", type=str, default="1.5b",
+    parser.add_argument("--preset", type=str, default="4gb",
                        choices=["4gb", "8gb", "1.5b"])
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--eval-only", action="store_true",

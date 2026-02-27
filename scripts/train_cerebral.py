@@ -1011,7 +1011,7 @@ def main():
         help="Modo local (tu PC)"
     )
     parser.add_argument(
-        "--preset", type=str, default="1.5b",
+        "--preset", type=str, default="4gb",
         choices=["4gb", "8gb", "1.5b"],
         help="Preset del modelo"
     )

@@ -628,7 +628,7 @@ def main() -> None:
         "24GB": PRESET_24GB, "1_5B": PRESET_1_5B,
     }
 
-    config = PRESET_1_5B
+    config = PRESET_4GB
     if args.checkpoint.exists():
         ckpt_meta = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
         raw_cfg = ckpt_meta.get("config")

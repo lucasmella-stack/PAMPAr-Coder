@@ -218,7 +218,7 @@ class Trainer:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default="data/code")
-    parser.add_argument("--tokenizer", default="data/tokenizer/code.model")
+    parser.add_argument("--tokenizer", default="data/tokenizer/code_tokenizer.model")
     parser.add_argument("--preset", default="4GB", choices=["4GB", "8GB"])
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=8)

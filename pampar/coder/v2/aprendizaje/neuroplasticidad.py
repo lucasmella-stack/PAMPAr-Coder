@@ -406,7 +406,8 @@ def territory_entropy_loss(
         Scalar loss
     """
     # Normalizar a distribución
-    probs = F.softmax(terr_acts, dim=-1)  # [B, L, 4]
+    # Normalizar directamente (terr_acts ya en [0,1] por sigmoid — softmax distorsionaría)
+    probs = terr_acts / terr_acts.sum(dim=-1, keepdim=True).clamp(min=1e-8)  # [B, L, 4]
     
     # Entropía por posición
     entropy = -(probs * (probs + 1e-8).log()).sum(dim=-1)  # [B, L]

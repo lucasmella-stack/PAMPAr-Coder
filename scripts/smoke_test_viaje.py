@@ -162,7 +162,7 @@ def _check_modelo(checkpoint: Path, device: torch.device):
         "24GB": PRESET_24GB, "1_5B": PRESET_1_5B,
     }
 
-    config = PRESET_1_5B
+    config = PRESET_4GB
     ckpt = None
 
     if checkpoint.exists():

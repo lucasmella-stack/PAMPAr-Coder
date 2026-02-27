@@ -448,7 +448,7 @@ def main():
         help="Checkpoint del modelo"
     )
     parser.add_argument(
-        "--preset", type=str, default="1.5b",
+        "--preset", type=str, default="4gb",
         choices=["4gb", "8gb", "1.5b"],
     )
     parser.add_argument("--lr", type=float, default=None)

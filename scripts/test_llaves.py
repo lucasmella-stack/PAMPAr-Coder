@@ -102,17 +102,14 @@ print(f"\n  Results: {passed}/{passed+failed} passed")
 
 print()
 print("=" * 60)
-print("TEST 3: Config seq_len")
+print("TEST 3: PRESET_4GB config sanity check")
 print("=" * 60)
 
-from cloud.runpod.config_3b import Config1_5B
-config = Config1_5B()
-print(f"  max_seq_len: {config.max_seq_len}")
-print(f"  batch_size: {config.batch_size}")
-print(f"  gradient_accumulation: {config.gradient_accumulation}")
-print(f"  effective_batch: {config.effective_batch}")
-assert config.max_seq_len == 1024, f"Expected 1024, got {config.max_seq_len}"
-assert config.batch_size * config.gradient_accumulation == config.effective_batch
+from pampar.coder.v2.config import PRESET_4GB
+cfg = PRESET_4GB
+print(f"  dim: {cfg.dim}, n_capas: {cfg.n_capas}, vocab_size: {cfg.vocab_size}")
+assert cfg.vocab_size == 16000, f"Vocab esperado 16000, obtenido {cfg.vocab_size}"
+assert cfg.n_capas >= 4, f"n_capas esperado >=4, obtenido {cfg.n_capas}"
 print("  ✅ Config OK")
 
 print()
