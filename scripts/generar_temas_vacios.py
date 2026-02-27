@@ -4587,6 +4587,349 @@ print(max_path_sum(raiz))  # 42""",
 # MAPA DE GENERADORES Y ARCHIVOS DESTINO
 # =============================================================================
 
+# =============================================================================
+# GENERADORES — TEMAS PRINCIPALES (agregados Feb 2026)
+# =============================================================================
+
+def generar_variables_y_tipos(n: int) -> list[str]:
+    ejemplos = [
+        'x = 42\ny = 3.14\nnombre = "Python"\nactivo = True\nvacio = None\nprint(type(x), type(y), type(nombre))',
+        'edad = 25\naltura = 1.75\nprint(f"Edad: {edad}, Altura: {altura:.2f}m")',
+        '# Conversión de tipos\nentero = int("42")\nflotante = float("3.14")\ntexto = str(100)\nbool_val = bool(0)\nprint(entero, flotante, texto, bool_val)',
+        'a = 10\nb = 3\nprint(a + b)   # 13\nprint(a - b)   # 7\nprint(a * b)   # 30\nprint(a / b)   # 3.333\nprint(a // b)  # 3 (división entera)\nprint(a % b)   # 1 (módulo)\nprint(a ** b)  # 1000 (potencia)',
+        'x = 5\nprint(isinstance(x, int))    # True\nprint(isinstance(x, float))  # False\nprint(type(x) is int)        # True',
+        'valores = [1, "hola", 3.14, True, None]\nfor v in valores:\n    print(f"{v!r:<10} -> {type(v).__name__}")',
+        '# Variables múltiples\na, b, c = 1, 2, 3\nprint(a, b, c)  # 1 2 3\n\n# Swap\na, b = b, a\nprint(a, b)  # 2 1\n\n# Desempaquetado extendido\nprimero, *resto = [1, 2, 3, 4, 5]\nprint(primero, resto)  # 1 [2, 3, 4, 5]',
+        'numero = 255\nprint(bin(numero))   # 0b11111111\nprint(oct(numero))   # 0o377\nprint(hex(numero))   # 0xff\nprint(int("ff", 16)) # 255',
+        'def es_numero(s: str) -> bool:\n    """Verifica si un string puede convertirse a número."""\n    try:\n        float(s)\n        return True\n    except ValueError:\n        return False\n\nprint(es_numero("3.14"))  # True\nprint(es_numero("abc"))   # False',
+        'x: int = 10\ny: float = 3.14\nz: str = "hola"\nw: bool = True\nprint(x, y, z, w)',
+        'MAXIMO_INT = 2**63 - 1\nMINIMO_FLOAT = 1e-308\nINFINITO = float("inf")\nNAN = float("nan")\nprint(MAXIMO_INT)\nprint(MINIMO_FLOAT)\nimport math\nprint(math.isinf(INFINITO))  # True\nprint(math.isnan(NAN))       # True',
+        '# Operadores de comparación e identidad\na = [1, 2, 3]\nb = [1, 2, 3]\nc = a\nprint(a == b)   # True (igual valor)\nprint(a is b)   # False (distinto objeto)\nprint(a is c)   # True (mismo objeto)',
+        'nombre = "Lucas"\nprint(nombre.upper())        # LUCAS\nprint(len(nombre))           # 5\nprint(nombre[0])             # L\nprint(nombre[-1])            # s\nprint(nombre[:3])            # Luc',
+    ]
+    return [jsonl_entry(e, "variables_y_tipos") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_strings_y_formato(n: int) -> list[str]:
+    ejemplos = [
+        'nombre = "Lucas"\nedad = 25\nprint(f"Hola, {nombre}! Tienes {edad} años.")',
+        'pi = 3.14159\nprint(f"Pi = {pi:.2f}")        # Pi = 3.14\nprint(f"Pi = {pi:10.4f}")   # Pi =     3.1416\nprint(f"Hex: {255:#x}")       # Hex: 0xff',
+        'texto = "  hola mundo  "\nprint(texto.strip())         # "hola mundo"\nprint(texto.lstrip())        # "hola mundo  "\nprint(texto.rstrip())        # "  hola mundo"',
+        'cadena = "python es genial"\nprint(cadena.split())           # [\'python\', \'es\', \'genial\']\nprint(cadena.split("es"))       # [\'python \', \' genial\']\nprint(", ".join(["a", "b", "c"]))  # "a, b, c"',
+        'texto = "Hello, World!"\nprint(texto.upper())      # HELLO, WORLD!\nprint(texto.lower())      # hello, world!\nprint(texto.title())      # Hello, World!\nprint(texto.capitalize())  # Hello, world!',
+        'cadena = "banana"\nprint(cadena.count("a"))    # 3\nprint(cadena.find("an"))    # 1\nprint(cadena.index("n"))    # 2\nprint(cadena.replace("a", "o"))  # "bonono"',
+        'email = "usuario@ejemplo.com"\nprint(email.startswith("usuario"))  # True\nprint(email.endswith(".com"))        # True\nprint("@" in email)                  # True',
+        '# Multiline strings\npoema = """\nRosas rojas,\nvioletas azules,\nPython es genial,\n¡y tú también!\n"""\nprint(poema.strip())',
+        'frase = "el cielo es azul"\npalabras = frase.split()\nresultado = " ".join(p.capitalize() for p in palabras)\nprint(resultado)  # El Cielo Es Azul',
+        'plantilla = "Nombre: {nombre}, Edad: {edad}"\nprint(plantilla.format(nombre="Ana", edad=30))',
+        'texto = "abc123def456"\nimport re\nnumeros = re.findall(r"\\d+", texto)\nprint(numeros)  # [\'123\', \'456\']',
+        'def truncar(texto: str, maximo: int = 50) -> str:\n    """Trunca un texto largo añadiendo \'...\'"""\n    if len(texto) <= maximo:\n        return texto\n    return texto[:maximo - 3] + "..."\n\nprint(truncar("Hola mundo", 8))  # "Hola ..."',
+        'lineas = "línea 1\\nlínea 2\\nlínea 3"\nfor i, linea in enumerate(lineas.splitlines(), 1):\n    print(f"{i}: {linea}")',
+    ]
+    return [jsonl_entry(e, "strings_y_formato") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_control_de_flujo(n: int) -> list[str]:
+    ejemplos = [
+        'x = 10\nif x > 0:\n    print("positivo")\nelif x < 0:\n    print("negativo")\nelse:\n    print("cero")',
+        'for i in range(5):\n    print(i, end=" ")  # 0 1 2 3 4',
+        'for i in range(10):\n    if i == 7:\n        break\n    if i % 2 == 0:\n        continue\n    print(i, end=" ")  # 1 3 5',
+        'n = 1\nwhile n <= 5:\n    print(n, end=" ")\n    n += 1  # 1 2 3 4 5',
+        'frutas = ["manzana", "banana", "cereza"]\nfor i, fruta in enumerate(frutas):\n    print(f"{i}: {fruta}")',
+        'a = [1, 2, 3]\nb = ["x", "y", "z"]\nfor num, letra in zip(a, b):\n    print(num, letra)',
+        '# Expresión ternaria\nedad = 18\nestado = "mayor" if edad >= 18 else "menor"\nprint(estado)  # mayor',
+        'match comando:\n    case "start":\n        print("Iniciando...")\n    case "stop":\n        print("Deteniendo...")\n    case _:\n        print("Comando desconocido")',
+        'nombres = ["Ana", "Bob", "Carlos"]\nfor nombre in reversed(nombres):\n    print(nombre)',
+        '# Bucle con else\nfor i in range(5):\n    if i == 10:  # nunca ocurre\n        break\nelse:\n    print("Bucle completado sin break")',
+        'numero = 42\ndescripcion = (\n    "grande" if numero > 100\n    else "mediano" if numero > 10\n    else "pequeño"\n)\nprint(descripcion)  # mediano',
+        'numeros = range(1, 11)\npares = [n for n in numeros if n % 2 == 0]\nprint(pares)  # [2, 4, 6, 8, 10]',
+        'def contar_hasta(n: int) -> None:\n    for i in range(1, n + 1):\n        print(i)',
+    ]
+    return [jsonl_entry(e, "control_de_flujo") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_listas_y_tuplas(n: int) -> list[str]:
+    ejemplos = [
+        'nums = [3, 1, 4, 1, 5, 9, 2, 6]\nprint(sorted(nums))           # [1, 1, 2, 3, 4, 5, 6, 9]\nprint(sorted(nums, reverse=True))  # [9, 6, 5, 4, 3, 2, 1, 1]',
+        'lista = [1, 2, 3]\nlista.append(4)\nlista.extend([5, 6])\nlista.insert(0, 0)\nprint(lista)  # [0, 1, 2, 3, 4, 5, 6]',
+        '# Slicing\nnums = list(range(10))\nprint(nums[2:5])    # [2, 3, 4]\nprint(nums[::2])    # [0, 2, 4, 6, 8]\nprint(nums[::-1])   # [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]',
+        'colores = ["rojo", "verde", "azul"]\nprint("verde" in colores)   # True\nprint(colores.index("azul"))  # 2\nprint(colores.count("rojo")) # 1\ncolores.remove("verde")\nprint(colores)',
+        '# Tuplas — inmutables\npunto = (3, 4)\nx, y = punto\ndistancia = (x**2 + y**2) ** 0.5\nprint(distancia)  # 5.0',
+        'nombres_coords = [("Ana", 1, 2), ("Bob", 3, 4), ("Carlos", 0, 1)]\nnombres_coords.sort(key=lambda t: t[1])\nprint(nombres_coords)',
+        'a = [1, 2, 3]\nb = a[:]  # copia superficial\nb.append(4)\nprint(a)  # [1, 2, 3]\nprint(b)  # [1, 2, 3, 4]',
+        'filas = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nfila = filas[1]\nprint(fila[2])  # 6\nprint(filas[0][0])  # 1',
+        'nums = [1, 2, 3, 4, 5]\nprint(sum(nums))    # 15\nprint(min(nums))    # 1\nprint(max(nums))    # 5\nprint(len(nums))    # 5',
+        'palabras = ["banana", "manzana", "kiwi"]\npalabras.sort(key=len)\nprint(palabras)  # [\'kiwi\', \'banana\', \'manzana\']',
+        'from typing import List\n\ndef aplanar(lista: List[List]) -> List:\n    """Aplana una lista de listas."""\n    return [elem for sublista in lista for elem in sublista]\n\nprint(aplanar([[1, 2], [3, 4], [5]]))  # [1, 2, 3, 4, 5]',
+        '# Comprensión de lista con condición\ncuadrados_pares = [x**2 for x in range(10) if x % 2 == 0]\nprint(cuadrados_pares)  # [0, 4, 16, 36, 64]',
+        'primero, *resto, ultimo = [1, 2, 3, 4, 5]\nprint(primero)  # 1\nprint(resto)    # [2, 3, 4]\nprint(ultimo)   # 5',
+    ]
+    return [jsonl_entry(e, "listas_y_tuplas") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_diccionarios_y_sets(n: int) -> list[str]:
+    ejemplos = [
+        'persona = {"nombre": "Ana", "edad": 30, "ciudad": "Madrid"}\nprint(persona["nombre"])         # Ana\nprint(persona.get("pais", "N/A")) # N/A',
+        'inventario = {"manzanas": 5, "bananas": 3}\ninventario["naranjas"] = 10\ninventario["manzanas"] += 2\nprint(inventario)',
+        '# Iterar sobre dict\npuntos = {"Ana": 95, "Bob": 87, "Carlos": 92}\nfor nombre, pts in puntos.items():\n    print(f"{nombre}: {pts}")\n\nganador = max(puntos, key=puntos.get)\nprint(f"Ganador: {ganador}")',
+        'nums = {1, 2, 3, 4, 5}\npares = {2, 4, 6, 8}\nprint(nums & pares)   # {2, 4}   intersección\nprint(nums | pares)   # {1, 2, 3, 4, 5, 6, 8}  unión\nprint(nums - pares)   # {1, 3, 5}  diferencia',
+        '# dict comprehension\ncuadrados = {x: x**2 for x in range(6)}\nprint(cuadrados)  # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}',
+        'from collections import defaultdict\n\ngrupos = defaultdict(list)\ndatos = [("A", 1), ("B", 2), ("A", 3), ("B", 4)]\nfor clave, valor in datos:\n    grupos[clave].append(valor)\nprint(dict(grupos))  # {\'A\': [1, 3], \'B\': [2, 4]}',
+        'd1 = {"a": 1, "b": 2}\nd2 = {"b": 3, "c": 4}\nmerged = {**d1, **d2}\nprint(merged)  # {\'a\': 1, \'b\': 3, \'c\': 4}',
+        'palabras = ["hola", "mundo", "hola", "python", "mundo", "hola"]\nfrecuencia = {}\nfor p in palabras:\n    frecuencia[p] = frecuencia.get(p, 0) + 1\nprint(frecuencia)',
+        'from typing import Dict, Set\n\ndef agrupar_por_longitud(palabras: list[str]) -> Dict[int, Set[str]]:\n    resultado: Dict[int, Set[str]] = {}\n    for p in palabras:\n        resultado.setdefault(len(p), set()).add(p)\n    return resultado\n\nprint(agrupar_por_longitud(["hi", "hola", "mundo", "ok"]))',
+        'cache: dict = {}\n\ndef fibonacci(n: int) -> int:\n    if n in cache:\n        return cache[n]\n    if n <= 1:\n        return n\n    cache[n] = fibonacci(n-1) + fibonacci(n-2)\n    return cache[n]\n\nprint(fibonacci(10))  # 55',
+        '# Eliminar duplicados preservando orden\nvistos: set = set()\nunicos = []\nfor x in [1, 3, 2, 1, 4, 3, 5]:\n    if x not in vistos:\n        vistos.add(x)\n        unicos.append(x)\nprint(unicos)  # [1, 3, 2, 4, 5]',
+        'config = {\n    "host": "localhost",\n    "port": 8080,\n    "debug": True,\n    "db": {"name": "app", "pool": 5}\n}\nprint(config["db"]["name"])  # app\nconfig.update({"port": 9000, "debug": False})\nprint(config["port"])  # 9000',
+    ]
+    return [jsonl_entry(e, "diccionarios_y_sets") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_funciones_basicas(n: int) -> list[str]:
+    ejemplos = [
+        'def saludar(nombre: str) -> str:\n    return f"Hola, {nombre}!"\n\nprint(saludar("Lucas"))  # Hola, Lucas!',
+        'def sumar(a: float, b: float) -> float:\n    """Retorna la suma de a y b."""\n    return a + b\n\nprint(sumar(3, 4.5))  # 7.5',
+        'def potencia(base: float, exponente: int = 2) -> float:\n    """Eleva base al exponente (default cuadrado)."""\n    return base ** exponente\n\nprint(potencia(3))     # 9\nprint(potencia(2, 10)) # 1024',
+        'def dividir(a: float, b: float) -> tuple[float, int]:\n    """Retorna cociente y resto."""\n    return a // b, a % b\n\ncoc, res = dividir(17, 5)\nprint(f"Cociente: {coc}, Resto: {res}")',
+        'def es_primo(n: int) -> bool:\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimos = [n for n in range(2, 30) if es_primo(n)]\nprint(primos)',
+        'def maximo(a, b, c):\n    """Retorna el mayor de tres valores."""\n    return max(a, b, c)\n\nprint(maximo(3, 7, 5))   # 7',
+        'def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(6))  # 720',
+        'def celsius_a_fahrenheit(celsius: float) -> float:\n    return celsius * 9/5 + 32\n\ndef fahrenheit_a_celsius(f: float) -> float:\n    return (f - 32) * 5/9\n\nprint(celsius_a_fahrenheit(100))  # 212.0\nprint(fahrenheit_a_celsius(32))   # 0.0',
+        'def contar_vocales(texto: str) -> int:\n    return sum(1 for c in texto.lower() if c in "aeiou")\n\nprint(contar_vocales("Hola Mundo"))  # 4',
+        'def es_palindromo(s: str) -> bool:\n    limpio = "".join(c.lower() for c in s if c.isalnum())\n    return limpio == limpio[::-1]\n\nprint(es_palindromo("A man a plan a canal Panama"))  # True',
+        'def promedio(*numeros: float) -> float:\n    if not numeros:\n        return 0.0\n    return sum(numeros) / len(numeros)\n\nprint(promedio(1, 2, 3, 4, 5))  # 3.0',
+        'def invertir_string(s: str) -> str:\n    return s[::-1]\n\nprint(invertir_string("python"))  # nohtyp',
+    ]
+    return [jsonl_entry(e, "funciones_basicas") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_funciones_avanzadas(n: int) -> list[str]:
+    ejemplos = [
+        'def args_ejemplo(*args, **kwargs):\n    print("args:", args)\n    print("kwargs:", kwargs)\n\nargs_ejemplo(1, 2, 3, nombre="Ana", edad=30)',
+        'cuadrado = lambda x: x ** 2\ndoble = lambda x: x * 2\nnums = [1, 2, 3, 4, 5]\nprint(list(map(cuadrado, nums)))    # [1, 4, 9, 16, 25]\nprint(list(filter(lambda x: x > 2, nums)))  # [3, 4, 5]',
+        'def hacer_operacion(operacion):\n    """Función de orden superior."""\n    def aplicar(a, b):\n        return operacion(a, b)\n    return aplicar\n\nsumar = hacer_operacion(lambda a, b: a + b)\nprint(sumar(3, 4))  # 7',
+        'def contador():\n    """Closure: función que captura su entorno."""\n    n = 0\n    def incrementar():\n        nonlocal n\n        n += 1\n        return n\n    return incrementar\n\nc = contador()\nprint(c())  # 1\nprint(c())  # 2\nprint(c())  # 3',
+        'from functools import reduce\n\nnums = [1, 2, 3, 4, 5]\nproducto = reduce(lambda a, b: a * b, nums)\nprint(producto)  # 120',
+        'from typing import Callable, TypeVar\nT = TypeVar("T")\n\ndef aplicar_dos_veces(f: Callable[[T], T], x: T) -> T:\n    return f(f(x))\n\nprint(aplicar_dos_veces(lambda x: x + 3, 7))  # 13',
+        'def registrar(func):\n    """Registra cuántas veces se llama una función."""\n    registrar.llamadas = 0\n    def wrapper(*args, **kwargs):\n        registrar.llamadas += 1\n        return func(*args, **kwargs)\n    return wrapper\n\n@registrar\ndef saludar(nombre):\n    return f"Hola {nombre}"\n\nsaludar("Ana")\nsaludar("Bob")\nprint(registrar.llamadas)  # 2',
+        'from functools import partial\n\ndef multiplicar(a, b):\n    return a * b\n\ndoble = partial(multiplicar, 2)\ntriple = partial(multiplicar, 3)\nprint(doble(5))   # 10\nprint(triple(5))  # 15',
+        'def memoize(func):\n    cache = {}\n    def wrapper(*args):\n        if args not in cache:\n            cache[args] = func(*args)\n        return cache[args]\n    return wrapper\n\n@memoize\ndef fib(n):\n    if n < 2: return n\n    return fib(n-1) + fib(n-2)\n\nprint(fib(35))  # 9227465',
+        'from typing import Generator\n\ndef numeros_infinitos(inicio: int = 0) -> Generator[int, None, None]:\n    n = inicio\n    while True:\n        yield n\n        n += 1\n\ngen = numeros_infinitos(10)\nprint([next(gen) for _ in range(5)])  # [10, 11, 12, 13, 14]',
+        'palabras = ["banana", "kiwi", "manzana", "pera"]\northograficas = sorted(palabras)\npor_len = sorted(palabras, key=len)\npor_len_desc = sorted(palabras, key=len, reverse=True)\nprint(orthograficas)\nprint(por_len)',
+    ]
+    return [jsonl_entry(e, "funciones_avanzadas") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_clases_y_oop(n: int) -> list[str]:
+    ejemplos = [
+        'class Perro:\n    def __init__(self, nombre: str, raza: str):\n        self.nombre = nombre\n        self.raza = raza\n\n    def ladrar(self) -> str:\n        return f"{self.nombre} dice: ¡Guau!"\n\n    def __repr__(self) -> str:\n        return f"Perro({self.nombre!r}, {self.raza!r})"\n\nfido = Perro("Fido", "Labrador")\nprint(fido.ladrar())\nprint(fido)',
+        'class Circulo:\n    PI = 3.14159\n\n    def __init__(self, radio: float):\n        self.radio = radio\n\n    @property\n    def area(self) -> float:\n        return self.PI * self.radio ** 2\n\n    @property\n    def perimetro(self) -> float:\n        return 2 * self.PI * self.radio\n\nc = Circulo(5)\nprint(f"Área: {c.area:.2f}")\nprint(f"Perímetro: {c.perimetro:.2f}")',
+        'class Contador:\n    _instancias = 0\n\n    def __init__(self):\n        Contador._instancias += 1\n        self.id = Contador._instancias\n\n    @classmethod\n    def total(cls) -> int:\n        return cls._instancias\n\n    @staticmethod\n    def descripcion() -> str:\n        return "Clase Contador"\n\na = Contador()\nb = Contador()\nprint(Contador.total())       # 2\nprint(Contador.descripcion()) # Clase Contador',
+        'class Pila:\n    def __init__(self):\n        self._items: list = []\n\n    def push(self, item) -> None:\n        self._items.append(item)\n\n    def pop(self):\n        if not self._items:\n            raise IndexError("Pila vacía")\n        return self._items.pop()\n\n    def peek(self):\n        if not self._items:\n            raise IndexError("Pila vacía")\n        return self._items[-1]\n\n    def __len__(self) -> int:\n        return len(self._items)\n\n    def __bool__(self) -> bool:\n        return bool(self._items)\n\np = Pila()\np.push(1)\np.push(2)\nprint(p.pop())   # 2\nprint(len(p))    # 1',
+        'class Temperatura:\n    def __init__(self, celsius: float):\n        self._celsius = celsius\n\n    @property\n    def celsius(self) -> float:\n        return self._celsius\n\n    @celsius.setter\n    def celsius(self, valor: float) -> None:\n        if valor < -273.15:\n            raise ValueError("Por debajo del cero absoluto")\n        self._celsius = valor\n\n    @property\n    def fahrenheit(self) -> float:\n        return self._celsius * 9/5 + 32\n\nt = Temperatura(100)\nprint(t.fahrenheit)  # 212.0\nt.celsius = 0\nprint(t.fahrenheit)  # 32.0',
+        'class Punto:\n    def __init__(self, x: float, y: float):\n        self.x = x\n        self.y = y\n\n    def __add__(self, otro: "Punto") -> "Punto":\n        return Punto(self.x + otro.x, self.y + otro.y)\n\n    def __eq__(self, otro: object) -> bool:\n        if not isinstance(otro, Punto):\n            return NotImplemented\n        return self.x == otro.x and self.y == otro.y\n\n    def __repr__(self) -> str:\n        return f"Punto({self.x}, {self.y})"\n\np1 = Punto(1, 2)\np2 = Punto(3, 4)\nprint(p1 + p2)  # Punto(4, 6)',
+        'class Vehiculo:\n    def __init__(self, marca: str, velocidad_max: float):\n        self.marca = marca\n        self.velocidad_max = velocidad_max\n        self._velocidad = 0.0\n\n    def acelerar(self, delta: float) -> None:\n        self._velocidad = min(self._velocidad + delta, self.velocidad_max)\n\n    def frenar(self, delta: float) -> None:\n        self._velocidad = max(self._velocidad - delta, 0)\n\n    @property\n    def velocidad(self) -> float:\n        return self._velocidad\n\n    def __str__(self) -> str:\n        return f"{self.marca} a {self._velocidad:.1f} km/h"\n\nauto = Vehiculo("Toyota", 200)\nauto.acelerar(80)\nauto.acelerar(80)\nprint(auto)        # Toyota a 160.0 km/h',
+        'from dataclasses import dataclass, field\nfrom typing import List\n\n@dataclass\nclass Producto:\n    nombre: str\n    precio: float\n    tags: List[str] = field(default_factory=list)\n\n    @property\n    def precio_con_iva(self) -> float:\n        return self.precio * 1.21\n\np = Producto("Laptop", 999.99, ["electrónica", "computación"])\nprint(p.precio_con_iva)\nprint(p)',
+    ]
+    return [jsonl_entry(e, "clases_y_oop") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_manejo_de_errores(n: int) -> list[str]:
+    ejemplos = [
+        'try:\n    resultado = 10 / 0\nexcept ZeroDivisionError as e:\n    print(f"Error: {e}")\nfinally:\n    print("Bloque finally siempre se ejecuta")',
+        'class ErrorDominio(Exception):\n    """Error personalizado para reglas de negocio."""\n    def __init__(self, mensaje: str, codigo: int = 0):\n        super().__init__(mensaje)\n        self.codigo = codigo\n\ntry:\n    raise ErrorDominio("Saldo insuficiente", codigo=402)\nexcept ErrorDominio as e:\n    print(f"[{e.codigo}] {e}")',
+        'def leer_entero(s: str) -> int:\n    try:\n        return int(s)\n    except ValueError:\n        raise ValueError(f"No se puede convertir \'{s}\' a entero") from None\n\ntry:\n    print(leer_entero("abc"))\nexcept ValueError as e:\n    print(e)',
+        'import json\nfrom pathlib import Path\n\ndef leer_config(ruta: str) -> dict:\n    try:\n        return json.loads(Path(ruta).read_text())\n    except FileNotFoundError:\n        return {}\n    except json.JSONDecodeError as e:\n        raise ValueError(f"Config inválida: {e}") from e',
+        'def dividir(a: float, b: float) -> float:\n    if b == 0:\n        raise ZeroDivisionError("El divisor no puede ser cero")\n    return a / b\n\ntry:\n    print(dividir(10, 2))  # 5.0\n    print(dividir(10, 0))  # ZeroDivisionError\nexcept ZeroDivisionError as e:\n    print(f"Error: {e}")',
+        'class ValidacionError(ValueError):\n    pass\n\ndef validar_edad(edad: int) -> None:\n    if not isinstance(edad, int):\n        raise TypeError(f"Se esperaba int, se recibió {type(edad).__name__}")\n    if edad < 0 or edad > 150:\n        raise ValidacionError(f"Edad inválida: {edad}")\n\ntry:\n    validar_edad(-5)\nexcept ValidacionError as e:\n    print(e)',
+        '# Múltiples excepciones\ntry:\n    datos = [1, 2, 3]\n    print(datos[10])\nexcept (IndexError, KeyError) as e:\n    print(f"Error de acceso: {e}")\nexcept Exception as e:\n    print(f"Error inesperado: {e}")',
+        'from contextlib import suppress\n\n# Ignorar excepciones específicas de forma limpia\nwith suppress(FileNotFoundError):\n    import os\n    os.remove("archivo_que_no_existe.txt")\nprint("Continuando sin error")',
+        'def procesar_lista(items: list) -> list:\n    """Procesa items, registrando errores sin abortar."""\n    resultados = []\n    errores = []\n    for item in items:\n        try:\n            resultados.append(int(item) * 2)\n        except (ValueError, TypeError) as e:\n            errores.append((item, str(e)))\n    if errores:\n        print(f"Advertencias: {errores}")\n    return resultados\n\nprint(procesar_lista(["1", "2", "abc", "4"]))  # [2, 4, 8]',
+    ]
+    return [jsonl_entry(e, "manejo_de_errores") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_comprensiones(n: int) -> list[str]:
+    ejemplos = [
+        '# List comprehension básica\ncuadrados = [x**2 for x in range(10)]\nprint(cuadrados)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]',
+        '# Con condición\nimpares = [x for x in range(20) if x % 2 != 0]\nprint(impares)  # [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]',
+        '# Dict comprehension\ninverso = {v: k for k, v in {"a": 1, "b": 2, "c": 3}.items()}\nprint(inverso)  # {1: \'a\', 2: \'b\', 3: \'c\'}',
+        '# Set comprehension\nletras = {c.lower() for c in "Hola Mundo" if c.isalpha()}\nprint(sorted(letras))  # [\'a\', \'d\', \'h\', \'l\', \'m\', \'n\', \'o\', \'u\']',
+        '# Generator expression (lazy)\ntotal = sum(x**2 for x in range(1000))  # no crea lista en memoria\nprint(total)',
+        '# Comprensión anidada\nmatriz = [[i * j for j in range(1, 4)] for i in range(1, 4)]\nfor fila in matriz:\n    print(fila)\n# [1, 2, 3]\n# [2, 4, 6]\n# [3, 6, 9]',
+        '# Aplanar matriz con comprensión\nmatriz = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nplana = [x for fila in matriz for x in fila]\nprint(plana)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]',
+        '# Comprensión con ternario\netiquetas = ["par" if x % 2 == 0 else "impar" for x in range(6)]\nprint(etiquetas)  # [\'par\', \'impar\', \'par\', \'impar\', \'par\', \'impar\']',
+        'datos = [{"nombre": "Ana", "edad": 25}, {"nombre": "Bob", "edad": 17}, {"nombre": "Carlos", "edad": 30}]\nmayor_de_edad = [p["nombre"] for p in datos if p["edad"] >= 18]\nprint(mayor_de_edad)  # [\'Ana\', \'Carlos\']',
+        'palabras = ["hola", "mundo", "python", "es", "genial"]\nfiltradas = [p.upper() for p in palabras if len(p) > 4]\nprint(filtradas)  # [\'MUNDO\', \'PYTHON\', \'GENIAL\']',
+        '# Transponer matrix con zip + comprensión\nmatriz = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\ntranspuesta = [list(fila) for fila in zip(*matriz)]\nprint(transpuesta)',
+        'numeros = range(1, 101)\npares_cuadrados = {n: n**2 for n in numeros if n % 2 == 0}\nmaximo = max(pares_cuadrados.values())\nprint(f"Máximo cuadrado par hasta 100: {maximo}")  # 10000',
+    ]
+    return [jsonl_entry(e, "comprensiones") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_generadores_tema(n: int) -> list[str]:
+    ejemplos = [
+        'def contar_hasta(limite: int):\n    """Generator que cuenta de 1 a limite."""\n    n = 1\n    while n <= limite:\n        yield n\n        n += 1\n\nfor num in contar_hasta(5):\n    print(num, end=" ")  # 1 2 3 4 5',
+        'def fibonacci():\n    """Generator infinito de Fibonacci."""\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b\n\nfib = fibonacci()\nprint([next(fib) for _ in range(8)])  # [0, 1, 1, 2, 3, 5, 8, 13]',
+        'from typing import Generator, Iterator\n\ndef leer_chunks(texto: str, n: int) -> Generator[str, None, None]:\n    """Divide un texto en chunks de n caracteres."""\n    for i in range(0, len(texto), n):\n        yield texto[i:i+n]\n\nfor chunk in leer_chunks("abcdefghij", 3):\n    print(chunk)  # abc, def, ghi, j',
+        '# Encadenamiento de generators\ndef cuadrados(n):\n    yield from (x**2 for x in range(n))\n\ndef filtrar_pares(gen):\n    for x in gen:\n        if x % 2 == 0:\n            yield x\n\nresultado = list(filtrar_pares(cuadrados(10)))\nprint(resultado)  # [0, 4, 16, 36, 64]',
+        'import itertools\n\n# islice para tomar N elementos de un generator infinito\ndef naturales():\n    n = 0\n    while True:\n        yield n\n        n += 1\n\nprimeros_10 = list(itertools.islice(naturales(), 10))\nprint(primeros_10)  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]',
+        '# Generator con send() — coroutine básica\ndef acumulador():\n    total = 0\n    while True:\n        valor = yield total\n        if valor is None:\n            break\n        total += valor\n\ngen = acumulador()\nnext(gen)       # inicializar\ngen.send(10)    # 10\ngen.send(20)    # 30\nprint(gen.send(5))  # 35',
+        'def paginar(items: list, pagina: int) -> Iterator:\n    """Generator que paginaea una lista."""\n    for i in range(0, len(items), pagina):\n        yield items[i:i+pagina]\n\nfor pagina in paginar(list(range(10)), 3):\n    print(pagina)',
+        'def tee_generator(gen, n=2):\n    import itertools\n    return itertools.tee(gen, n)\n\ng1, g2 = tee_generator(x**2 for x in range(5))\nprint(list(g1))  # [0, 1, 4, 9, 16]\nprint(list(g2))  # [0, 1, 4, 9, 16]',
+        '# yield from para delegar en sub-generator\ndef cadena(*iterables):\n    for it in iterables:\n        yield from it\n\nprimeros = cadena([1,2,3], "abc", range(5))\nresult = list(primeros)\nprint(result)',
+    ]
+    return [jsonl_entry(e, "generadores") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_decoradores_tema(n: int) -> list[str]:
+    ejemplos = [
+        'from functools import wraps\nimport time\n\ndef medir_tiempo(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        inicio = time.perf_counter()\n        resultado = func(*args, **kwargs)\n        fin = time.perf_counter()\n        print(f"{func.__name__} tomó {fin-inicio:.4f}s")\n        return resultado\n    return wrapper\n\n@medir_tiempo\ndef operacion_lenta():\n    return sum(range(1_000_000))\n\noperacion_lenta()',
+        'from functools import wraps\n\ndef solo_enteros(func):\n    """Valida que todos los argumentos sean enteros."""\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        for a in args:\n            if not isinstance(a, int):\n                raise TypeError(f"Se esperaba int, se recibió {type(a).__name__}")\n        return func(*args, **kwargs)\n    return wrapper\n\n@solo_enteros\ndef sumar(a, b):\n    return a + b\n\nprint(sumar(3, 4))    # 7\nprint(sumar(3, 4.5))  # TypeError',
+        'def reintentar(intentos: int = 3):\n    """Decorador factory: reintenta la función si falla."""\n    def decorador(func):\n        from functools import wraps\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            for i in range(intentos):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    if i == intentos - 1:\n                        raise\n                    print(f"Intento {i+1} fallido: {e}")\n        return wrapper\n    return decorador\n\n@reintentar(intentos=3)\ndef operacion_inestable():\n    import random\n    if random.random() < 0.7:\n        raise ValueError("Fallo aleatorio")\n    return "OK"',
+        'class Singleton:\n    """Decorador de clase: garantiza una sola instancia."""\n    def __init__(self, clase):\n        self._clase = clase\n        self._instancia = None\n\n    def __call__(self, *args, **kwargs):\n        if self._instancia is None:\n            self._instancia = self._clase(*args, **kwargs)\n        return self._instancia\n\n@Singleton\nclass Config:\n    def __init__(self):\n        self.datos = {}\n\na = Config()\nb = Config()\nprint(a is b)  # True',
+        'from functools import wraps, lru_cache\n\n@lru_cache(maxsize=128)\ndef fibonacci(n: int) -> int:\n    """Fibonacci con memoización automática."""\n    if n < 2:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(40))  # 102334155\nprint(fibonacci.cache_info())',
+        'def registrar(nivel="INFO"):\n    from functools import wraps\n    def decorador(func):\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            print(f"[{nivel}] Llamando {func.__name__}")\n            resultado = func(*args, **kwargs)\n            print(f"[{nivel}] {func.__name__} retornó {resultado}")\n            return resultado\n        return wrapper\n    return decorador\n\n@registrar("DEBUG")\ndef multiplicar(a, b):\n    return a * b\n\nmultiplicar(3, 4)',
+        'from functools import wraps\n\ndef deprecado(mensaje: str):\n    """Marca una función como obsoleta."""\n    import warnings\n    def decorador(func):\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            warnings.warn(\n                f"{func.__name__} está obsoleto: {mensaje}",\n                DeprecationWarning, stacklevel=2\n            )\n            return func(*args, **kwargs)\n        return wrapper\n    return decorador\n\n@deprecado("usa nueva_funcion() en su lugar")\ndef funcion_vieja():\n    pass',
+    ]
+    return [jsonl_entry(e, "decoradores") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_context_managers(n: int) -> list[str]:
+    ejemplos = [
+        '# Context manager con clase\nclass TemporizadorCM:\n    import time\n    def __enter__(self):\n        import time\n        self._inicio = time.perf_counter()\n        return self\n\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        import time\n        self.elapsed = time.perf_counter() - self._inicio\n        print(f"Tiempo: {self.elapsed:.4f}s")\n        return False  # no suprimir excepciones\n\nwith TemporizadorCM() as t:\n    resultado = sum(range(100_000))\nprint(f"Resultado: {resultado}")',
+        'from contextlib import contextmanager\n\n@contextmanager\ndef abrir_temporal(ruta: str):\n    """Crea un archivo temporal y lo elimina al finalizar."""\n    from pathlib import Path\n    path = Path(ruta)\n    try:\n        path.write_text("")\n        yield path\n    finally:\n        if path.exists():\n            path.unlink()\n\nwith abrir_temporal("temp.txt") as f:\n    f.write_text("datos temporales")\n    print(f.read_text())',
+        'from contextlib import contextmanager\n\n@contextmanager\ndef transaccion(db):\n    """Simula una transacción de base de datos."""\n    try:\n        yield db\n        db.commit()\n        print("Commit exitoso")\n    except Exception as e:\n        db.rollback()\n        print(f"Rollback por: {e}")\n        raise',
+        '# Múltiples context managers en línea\nimport tempfile\nimport os\n\nwith tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f1, \\\n     tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f2:\n    f1.write("data")\n    f2.write("col1,col2")\nprint("Ambos archivos creados y cerrados")',
+        'from contextlib import suppress\n\nwith suppress(FileNotFoundError, PermissionError):\n    import os\n    os.remove("archivo_inexistente.log")\nprint("Sin error")',
+        'class ConexionBD:\n    def __init__(self, url: str):\n        self.url = url\n        self.conexion = None\n\n    def __enter__(self):\n        print(f"Conectando a {self.url}")\n        self.conexion = {"url": self.url, "activa": True}\n        return self.conexion\n\n    def __exit__(self, *args):\n        if self.conexion:\n            self.conexion["activa"] = False\n            print("Conexión cerrada")\n        return False\n\nwith ConexionBD("sqlite:///app.db") as conn:\n    print(f"Conexión activa: {conn[\'activa\']}")',
+        'from contextlib import contextmanager\n\n@contextmanager\ndef directorio_temporal():\n    import tempfile, os, shutil\n    tmp = tempfile.mkdtemp()\n    try:\n        yield tmp\n    finally:\n        shutil.rmtree(tmp, ignore_errors=True)\n\nwith directorio_temporal() as d:\n    ruta = os.path.join(d, "archivo.txt")\n    with open(ruta, "w") as f:\n        f.write("temporal")\n    print(os.listdir(d))',
+    ]
+    return [jsonl_entry(e, "context_managers") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_recursion_tema(n: int) -> list[str]:
+    ejemplos = [
+        'def factorial(n: int) -> int:\n    """Factorial recursivo."""\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(10))  # 3628800',
+        'def fibonacci(n: int) -> int:\n    """Fibonacci recursivo con memoización."""\n    from functools import lru_cache\n    @lru_cache(maxsize=None)\n    def _fib(k):\n        if k < 2: return k\n        return _fib(k-1) + _fib(k-2)\n    return _fib(n)\n\nprint(fibonacci(30))  # 832040',
+        'def suma_lista(lst: list) -> int:\n    """Suma recursiva de una lista."""\n    if not lst:\n        return 0\n    return lst[0] + suma_lista(lst[1:])\n\nprint(suma_lista([1, 2, 3, 4, 5]))  # 15',
+        'def busqueda_binaria_rec(arr: list, objetivo, izq: int = 0, der: int = None) -> int:\n    if der is None:\n        der = len(arr) - 1\n    if izq > der:\n        return -1\n    mid = (izq + der) // 2\n    if arr[mid] == objetivo:\n        return mid\n    if arr[mid] < objetivo:\n        return busqueda_binaria_rec(arr, objetivo, mid + 1, der)\n    return busqueda_binaria_rec(arr, objetivo, izq, mid - 1)\n\nprint(busqueda_binaria_rec([1,3,5,7,9,11], 7))  # 3',
+        'def potencia(base: float, exp: int) -> float:\n    """Potencia recursiva eficiente (O(log n))."""\n    if exp == 0:\n        return 1\n    if exp % 2 == 0:\n        mitad = potencia(base, exp // 2)\n        return mitad * mitad\n    return base * potencia(base, exp - 1)\n\nprint(potencia(2, 10))  # 1024',
+        'def aplanar(lst: list) -> list:\n    """Aplana recursivamente una lista anidada."""\n    resultado = []\n    for item in lst:\n        if isinstance(item, list):\n            resultado.extend(aplanar(item))\n        else:\n            resultado.append(item)\n    return resultado\n\nprint(aplanar([1, [2, [3, 4], 5], [6, 7]]))  # [1, 2, 3, 4, 5, 6, 7]',
+        'def hanoi(n: int, origen: str, destino: str, auxiliar: str) -> None:\n    """Torres de Hanói."""\n    if n == 1:\n        print(f"Mover disco 1 de {origen} a {destino}")\n        return\n    hanoi(n-1, origen, auxiliar, destino)\n    print(f"Mover disco {n} de {origen} a {destino}")\n    hanoi(n-1, auxiliar, destino, origen)\n\nhanoi(3, "A", "C", "B")',
+        'def mcd(a: int, b: int) -> int:\n    """Máximo común divisor por algoritmo de Euclides."""\n    if b == 0:\n        return a\n    return mcd(b, a % b)\n\nprint(mcd(48, 18))  # 6',
+        'def permutar(elements: list) -> list[list]:\n    """Genera todas las permutaciones de una lista."""\n    if len(elements) <= 1:\n        return [elements[:]]\n    resultado = []\n    for i, elem in enumerate(elements):\n        resto = elements[:i] + elements[i+1:]\n        for perm in permutar(resto):\n            resultado.append([elem] + perm)\n    return resultado\n\nperms = permutar([1, 2, 3])\nprint(len(perms))  # 6',
+    ]
+    return [jsonl_entry(e, "recursion") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_busqueda_binaria(n: int) -> list[str]:
+    ejemplos = [
+        'def busqueda_binaria(arr: list, objetivo) -> int:\n    """Retorna el índice del objetivo, o -1 si no existe."""\n    izq, der = 0, len(arr) - 1\n    while izq <= der:\n        mid = (izq + der) // 2\n        if arr[mid] == objetivo:\n            return mid\n        if arr[mid] < objetivo:\n            izq = mid + 1\n        else:\n            der = mid - 1\n    return -1\n\narr = [1, 3, 5, 7, 9, 11, 13]\nprint(busqueda_binaria(arr, 7))   # 3\nprint(busqueda_binaria(arr, 4))   # -1',
+        'import bisect\n\narr = [1, 3, 5, 7, 9]\nbisect.insort(arr, 6)\nprint(arr)  # [1, 3, 5, 6, 7, 9]\nprint(bisect.bisect_left(arr, 7))   # 4\nprint(bisect.bisect_right(arr, 7))  # 5',
+        'def primer_mayor_o_igual(arr: list, objetivo) -> int:\n    """Lower bound: primer índice donde arr[i] >= objetivo."""\n    izq, der = 0, len(arr)\n    while izq < der:\n        mid = (izq + der) // 2\n        if arr[mid] < objetivo:\n            izq = mid + 1\n        else:\n            der = mid\n    return izq\n\narr = [1, 2, 4, 4, 5, 8, 10]\nprint(primer_mayor_o_igual(arr, 4))  # 2 (primer 4)\nprint(primer_mayor_o_igual(arr, 6))  # 5 (primer >= 6 es 8)',
+        'def rotated_search(arr: list, objetivo: int) -> int:\n    """Búsqueda binaria en array rotado."""\n    izq, der = 0, len(arr) - 1\n    while izq <= der:\n        mid = (izq + der) // 2\n        if arr[mid] == objetivo:\n            return mid\n        if arr[izq] <= arr[mid]:  # izquierda ordenada\n            if arr[izq] <= objetivo < arr[mid]:\n                der = mid - 1\n            else:\n                izq = mid + 1\n        else:  # derecha ordenada\n            if arr[mid] < objetivo <= arr[der]:\n                izq = mid + 1\n            else:\n                der = mid - 1\n    return -1\n\nprint(rotated_search([4,5,6,7,0,1,2], 0))  # 4',
+        'def raiz_cuadrada_entera(n: int) -> int:\n    """Raíz cuadrada entera usando búsqueda binaria."""\n    if n < 0:\n        raise ValueError("n debe ser no negativo")\n    izq, der = 0, n\n    while izq <= der:\n        mid = (izq + der) // 2\n        if mid * mid == n:\n            return mid\n        if mid * mid < n:\n            izq = mid + 1\n            ultimo = mid\n        else:\n            der = mid - 1\n    return ultimo\n\nprint(raiz_cuadrada_entera(8))   # 2\nprint(raiz_cuadrada_entera(25))  # 5',
+        'def encontrar_pico(arr: list) -> int:\n    """Encontrar cualquier elemento pico (mayor a sus vecinos)."""\n    izq, der = 0, len(arr) - 1\n    while izq < der:\n        mid = (izq + der) // 2\n        if arr[mid] > arr[mid + 1]:\n            der = mid\n        else:\n            izq = mid + 1\n    return izq\n\narr = [1, 3, 5, 4, 2]\nidx = encontrar_pico(arr)\nprint(f"Pico en índice {idx}: {arr[idx]}")  # índice 2: 5',
+        'def contar_ocurrencias(arr: list, objetivo) -> int:\n    """Cuenta cuántas veces aparece objetivo en arr ordenado."""\n    import bisect\n    izq = bisect.bisect_left(arr, objetivo)\n    der = bisect.bisect_right(arr, objetivo)\n    return der - izq\n\narr = [1, 2, 2, 2, 3, 4, 4]\nprint(contar_ocurrencias(arr, 2))  # 3\nprint(contar_ocurrencias(arr, 4))  # 2',
+    ]
+    return [jsonl_entry(e, "busqueda_binaria") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_sorting_clasico(n: int) -> list[str]:
+    ejemplos = [
+        'def bubble_sort(arr: list) -> list:\n    """Ordenamiento de burbuja O(n²)."""\n    arr = arr[:]\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n    return arr\n\nprint(bubble_sort([64, 34, 25, 12, 22, 11, 90]))',
+        'def merge_sort(arr: list) -> list:\n    """Merge sort O(n log n)."""\n    if len(arr) <= 1:\n        return arr\n    mid = len(arr) // 2\n    izq = merge_sort(arr[:mid])\n    der = merge_sort(arr[mid:])\n    return merge(izq, der)\n\ndef merge(izq: list, der: list) -> list:\n    resultado = []\n    i = j = 0\n    while i < len(izq) and j < len(der):\n        if izq[i] <= der[j]:\n            resultado.append(izq[i]); i += 1\n        else:\n            resultado.append(der[j]); j += 1\n    resultado.extend(izq[i:])\n    resultado.extend(der[j:])\n    return resultado\n\nprint(merge_sort([38, 27, 43, 3, 9, 82, 10]))',
+        'def quick_sort(arr: list) -> list:\n    """Quick sort O(n log n) promedio."""\n    if len(arr) <= 1:\n        return arr\n    pivote = arr[len(arr) // 2]\n    menores = [x for x in arr if x < pivote]\n    iguales = [x for x in arr if x == pivote]\n    mayores = [x for x in arr if x > pivote]\n    return quick_sort(menores) + iguales + quick_sort(mayores)\n\nprint(quick_sort([3, 6, 8, 10, 1, 2, 1]))',
+        'def insertion_sort(arr: list) -> list:\n    """Ordenamiento por inserción O(n²), bueno para casi-ordenados."""\n    arr = arr[:]\n    for i in range(1, len(arr)):\n        clave = arr[i]\n        j = i - 1\n        while j >= 0 and arr[j] > clave:\n            arr[j + 1] = arr[j]\n            j -= 1\n        arr[j + 1] = clave\n    return arr\n\nprint(insertion_sort([12, 11, 13, 5, 6]))',
+        'def selection_sort(arr: list) -> list:\n    """Ordenamiento por selección O(n²)."""\n    arr = arr[:]\n    n = len(arr)\n    for i in range(n):\n        min_idx = i\n        for j in range(i + 1, n):\n            if arr[j] < arr[min_idx]:\n                min_idx = j\n        arr[i], arr[min_idx] = arr[min_idx], arr[i]\n    return arr\n\nprint(selection_sort([64, 25, 12, 22, 11]))',
+        '# Python built-in sort (Timsort) — el más eficiente en práctica\nimport random\nnums = random.sample(range(1000), 10)\nprint("Original:", nums)\nnums.sort()\nprint("Ordenado:", nums)\n\n# Sort estable con key\npersonas = [("Ana", 30), ("Bob", 25), ("Carlos", 30)]\npersonas.sort(key=lambda p: (p[1], p[0]))\nprint(personas)',
+        'def counting_sort(arr: list, max_val: int) -> list:\n    """Counting sort O(n + k), para enteros pequeños."""\n    count = [0] * (max_val + 1)\n    for x in arr:\n        count[x] += 1\n    resultado = []\n    for val, freq in enumerate(count):\n        resultado.extend([val] * freq)\n    return resultado\n\nprint(counting_sort([4, 2, 2, 8, 3, 3, 1], 8))',
+    ]
+    return [jsonl_entry(e, "sorting_clasico") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_grafos_bfs_dfs(n: int) -> list[str]:
+    ejemplos = [
+        'from collections import deque\n\ndef bfs(grafo: dict, inicio: str) -> list:\n    """BFS — Búsqueda en Anchura."""\n    visitados = set()\n    cola = deque([inicio])\n    orden = []\n    while cola:\n        nodo = cola.popleft()\n        if nodo not in visitados:\n            visitados.add(nodo)\n            orden.append(nodo)\n            cola.extend(grafo.get(nodo, []))\n    return orden\n\ngrafo = {"A": ["B", "C"], "B": ["D", "E"], "C": ["F"], "D": [], "E": [], "F": []}\nprint(bfs(grafo, "A"))  # [\'A\', \'B\', \'C\', \'D\', \'E\', \'F\']',
+        'def dfs(grafo: dict, inicio: str, visitados: set = None) -> list:\n    """DFS — Búsqueda en Profundidad recursiva."""\n    if visitados is None:\n        visitados = set()\n    visitados.add(inicio)\n    orden = [inicio]\n    for vecino in grafo.get(inicio, []):\n        if vecino not in visitados:\n            orden.extend(dfs(grafo, vecino, visitados))\n    return orden\n\ngrafo = {"A": ["B", "C"], "B": ["D"], "C": ["E"], "D": [], "E": []}\nprint(dfs(grafo, "A"))  # [\'A\', \'B\', \'D\', \'C\', \'E\']',
+        'def dfs_iterativo(grafo: dict, inicio: str) -> list:\n    """DFS iterativo con pila explícita."""\n    visitados = set()\n    pila = [inicio]\n    orden = []\n    while pila:\n        nodo = pila.pop()\n        if nodo not in visitados:\n            visitados.add(nodo)\n            orden.append(nodo)\n            pila.extend(reversed(grafo.get(nodo, [])))\n    return orden\n\ngrafo = {"A": ["B", "C"], "B": ["D", "E"], "C": [], "D": [], "E": []}\nprint(dfs_iterativo(grafo, "A"))',
+        'from collections import deque\n\ndef camino_mas_corto(grafo: dict, inicio: str, fin: str) -> list | None:\n    """BFS para encontrar el camino más corto."""\n    cola = deque([(inicio, [inicio])])\n    visitados = {inicio}\n    while cola:\n        nodo, camino = cola.popleft()\n        if nodo == fin:\n            return camino\n        for vecino in grafo.get(nodo, []):\n            if vecino not in visitados:\n                visitados.add(vecino)\n                cola.append((vecino, camino + [vecino]))\n    return None\n\ngrafo = {"A": ["B", "C"], "B": ["D"], "C": ["D", "E"], "D": ["E"], "E": []}\nprint(camino_mas_corto(grafo, "A", "E"))',
+        'def tiene_ciclo(grafo: dict) -> bool:\n    """Detecta ciclos en un grafo dirigido con DFS."""\n    blanco, gris, negro = 0, 1, 2\n    color = {nodo: blanco for nodo in grafo}\n\n    def visitar(v) -> bool:\n        color[v] = gris\n        for w in grafo.get(v, []):\n            if color[w] == gris:\n                return True\n            if color[w] == blanco and visitar(w):\n                return True\n        color[v] = negro\n        return False\n\n    return any(visitar(v) for v in grafo if color[v] == blanco)\n\nprint(tiene_ciclo({"A": ["B"], "B": ["C"], "C": ["A"]}))  # True\nprint(tiene_ciclo({"A": ["B"], "B": ["C"], "C": []}))      # False',
+        'def componentes_conectados(grafo: dict) -> list[set]:\n    """Encuentra los componentes conectados de un grafo no dirigido."""\n    visitados = set()\n    componentes = []\n\n    def dfs(nodo, componente):\n        visitados.add(nodo)\n        componente.add(nodo)\n        for vecino in grafo.get(nodo, []):\n            if vecino not in visitados:\n                dfs(vecino, componente)\n\n    for nodo in grafo:\n        if nodo not in visitados:\n            c = set()\n            dfs(nodo, c)\n            componentes.append(c)\n    return componentes\n\ngrafo = {"A": ["B"], "B": ["A"], "C": ["D"], "D": ["C"], "E": []}\nprint(componentes_conectados(grafo))',
+        'from collections import defaultdict\n\nclass Grafo:\n    def __init__(self):\n        self.adj: dict = defaultdict(list)\n\n    def agregar_arista(self, u, v, dirigido=False):\n        self.adj[u].append(v)\n        if not dirigido:\n            self.adj[v].append(u)\n\n    def vecinos(self, nodo):\n        return self.adj[nodo]\n\ng = Grafo()\ng.agregar_arista("A", "B")\ng.agregar_arista("B", "C")\ng.agregar_arista("A", "C")\nprint(dict(g.adj))',
+    ]
+    return [jsonl_entry(e, "grafos_bfs_dfs") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_modulos_y_paquetes(n: int) -> list[str]:
+    ejemplos = [
+        'import os\nimport sys\nfrom pathlib import Path\n\n# Información del sistema\nprint(sys.version)\nprint(os.getcwd())\nprint(Path.home())',
+        'from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from collections.abc import Sequence\n\ndef procesar(items: "Sequence[int]") -> list:\n    return sorted(set(items))',
+        'import importlib\n\ndef importar_dinamico(modulo: str, atributo: str):\n    """Importa un atributo de un módulo dinámicamente."""\n    mod = importlib.import_module(modulo)\n    return getattr(mod, atributo)\n\nPi = importar_dinamico("math", "pi")\nprint(Pi)  # 3.141592653589793',
+        '# __init__.py de un paquete\n__version__ = "1.0.0"\n__author__ = "Lucas"\n__all__ = ["Cliente", "Config", "parsear"]\n\nfrom .cliente import Cliente\nfrom .config import Config\nfrom .utils import parsear',
+        'from dataclasses import dataclass\nfrom pathlib import Path\nimport json\n\n@dataclass\nclass Config:\n    host: str = "localhost"\n    port: int = 8080\n    debug: bool = False\n\n    @classmethod\n    def desde_json(cls, ruta: Path) -> "Config":\n        datos = json.loads(ruta.read_text())\n        return cls(**datos)\n\n    def a_dict(self) -> dict:\n        from dataclasses import asdict\n        return asdict(self)',
+        'import functools\nimport operator\nfrom collections import Counter, defaultdict\nfrom itertools import chain, groupby\n\n# Usar stdlib correctamente\npalabras = "el gato come el ratón y el perro duerme".split()\nfrecuencias = Counter(palabras)\nprint(frecuencias.most_common(3))',
+        '# Relative imports dentro de un paquete\n# En archivo: paquete/utils/formato.py\nfrom ..config import Config\nfrom .validacion import validar\n\ndef formatear(datos: dict) -> str:\n    cfg = Config()\n    validar(datos)\n    return str(datos)',
+        '# Uso de __name__ == "__main__"\ndef procesar_datos(datos: list) -> list:\n    return [x * 2 for x in datos]\n\ndef main():\n    datos = [1, 2, 3, 4, 5]\n    resultado = procesar_datos(datos)\n    print(resultado)\n\nif __name__ == "__main__":\n    main()',
+        'import sys\nfrom pathlib import Path\n\n# Agregar directorio al path para imports locales\nroot = Path(__file__).parent.parent\nif str(root) not in sys.path:\n    sys.path.insert(0, str(root))',
+    ]
+    return [jsonl_entry(e, "modulos_y_paquetes") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_type_hints_tema(n: int) -> list[str]:
+    ejemplos = [
+        'from typing import Optional, Union\n\ndef buscar(items: list[str], objetivo: str) -> Optional[int]:\n    """Retorna el índice o None si no existe."""\n    try:\n        return items.index(objetivo)\n    except ValueError:\n        return None\n\nresult = buscar(["a", "b", "c"], "b")\nprint(result)  # 1',
+        'from typing import TypeVar, Generic\n\nT = TypeVar("T")\n\nclass Caja(Generic[T]):\n    def __init__(self, contenido: T) -> None:\n        self.contenido = contenido\n\n    def obtener(self) -> T:\n        return self.contenido\n\ncaja_int = Caja(42)\ncaja_str = Caja("hola")\nprint(caja_int.obtener())  # 42',
+        'from typing import Callable, TypeVar\n\nT = TypeVar("T")\nU = TypeVar("U")\n\ndef mapear(f: Callable[[T], U], items: list[T]) -> list[U]:\n    return [f(x) for x in items]\n\nresult = mapear(str.upper, ["a", "b", "c"])\nprint(result)  # [\'A\', \'B\', \'C\']',
+        'from dataclasses import dataclass\nfrom typing import ClassVar\n\n@dataclass\nclass Empleado:\n    nombre: str\n    salario: float\n    departamento: str\n    _contador: ClassVar[int] = 0\n\n    def __post_init__(self) -> None:\n        Empleado._contador += 1\n\n    @classmethod\n    def total(cls) -> int:\n        return cls._contador\n\nana = Empleado("Ana", 50000, "IT")\nbob = Empleado("Bob", 60000, "HR")\nprint(Empleado.total())  # 2',
+        'from typing import Protocol\n\nclass Comparable(Protocol):\n    def __lt__(self, other: "Comparable") -> bool: ...\n    def __le__(self, other: "Comparable") -> bool: ...\n\ndef minimo(a: Comparable, b: Comparable) -> Comparable:\n    return a if a <= b else b\n\nprint(minimo(3, 5))      # 3\nprint(minimo("b", "a"))  # a',
+        'from typing import TypedDict\n\nclass UserDict(TypedDict):\n    nombre: str\n    edad: int\n    email: str\n\ndef procesar_usuario(user: UserDict) -> str:\n    return f"{user[\'nombre\']} ({user[\'edad\']}): {user[\'email\']}"\n\nusuario: UserDict = {"nombre": "Ana", "edad": 30, "email": "ana@ejemplo.com"}\nprint(procesar_usuario(usuario))',
+        'from typing import overload\n\n@overload\ndef procesar(x: int) -> str: ...\n@overload\ndef procesar(x: str) -> int: ...\n\ndef procesar(x):\n    if isinstance(x, int):\n        return str(x)\n    return int(x)\n\nprint(procesar(42))     # "42"\nprint(procesar("42"))   # 42',
+        'from typing import NamedTuple\n\nclass Punto(NamedTuple):\n    x: float\n    y: float\n    z: float = 0.0\n\n    def distancia_origen(self) -> float:\n        return (self.x**2 + self.y**2 + self.z**2) ** 0.5\n\np = Punto(3, 4)\nprint(p.distancia_origen())  # 5.0\nprint(p.x, p.y, p.z)',
+    ]
+    return [jsonl_entry(e, "type_hints") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_regex_tema(n: int) -> list[str]:
+    ejemplos = [
+        'import re\n\n# Buscar patrón\ntexto = "Mi teléfono es 555-1234 y el de Ana es 555-5678"\npatron = r"\\d{3}-\\d{4}"\ntelefono = re.search(patron, texto)\nif telefono:\n    print(f"Encontrado: {telefono.group()}")  # 555-1234\n\ntodos = re.findall(patron, texto)\nprint(f"Todos: {todos}")  # [\'555-1234\', \'555-5678\']',
+        'import re\n\n# Grupos de captura\nfecha = "2026-02-27"\npatron = r"(\\d{4})-(\\d{2})-(\\d{2})"\nm = re.match(patron, fecha)\nif m:\n    año, mes, dia = m.groups()\n    print(f"Año: {año}, Mes: {mes}, Día: {dia}")',
+        'import re\n\n# Validar email\ndef validar_email(email: str) -> bool:\n    patron = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"\n    return bool(re.match(patron, email))\n\nprint(validar_email("usuario@ejemplo.com"))  # True\nprint(validar_email("invalido@"))            # False\nprint(validar_email("sin_arroba"))           # False',
+        'import re\n\n# Sustitución\ntexto = "El gato y el perro corren. El gato come."\nnuevo = re.sub(r"\\bEl\\b", "Un", texto)\nprint(nuevo)  # Un gato y el perro corren. Un gato come.\n\n# Con función\ndef capitalizar(m):\n    return m.group(0).upper()\n\nresultado = re.sub(r"[aeiou]", capitalizar, "hola mundo")\nprint(resultado)  # hOlA mUndO',
+        'import re\n\n# Grupos nombrados\nregistro = "2026-02-27 ERROR [app.db] Connection timeout"\npatron = r"(?P<fecha>\\d{4}-\\d{2}-\\d{2}) (?P<nivel>\\w+) \\[(?P<modulo>[\\w.]+)\\] (?P<mensaje>.+)"\nm = re.match(patron, registro)\nif m:\n    print(m.group("fecha"))   # 2026-02-27\n    print(m.group("nivel"))   # ERROR\n    print(m.group("mensaje")) # Connection timeout',
+        'import re\n\n# Splitting\ntexto = "uno,dos;tres|cuatro"\npiezas = re.split(r"[,;|]", texto)\nprint(piezas)  # [\'uno\', \'dos\', \'tres\', \'cuatro\']',
+        'import re\n\n# Flags\ntexto = "Python ES Genial"\npatrón_ci = re.compile(r"es", re.IGNORECASE)\nprint(patrón_ci.search(texto).group())  # ES\n\n# Multiline\ntexto_ml = "primero\\nsegundo\\ntercero"\nprint(re.findall(r"^\\w+", texto_ml, re.MULTILINE))',
+        'import re\n\ndef extraer_urls(texto: str) -> list[str]:\n    patron = r"https?://[^\\s<>\\"]+[^\\s<>\\\".,;]"\n    return re.findall(patron, texto)\n\ntexto = "Visita https://python.org o http://ejemplo.com/path?q=1 para más info"\nprint(extraer_urls(texto))',
+    ]
+    return [jsonl_entry(e, "regex") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_api_design_rest_tema(n: int) -> list[str]:
+    ejemplos = [
+        'from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Item(BaseModel):\n    nombre: str\n    precio: float\n    disponible: bool = True\n\nitems_db: dict[int, Item] = {}\n\n@app.post("/items", status_code=201)\ndef crear_item(item: Item) -> dict:\n    item_id = len(items_db) + 1\n    items_db[item_id] = item\n    return {"id": item_id, **item.model_dump()}',
+        'from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n@app.get("/items/{item_id}")\ndef obtener_item(item_id: int) -> dict:\n    if item_id not in items_db:\n        raise HTTPException(status_code=404, detail="Item no encontrado")\n    return {"id": item_id, **items_db[item_id].model_dump()}',
+        'from pydantic import BaseModel, validator, Field\nfrom typing import Optional\n\nclass Usuario(BaseModel):\n    nombre: str = Field(..., min_length=2, max_length=50)\n    email: str\n    edad: int = Field(..., ge=0, le=150)\n    rol: Optional[str] = "user"\n\n    @validator("email")\n    def email_valido(cls, v):\n        if "@" not in v:\n            raise ValueError("Email inválido")\n        return v.lower()\n\nu = Usuario(nombre="Ana", email="ANA@test.COM", edad=25)\nprint(u)',
+        'from fastapi import APIRouter, Depends\nfrom typing import Annotated\n\nrouter = APIRouter(prefix="/usuarios", tags=["usuarios"])\n\ndef obtener_db():\n    db = {"conexion": "activa"}\n    try:\n        yield db\n    finally:\n        pass  # cerrar conexión\n\nDB = Annotated[dict, Depends(obtener_db)]\n\n@router.get("/")\ndef listar(db: DB) -> list:\n    return []\n\n@router.get("/{user_id}")\ndef obtener(user_id: int, db: DB) -> dict:\n    return {"id": user_id}',
+        'from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp = FastAPI(title="Mi API", version="1.0.0")\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=["https://mifrontend.com"],\n    allow_methods=["GET", "POST", "PUT", "DELETE"],\n    allow_headers=["*"],\n)',
+        'from fastapi import FastAPI, Query\nfrom typing import Optional\n\napp = FastAPI()\n\n@app.get("/buscar")\ndef buscar(\n    q: str = Query(..., min_length=1, description="Término de búsqueda"),\n    pagina: int = Query(1, ge=1),\n    limite: int = Query(10, ge=1, le=100),\n    categoria: Optional[str] = None,\n) -> dict:\n    return {\n        "query": q,\n        "pagina": pagina,\n        "limite": limite,\n        "categoria": categoria,\n    }',
+        'from fastapi import FastAPI, status\nfrom fastapi.responses import JSONResponse\n\napp = FastAPI()\n\n@app.exception_handler(ValueError)\nasync def manejar_valor_error(request, exc):\n    return JSONResponse(\n        status_code=status.HTTP_400_BAD_REQUEST,\n        content={"error": str(exc), "tipo": "ValueError"},\n    )',
+    ]
+    return [jsonl_entry(e, "api_design_rest") for e in shuffle_and_sample(ejemplos, n)]
+
+
+def generar_observer_strategy_tema(n: int) -> list[str]:
+    ejemplos = [
+        '# Patrón Observer\nfrom abc import ABC, abstractmethod\n\nclass Observador(ABC):\n    @abstractmethod\n    def actualizar(self, evento: str, datos: dict) -> None: ...\n\nclass Sujeto:\n    def __init__(self):\n        self._observadores: list[Observador] = []\n\n    def suscribir(self, obs: Observador) -> None:\n        self._observadores.append(obs)\n\n    def notificar(self, evento: str, datos: dict = {}) -> None:\n        for obs in self._observadores:\n            obs.actualizar(evento, datos)\n\nclass Logger(Observador):\n    def actualizar(self, evento: str, datos: dict) -> None:\n        print(f"[LOG] {evento}: {datos}")\n\nbus = Sujeto()\nbus.suscribir(Logger())\nbus.notificar("usuario_creado", {"nombre": "Ana"})',
+        '# Patrón Strategy\nfrom abc import ABC, abstractmethod\n\nclass EstrategiaOrden(ABC):\n    @abstractmethod\n    def ordenar(self, datos: list) -> list: ...\n\nclass OrdenBurbujas(EstrategiaOrden):\n    def ordenar(self, datos: list) -> list:\n        d = datos[:]\n        n = len(d)\n        for i in range(n):\n            for j in range(0, n-i-1):\n                if d[j] > d[j+1]:\n                    d[j], d[j+1] = d[j+1], d[j]\n        return d\n\nclass OrdenPython(EstrategiaOrden):\n    def ordenar(self, datos: list) -> list:\n        return sorted(datos)\n\nclass Ordenador:\n    def __init__(self, estrategia: EstrategiaOrden):\n        self.estrategia = estrategia\n\n    def ejecutar(self, datos: list) -> list:\n        return self.estrategia.ordenar(datos)\n\nord = Ordenador(OrdenPython())\nprint(ord.ejecutar([3, 1, 4, 1, 5, 9]))',
+        '# Observer con events dict (pythónico)\nfrom collections import defaultdict\nfrom typing import Callable\n\nclass EventBus:\n    def __init__(self):\n        self._handlers: dict = defaultdict(list)\n\n    def on(self, evento: str, handler: Callable) -> None:\n        self._handlers[evento].append(handler)\n\n    def emit(self, evento: str, **datos) -> None:\n        for handler in self._handlers[evento]:\n            handler(**datos)\n\nbus = EventBus()\n\n@bus.on("login")\ndef log_login(usuario, **_):\n    print(f"Usuario {usuario} inició sesión")\n\nbus.emit("login", usuario="ana", ip="192.168.1.1")',
+        '# Strategy con funciones (pythónico)\nfrom typing import Callable\n\ndef validar_email(s: str) -> bool:\n    return "@" in s and "." in s.split("@")[-1]\n\ndef validar_telefono(s: str) -> bool:\n    return s.replace("-", "").replace("+", "").isdigit()\n\ndef validar(valor: str, estrategia: Callable[[str], bool]) -> bool:\n    return estrategia(valor)\n\nprint(validar("user@mail.com", validar_email))  # True\nprint(validar("+54-911-1234", validar_telefono))  # True',
+        '# Observer con weakrefs (sin memory leak)\nimport weakref\nfrom typing import Callable\n\nclass Señal:\n    def __init__(self):\n        self._slots: list = []\n\n    def conectar(self, slot: Callable) -> None:\n        self._slots.append(weakref.WeakMethod(slot) if hasattr(slot, "__self__") else weakref.ref(slot))\n\n    def emitir(self, *args, **kwargs) -> None:\n        muertos = []\n        for ref in self._slots:\n            slot = ref()\n            if slot is None:\n                muertos.append(ref)\n            else:\n                slot(*args, **kwargs)\n        for ref in muertos:\n            self._slots.remove(ref)',
+        '# Patrón Strategy para serialización\nfrom abc import ABC, abstractmethod\nimport json\n\nclass Serializador(ABC):\n    @abstractmethod\n    def serializar(self, datos: dict) -> str: ...\n    @abstractmethod\n    def deserializar(self, texto: str) -> dict: ...\n\nclass JSONSerializador(Serializador):\n    def serializar(self, datos: dict) -> str:\n        return json.dumps(datos, ensure_ascii=False)\n    def deserializar(self, texto: str) -> dict:\n        return json.loads(texto)\n\ns = JSONSerializador()\ncodificado = s.serializar({"nombre": "Ana", "edad": 30})\nprint(codificado)\nprint(s.deserializar(codificado))',
+    ]
+    return [jsonl_entry(e, "observer_strategy") for e in shuffle_and_sample(ejemplos, n)]
+
+
 GENERADORES = {
     "collections":            (generar_collections,          "stdlib_python/collections.jsonl"),
     "dataclasses":            (generar_dataclasses,          "stdlib_python/dataclasses.jsonl"),
@@ -4614,6 +4957,29 @@ GENERADORES = {
     "refactoring":            (generar_refactoring,          "ingenieria_software/refactoring.jsonl"),
     "testing_avanzado":       (generar_testing_avanzado,     "ingenieria_software/testing_avanzado.jsonl"),
     "arboles_binarios":       (generar_arboles_binarios_extra, "algoritmos/arboles_binarios.jsonl"),
+    # --- 22 nuevos generadores (Feb 2026) ---
+    "variables_y_tipos":      (generar_variables_y_tipos,    "python_basico/variables_y_tipos.jsonl"),
+    "strings_y_formato":      (generar_strings_y_formato,    "python_basico/strings_y_formato.jsonl"),
+    "control_de_flujo":       (generar_control_de_flujo,     "python_basico/control_de_flujo.jsonl"),
+    "listas_y_tuplas":        (generar_listas_y_tuplas,      "python_basico/listas_y_tuplas.jsonl"),
+    "diccionarios_y_sets":    (generar_diccionarios_y_sets,  "python_basico/diccionarios_y_sets.jsonl"),
+    "funciones_basicas":      (generar_funciones_basicas,    "python_basico/funciones_basicas.jsonl"),
+    "funciones_avanzadas":    (generar_funciones_avanzadas,  "python_basico/funciones_avanzadas.jsonl"),
+    "clases_y_oop":           (generar_clases_y_oop,         "python_basico/clases_y_oop.jsonl"),
+    "manejo_de_errores":      (generar_manejo_de_errores,    "python_basico/manejo_de_errores.jsonl"),
+    "comprensiones":          (generar_comprensiones,        "python_basico/comprensiones.jsonl"),
+    "generadores":            (generar_generadores_tema,     "python_basico/generadores.jsonl"),
+    "decoradores":            (generar_decoradores_tema,     "python_basico/decoradores.jsonl"),
+    "context_managers":       (generar_context_managers,     "python_basico/context_managers.jsonl"),
+    "type_hints":             (generar_type_hints_tema,      "python_basico/type_hints.jsonl"),
+    "modulos_y_paquetes":     (generar_modulos_y_paquetes,   "python_basico/modulos_y_paquetes.jsonl"),
+    "recursion":              (generar_recursion_tema,       "algoritmos/recursion.jsonl"),
+    "busqueda_binaria":       (generar_busqueda_binaria,     "algoritmos/busqueda_binaria.jsonl"),
+    "sorting_clasico":        (generar_sorting_clasico,      "algoritmos/sorting_clasico.jsonl"),
+    "grafos_bfs_dfs":         (generar_grafos_bfs_dfs,       "algoritmos/grafos_bfs_dfs.jsonl"),
+    "regex":                  (generar_regex_tema,           "stdlib_python/regex.jsonl"),
+    "observer_strategy":      (generar_observer_strategy_tema, "patrones_diseno/observer_strategy.jsonl"),
+    "api_design_rest":        (generar_api_design_rest_tema, "ingenieria_software/api_design_rest.jsonl"),
 }
 
 
