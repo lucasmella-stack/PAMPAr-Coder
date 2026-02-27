@@ -27,9 +27,9 @@ from pathlib import Path
 
 import pytest
 
-from skills.lector_archivos import LectorArchivos
-from skills.ejecutar_codigo import EjecutorCodigo
-from skills.base import ResultadoSkill
+from pampar.skills.lector_archivos import LectorArchivos
+from pampar.skills.ejecutar_codigo import EjecutorCodigo
+from pampar.skills.base import ResultadoSkill
 
 
 # ==============================================================================

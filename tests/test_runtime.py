@@ -28,7 +28,7 @@ import torch
 # Garantizar que el root del proyecto esté en el PATH
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from runtime.agente import SYSTEM_PROMPT
+from pampar.runtime.agente import SYSTEM_PROMPT
 
 
 # ==============================================================================
@@ -42,7 +42,7 @@ def _make_agente(tmp_path: Path) -> "Agente":
     Evita depender del tokenizer .model y del checkpoint pre-entrenado.
     El modelo se inicializa desde cero (pesos aleatorios).
     """
-    from runtime.agente import Agente
+    from pampar.runtime.agente import Agente
     from pampar.coder.v3.config import ConfigV3
 
     config_mini = ConfigV3(
@@ -53,7 +53,7 @@ def _make_agente(tmp_path: Path) -> "Agente":
         n_heads=2,
         n_kv_heads=1,
         ffn_mult=2.0,
-        n_zonas=4,
+        n_zonas=52,            # Hardcodeado en v2 LLAVES — NO cambiar
         n_territorios=4,
         lateral_bottleneck=8,
         ventana_contexto=2,
@@ -71,7 +71,7 @@ def _make_agente(tmp_path: Path) -> "Agente":
     mock_tok.IdToPiece.side_effect = lambda i: str(i)  # retorna string para clasificar_token
 
     # Parchar sentencepiece.SentencePieceProcessor para que retorne nuestro mock
-    with patch("runtime.agente.spm") as mock_spm:
+    with patch("pampar.runtime.agente.spm") as mock_spm:
         mock_spm.SentencePieceProcessor.return_value = mock_tok
 
         agente = Agente(

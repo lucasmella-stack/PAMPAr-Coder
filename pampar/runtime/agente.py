@@ -32,11 +32,11 @@ from typing import Dict, List, Optional, Tuple
 
 from pampar.coder.v3 import PamparV3, PRESET_V3
 from pampar.coder.v3.config import ConfigV3
-from memoria.clasificador import ClasificadorPareto
-from memoria.rag import RAGResidual
-from memoria.cola_finetune import ColaFinetune
-from skills.lector_archivos import LectorArchivos
-from skills.ejecutar_codigo import EjecutorCodigo
+from pampar.memoria.clasificador import ClasificadorPareto
+from pampar.memoria.rag import RAGResidual
+from pampar.memoria.cola_finetune import ColaFinetune
+from pampar.skills.lector_archivos import LectorArchivos
+from pampar.skills.ejecutar_codigo import EjecutorCodigo
 
 
 # =============================================================================
@@ -239,19 +239,22 @@ class Agente:
         for match in re.finditer(r"\[LEER:\s*(.+?)\]", respuesta):
             ruta = match.group(1).strip()
             resultado = self.lector.execute(ruta=ruta)
-            respuesta = respuesta.replace(match.group(0), resultado.contenido)
+            reemplazo = resultado.contenido if resultado.exito else f"[ERROR al leer: {resultado.error}]"
+            respuesta = respuesta.replace(match.group(0), reemplazo)
 
         # [EJECUTAR: codigo ]
         for match in re.finditer(r"\[EJECUTAR:\s*\n?(.*?)\n?\]", respuesta, re.DOTALL):
             codigo = match.group(1).strip()
             resultado = self.ejecutor.execute(codigo=codigo)
-            respuesta = respuesta.replace(match.group(0), resultado.contenido)
+            reemplazo = resultado.contenido if resultado.contenido else f"[ERROR al ejecutar: {resultado.error}]"
+            respuesta = respuesta.replace(match.group(0), reemplazo)
 
         # [TESTS: ruta]
         for match in re.finditer(r"\[TESTS:\s*(.+?)\]", respuesta):
             ruta = match.group(1).strip()
             resultado = self.ejecutor.ejecutar_tests(ruta_test=ruta)
-            respuesta = respuesta.replace(match.group(0), resultado.contenido)
+            reemplazo = resultado.contenido if resultado.contenido else f"[ERROR al correr tests: {resultado.error}]"
+            respuesta = respuesta.replace(match.group(0), reemplazo)
 
         return respuesta
 

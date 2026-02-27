@@ -32,9 +32,9 @@ from pathlib import Path
 
 import pytest
 
-from memoria.clasificador import ClasificadorPareto, EntradaMemoria
-from memoria.rag import RAGResidual
-from memoria.cola_finetune import ColaFinetune
+from pampar.memoria.clasificador import ClasificadorPareto, EntradaMemoria
+from pampar.memoria.rag import RAGResidual
+from pampar.memoria.cola_finetune import ColaFinetune
 
 
 # ==============================================================================

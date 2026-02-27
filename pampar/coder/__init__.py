@@ -22,7 +22,7 @@ Uso:
 """
 
 # === Arquitectura canónica (v2 — 52 Zonas de Brodmann) ===
-from .v2 import (
+from .deprecated import (
     # Config
     ConfigV2,
     PRESET_4GB,
@@ -48,8 +48,8 @@ from .v2 import (
     crear_modelo,
 )
 
-# === Destilación v2 ===
-from .v2.aprendizaje.destilacion import (
+# === Destilación v2 (deprecated) ===
+from .deprecated.aprendizaje.destilacion import (
     ConfigProfesor,
     ClienteProfesor,
     GeneradorDestilacion,

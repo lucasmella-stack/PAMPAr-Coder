@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pampar.coder.v3.config import ConfigV3
 from pampar.coder.v3.modelo import PamparV3
-from memoria.clasificador import ClasificadorPareto
+from pampar.memoria.clasificador import ClasificadorPareto
 
 
 # =============================================================================
