@@ -57,6 +57,14 @@ from .v2.aprendizaje.destilacion import (
     territory_aware_distillation,
 )
 
+# === Arquitectura v3 (2D: 4 streams × 5 niveles, ~110M params) ===
+from .v3 import (
+    ConfigV3,
+    PRESET_V3,
+    PamparV3,
+    crear_modelo_v3,
+)
+
 __all__ = [
     # Config
     "ConfigV2",
@@ -87,6 +95,11 @@ __all__ = [
     "GeneradorDestilacion",
     "distillation_loss",
     "territory_aware_distillation",
+    # v3 — arquitectura 2D
+    "ConfigV3",
+    "PRESET_V3",
+    "PamparV3",
+    "crear_modelo_v3",
 ]
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
