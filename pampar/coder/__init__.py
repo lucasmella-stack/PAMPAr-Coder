@@ -3,101 +3,38 @@
 """
 PAMPAr-Coder: Modelo de lenguaje cerebral para código.
 
-Arquitectura v2 con 52 Zonas de Brodmann:
-- 4 Territorios: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL
-- 52 Zonas especializadas con routing LLAVES (80% reglas + 20% atención)
-- RoPE embeddings + SwiGLU FFN
-- Early Exit para inferencia rápida
+Arquitectura activa: PamparV3 — 108.3M params, vocab 48K.
+  - Grilla 2D: 4 streams × 5 niveles
+  - TalamoInicial: LLAVES (80% reglas) + atención (20%)
+  - GQA 4:1, SwiGLU, lateral gates
+  - Early exit (umbral 90%)
 
 Uso:
-    from pampar.coder import PampaRCoderV2, crear_modelo, PRESET_4GB
+    from pampar.coder import PamparV3, PRESET_V3
 
-    # Crear modelo para GTX 1650
-    model = crear_modelo(PRESET_4GB)
+    model = PamparV3(PRESET_V3)
 
-    # Con config custom
-    from pampar.coder import ConfigV2
-    config = ConfigV2(dim=512, n_heads=8, n_capas=8)
-    model = PampaRCoderV2(config)
+Arquitectura legacy (v2, 42M params, vocab 16K):
+    from pampar.coder.deprecated import PampaRCoderV2, ConfigV2, PRESET_4GB
 """
 
-# === Arquitectura canónica (v2 — 52 Zonas de Brodmann) ===
-from .deprecated import (
-    # Config
-    ConfigV2,
-    PRESET_4GB,
-    PRESET_8GB,
-    PRESET_24GB,
-    PRESET_1_5B,
-    # Zonas y territorios
-    Zona,
-    Territorio,
-    ZONAS,
-    # LLAVES (routing por reglas)
-    LlavesV2,
-    clasificar_token,
-    # Componentes
-    Talamo,
-    RMSNorm,
-    RoPE,
-    BloqueAttn,
-    BloqueFFN,
-    BloqueTerritorial,
-    # Modelo
-    PampaRCoderV2,
-    crear_modelo,
-)
-
-# === Destilación v2 (deprecated) ===
-from .deprecated.aprendizaje.destilacion import (
-    ConfigProfesor,
-    ClienteProfesor,
-    GeneradorDestilacion,
-    distillation_loss,
-    territory_aware_distillation,
-)
-
-# === Arquitectura v3 (2D: 4 streams × 5 niveles, ~110M params) ===
+# === Arquitectura activa (v3) ===
 from .v3 import (
     ConfigV3,
     PRESET_V3,
+    PRESET_V3_SMALL,
+    PRESET_V3_LARGE,
     PamparV3,
     crear_modelo_v3,
 )
 
 __all__ = [
-    # Config
-    "ConfigV2",
-    "PRESET_4GB",
-    "PRESET_8GB",
-    "PRESET_24GB",
-    "PRESET_1_5B",
-    # Zonas
-    "Zona",
-    "Territorio",
-    "ZONAS",
-    # LLAVES
-    "LlavesV2",
-    "clasificar_token",
-    # Componentes
-    "Talamo",
-    "RMSNorm",
-    "RoPE",
-    "BloqueAttn",
-    "BloqueFFN",
-    "BloqueTerritorial",
-    # Modelo
-    "PampaRCoderV2",
-    "crear_modelo",
-    # Destilación v2
-    "ConfigProfesor",
-    "ClienteProfesor",
-    "GeneradorDestilacion",
-    "distillation_loss",
-    "territory_aware_distillation",
-    # v3 — arquitectura 2D
+    # Config v3
     "ConfigV3",
     "PRESET_V3",
+    "PRESET_V3_SMALL",
+    "PRESET_V3_LARGE",
+    # Modelo v3
     "PamparV3",
     "crear_modelo_v3",
 ]
