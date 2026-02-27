@@ -208,7 +208,11 @@
       "nivel": 3,
       "archivo": "stdlib_python/unittest_pytest.jsonl"
     },
-    { "nombre": "regex", "nivel": 4, "archivo": "stdlib_python/regex.jsonl" },
+    {
+      "nombre": "regex",
+      "nivel": 4,
+      "archivo": "stdlib_python/regex.jsonl"
+    },
     {
       "nombre": "logging",
       "nivel": 3,
@@ -245,6 +249,23 @@
       "nombre": "api_design_rest",
       "nivel": 5,
       "archivo": "ingenieria_software/api_design_rest.jsonl"
+    }
+  ],
+  "python_real": [
+    {
+      "nombre": "flytech_python",
+      "nivel": 2,
+      "archivo": "python_real/flytech_python.jsonl"
+    },
+    {
+      "nombre": "python_instrucciones",
+      "nivel": 2,
+      "archivo": "python_real/python_instrucciones.jsonl"
+    },
+    {
+      "nombre": "humaneval_python",
+      "nivel": 3,
+      "archivo": "python_real/humaneval_python.jsonl"
     }
   ]
 }
