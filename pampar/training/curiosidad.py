@@ -64,9 +64,9 @@ class PerfilTema:
             den = sum((x - x_mean) ** 2 for x in xs) or 1e-8
             self.tasa_mejora = -(num / den)  # Negativo = mejora
 
-        # Dominado si loss baja por 5 sesiones consecutivas
+        # Dominado si las últimas 5 sesiones están por debajo del umbral de dominio
         if len(self.historial_loss) >= 5:
-            self.dominado = all(l < 0.8 for l in list(self.historial_loss)[-5:])
+            self.dominado = all(l < 1.3 for l in list(self.historial_loss)[-5:])
 
     def tiempo_sin_ver(self) -> float:
         """Horas desde la última sesión."""
@@ -122,9 +122,9 @@ class MotorCuriosidad:
     bonus_mejora:  refuerzo si el modelo está mejorando rápido.
     """
 
-    LOSS_OPTIMA: float = 1.5
-    LOSS_DOMINIO: float = 0.7
-    LOSS_MUY_DIFICIL: float = 5.0
+    LOSS_OPTIMA: float = 1.5       # Centro de la zona de máxima curiosidad
+    LOSS_DOMINIO: float = 1.3       # Bajo este umbral el modelo ya dominó el tema
+    LOSS_MUY_DIFICIL: float = 5.0  # Sobre este umbral el tema está fuera del ZPD
 
     def __init__(
         self,
