@@ -140,7 +140,9 @@ class TestCuriosidadZonaProximal:
     def test_tema_en_zona_optima_tiene_curiosidad_alta(self, motor):
         """Un tema con loss ~1.5 (zona óptima) tiene curiosidad máxima."""
         tema = motor.temas["listas"]
-        tema.registrar_sesion(1.5)  # Zona exacta
+        # 6 sesiones para salir del early exploration path (n_sesiones <= 5)
+        for _ in range(6):
+            tema.registrar_sesion(1.5)  # Zona exacta
 
         curiosidad = motor.calcular_curiosidad(tema)
         assert curiosidad > 0.5
@@ -166,10 +168,13 @@ class TestCuriosidadZonaProximal:
         """Un tema de nivel >> nivel_actual tiene curiosidad penalizada."""
         motor.nivel_actual = 1
         tema_dificil = motor.temas["grafos"]  # nivel 5
-        tema_dificil.registrar_sesion(2.0)  # Loss óptima, pero nivel 5
+        # 6 sesiones para salir del early exploration path (n_sesiones <= 5)
+        for _ in range(6):
+            tema_dificil.registrar_sesion(2.0)  # Loss óptima, pero nivel 5
 
         tema_facil = motor.temas["variables"]  # nivel 1
-        tema_facil.registrar_sesion(2.0)  # Misma loss
+        for _ in range(6):
+            tema_facil.registrar_sesion(2.0)  # Misma loss
 
         c_dificil = motor.calcular_curiosidad(tema_dificil)
         c_facil = motor.calcular_curiosidad(tema_facil)

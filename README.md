@@ -35,23 +35,25 @@ Input → Embedding → [BloqueTerrritorial ×6] → LM Head → Output
 
 ### Los 4 Territorios
 
-| Territorio | Zonas Brodmann | Procesa |
-|------------|----------------|---------|
-| **SINTAXIS** | 1–15 | Keywords, operadores, puntuación |
-| **SEMÁNTICA** | 16–30 | Tipos, nombres de variables, literales |
-| **LÓGICO** | 31–42 | Control flow, condicionales, bucles |
-| **ESTRUCTURAL** | 43–52 | Bloques, indentación, scope |
+| Territorio      | Zonas Brodmann | Procesa                                |
+| --------------- | -------------- | -------------------------------------- |
+| **SINTAXIS**    | 1–15           | Keywords, operadores, puntuación       |
+| **SEMÁNTICA**   | 16–30          | Tipos, nombres de variables, literales |
+| **LÓGICO**      | 31–42          | Control flow, condicionales, bucles    |
+| **ESTRUCTURAL** | 43–52          | Bloques, indentación, scope            |
 
 ---
 
 ## Innovaciones Clave
 
 ### 🔑 Sistema LLAVES
+
 - **80% reglas explícitas**: Routing instantáneo basado en patrones de código (INT8)
 - **20% atención aprendida**: Ajuste fino para casos ambiguos
 - Pre-computado al registrar el tokenizer — sin overhead en inferencia
 
 ### 🧠 Viaje Intelectual Autónomo
+
 El modelo aprende solo, sin intervención humana:
 
 1. **MotorCuriosidad** (Vygotsky ZPD): elige el próximo tema maximizando aprendizaje real
@@ -62,18 +64,19 @@ El modelo aprende solo, sin intervención humana:
 3. **Biblioteca**: 39 temas de Python organizados por nivel (1=básico, 6=experto)
 
 ### ⚡ Early Exit
+
 Si la confianza de un token > 90%, salta capas restantes — código Python es predecible.
 
 ---
 
 ## Hardware Soportado
 
-| Config | Params | VRAM | Vocab | Notas |
-|--------|--------|------|-------|-------|
-| PRESET_4GB | **42M** | ~0.5 GB | 16K | **Modelo actual (GTX 1650)** |
-| PRESET_8GB | ~56M | ~1 GB | 16K | En preparación |
-| PRESET_24GB | ~133M | ~3 GB | 48K | En preparación |
-| PRESET_1_5B | ~1.5B | ~12 GB | 48K | Roadmap |
+| Config      | Params  | VRAM    | Vocab | Notas                        |
+| ----------- | ------- | ------- | ----- | ---------------------------- |
+| PRESET_4GB  | **42M** | ~0.5 GB | 16K   | **Modelo actual (GTX 1650)** |
+| PRESET_8GB  | ~56M    | ~1 GB   | 16K   | En preparación               |
+| PRESET_24GB | ~133M   | ~3 GB   | 48K   | En preparación               |
+| PRESET_1_5B | ~1.5B   | ~12 GB  | 48K   | Roadmap                      |
 
 > Todo el entrenamiento es **local**. No hay cloud, no hay RunPod, no hay nada remoto.
 
@@ -175,18 +178,17 @@ PAMPAr-Coder/
 │   ├── aprender_solo.py       # Loop autónomo
 │   ├── smoke_test_viaje.py    # Pre-flight (12 checks)
 │   └── probar_modelo.py       # Testing
-├── tests/                     # 130 tests pytest
-└── versions/legacy-v1/        # Código v1 archivado
+└── tests/                     # 134 tests pytest
 ```
 
 ---
 
 ## Tokenizer — Regla crítica
 
-| Archivo | Vocab | Usar cuando |
-|---------|-------|-------------|
+| Archivo              | Vocab   | Usar cuando                       |
+| -------------------- | ------- | --------------------------------- |
 | code_tokenizer.model | **16K** | Modelo actual (pampar_v2_best.pt) |
-| pampar_48k.model | 48K | Futuros modelos más grandes |
+| pampar_48k.model     | 48K     | Futuros modelos más grandes       |
 
 **El vocab del tokenizer DEBE coincidir con el vocab del modelo.**
 
@@ -194,20 +196,20 @@ PAMPAr-Coder/
 
 ## Interpretar el Loss
 
-| Loss | Significado |
-|------|-------------|
-| ~99 | Sin entrenar |
-| 5–7 | Comenzando a aprender |
-| 2–4 | Aprendizaje activo |
-| 1.5–2 | Zona óptima de ZPD |
-| < 1.5 | Tema bien aprendido |
-| < 0.7 | Tema dominado |
+| Loss  | Significado           |
+| ----- | --------------------- |
+| ~99   | Sin entrenar          |
+| 5–7   | Comenzando a aprender |
+| 2–4   | Aprendizaje activo    |
+| 1.5–2 | Zona óptima de ZPD    |
+| < 1.5 | Tema bien aprendido   |
+| < 0.7 | Tema dominado         |
 
 ---
 
 ## Filosofía
 
-> *"No necesitas 72 billones de parámetros. Necesitas la arquitectura correcta y la curiosidad correcta."*
+> _"No necesitas 72 billones de parámetros. Necesitas la arquitectura correcta y la curiosidad correcta."_
 
 1. **El código es estructurado** → Más peso a reglas (LLAVES 80%)
 2. **El código es predecible** → Early exit agresivo

@@ -112,40 +112,6 @@ def detect_next_fase(current_fase: int) -> int:
     return FINAL_PHASES.get(current_fase, current_fase + 1)
 
 
-def setup_watchdog(api_key: str = None, pod_id: str = None):
-    """Configura watchdog para parar el pod cuando termine."""
-    if not api_key or not pod_id:
-        # Intentar leer de env
-        api_key = api_key or os.environ.get("RUNPOD_API_KEY", "")
-        pod_id = pod_id or os.environ.get("RUNPOD_POD_ID", "")
-    
-    if not api_key or not pod_id:
-        print("  ⚠️  Sin RUNPOD_API_KEY o RUNPOD_POD_ID — watchdog no configurado")
-        return
-    
-    watchdog_script = f"""#!/bin/bash
-TRAIN_PID=$$TRAIN_PID$$
-POD_ID="{pod_id}"
-API_KEY="{api_key}"
-
-while kill -0 $TRAIN_PID 2>/dev/null; do
-    sleep 30
-done
-
-echo "[watchdog] Training finished at $(date)" >> /workspace/watchdog.log
-curl -s -X POST https://api.runpod.io/graphql \\
-  -H 'Content-Type: application/json' \\
-  -H "Authorization: Bearer $API_KEY" \\
-  -d '{{"query": "mutation {{ podStop(input: {{podId: \\\\"'$POD_ID'\\\\"}}) {{ id }} }}"}}' \\
-  >> /workspace/watchdog.log 2>&1
-"""
-    
-    with open("/workspace/watchdog_resume.sh", "w") as f:
-        f.write(watchdog_script)
-    os.chmod("/workspace/watchdog_resume.sh", 0o755)
-    print("  🐕 Watchdog script preparado")
-
-
 def main():
     parser = argparse.ArgumentParser(description="🔄 Resume Training")
     parser.add_argument("--checkpoint", type=str, default=None)

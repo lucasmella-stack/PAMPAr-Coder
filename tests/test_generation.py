@@ -25,7 +25,7 @@ def main():
     print("\n  Cargando modelo...")
     model = crear_modelo(PRESET_4GB)
 
-    checkpoint_path = Path(__file__).parent.parent / "checkpoints" / "stable_best.pt"
+    checkpoint_path = Path(__file__).parent.parent / "checkpoints" / "pampar_v2_best.pt"
     if checkpoint_path.exists():
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint['model'], strict=False)
@@ -38,7 +38,7 @@ def main():
     model.eval()
 
     # Cargar tokenizer
-    tokenizer_path = Path(__file__).parent.parent / "data" / "tokenizer" / "pampar_48k.model"
+    tokenizer_path = Path(__file__).parent.parent / "data" / "tokenizer" / "code_tokenizer.model"
     if not tokenizer_path.exists():
         print(f"    [ERROR] Tokenizer not found: {tokenizer_path}")
         return
