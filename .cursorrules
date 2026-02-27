@@ -13,13 +13,13 @@
 
 | Area | Convention |
 |------|------------|
-| Language | Python 3.11+ |
+| Language | Python 3.13+ |
 | Framework | PyTorch 2.x |
-| Tokenizer | SentencePiece BPE (48K vocab) |
-| Testing | pytest |
+| Tokenizer | SentencePiece BPE — 16K vocab (modelo activo) |
+| Testing | pytest (134 tests) |
 | Type hints | Siempre requeridos |
 | Docstrings | Google style |
-| Cloud | RunPod (RTX A5000 / A40 / A100) |
+| Training | local — GPU 4GB VRAM (NO cloud, NO RunPod) |
 
 ---
 
@@ -76,17 +76,17 @@ LLAVES = {
 PAMPAr-Coder/
 ├── pampar/coder/v2/
 │   ├── modelo.py          # PampaRCoderV2 principal
-│   ├── config.py          # ConfigPampaRCoderV2 + presets
+│   ├── config.py          # ConfigV2 + presets (PRESET_4GB, PRESET_8GB)
 │   ├── talamo.py          # TálamoBrodmann orquestador
 │   ├── llaves.py          # LLAVES INT8 lookup tables
 │   ├── zonas.py           # 52 zonas de Brodmann
-│   ├── bloques.py         # BloqueTerrritorial + FFN simbiótico
+│   ├── bloques.py         # BloqueTerritorial + FFN simbiótico
 │   └── aprendizaje/       # Subsistemas de aprendizaje
-├── cloud/runpod/          # Scripts entrenamiento cloud
+├── biblioteca/            # 39 temas de Python (~140 MB), lista para entrenar
 ├── data/                  # Datos y tokenizer
-├── checkpoints/           # Modelos guardados
-├── scripts/               # Scripts utilidad
-└── tests/                 # Tests pytest
+├── checkpoints/           # pampar_v2_best.pt (42M params, vocab 16K)
+├── scripts/               # Scripts utilidad (aprender_solo.py, etc.)
+└── tests/                 # 134 tests pytest
 ```
 
 ---
@@ -98,7 +98,7 @@ PAMPAr-Coder/
 3. **INT8 para LLAVES** — lookup tables cuantizadas (256 niveles)
 4. **Pesos en FP16/BF16** — nunca INT8
 5. **Gradient checkpointing** — obligatorio para >500M params
-6. **vocab_size = 48000** — debe coincidir con tokenizer.GetPieceSize()
+6. **vocab_size = 16000** — debe coincidir con el tokenizer activo (`code_tokenizer.model`)
 7. **Ventana contexto = 32** — convolución causal, pad izquierdo
 
 ---
@@ -112,7 +112,7 @@ PAMPAr-Coder/
 | Dominio | Español | `Talamo`, `MemoriaErrores` |
 | ML estándar | Inglés | `forward`, `hidden_states` |
 | Config | `Config` + nombre | `ConfigPampaRCoderV2` |
-| Presets | `PRESET_` + capacidad | `PRESET_1_5B` |
+| Presets | `PRESET_` + capacidad | `PRESET_4GB` |
 
 ### Type Hints (OBLIGATORIO)
 
@@ -139,8 +139,7 @@ class PampaRCoderV2(nn.Module):
         embedding: Capa de embedding.
 
     Example:
-        >>> config = ConfigPampaRCoderV2.from_preset("1.5B")
-        >>> model = PampaRCoderV2(config)
+        >>> model = crear_modelo(PRESET_4GB)
     """
 ```
 
@@ -197,29 +196,6 @@ class TestPampaRCoderV2:
         output = model(input_ids)
         assert output.logits.shape == (2, 16, 1000)
 ```
-
----
-
-## Cloud Training (RunPod)
-
-```bash
-# Conectar
-ssh root@IP -p PORT
-
-# Lanzar con screen
-cd /workspace/PAMPAr-Coder
-screen -S train
-python3 cloud/runpod/train_cloud.py --config 1_5B > training.log 2>&1
-
-# Monitorear
-tail -f training.log
-nvidia-smi -l 5
-```
-
-| Config | Params | VRAM | GPU |
-|--------|--------|------|-----|
-| 1.5B | ~230M | 8GB | A5000 |
-| 3B | ~3B | 24GB | A40/A100 |
 
 ---
 

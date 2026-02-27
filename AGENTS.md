@@ -10,7 +10,7 @@
 | Language   | Python 3.13+                                                          |
 | Framework  | PyTorch 2.x                                                           |
 | Tokenizer  | SentencePiece BPE — 16K para modelo actual, 48K preparado para futuro |
-| Testing    | pytest (130 tests, todos deben pasar)                                 |
+| Testing    | pytest (134 tests, todos deben pasar)                                 |
 | Type hints | Always required                                                       |
 | Docstrings | Google style                                                          |
 | Training   | Local — todo corre en la GPU del desarrollador (4GB VRAM)             |
@@ -23,7 +23,7 @@
 - **Tokenizer activo**: `data/tokenizer/code_tokenizer.model` (16K vocab) — debe coincidir con el modelo
 - **Entrenamiento**: `scripts/aprender_solo.py` — loop autónomo local con MotorCuriosidad
 - **Biblioteca**: `biblioteca/` — 39 temas de Python (~140 MB), lista para entrenamiento
-- **Tests**: 130/130 passing
+- **Tests**: 134/134 passing
 
 ## Project Structure
 
@@ -52,16 +52,13 @@ PAMPAr-Coder/
 │   ├── code/                  # Código de GitHub (~143 MB)
 │   └── distillation/          # Datos destilados (~2.8 GB)
 ├── checkpoints/
-│   ├── pampar_v2_best.pt      # ACTIVO — 42M params, vocab 16K
-│   └── stable_*.pt            # Checkpoints legacy (vocab 16K, dim 256 — arch vieja)
+│   └── pampar_v2_best.pt      # ACTIVO — 42M params, vocab 16K
 ├── scripts/
 │   ├── aprender_solo.py       # Loop de entrenamiento autónomo (PRINCIPAL)
 │   ├── smoke_test_viaje.py    # Smoke test — correr antes de entrenar (12 checks)
 │   ├── probar_modelo.py       # Prueba interactiva y automática del modelo
 │   └── poblar_biblioteca.py   # Clasifica datos en temas para biblioteca/
-├── tests/                     # 130 tests pytest
-├── cloud/                     # LEGACY — ignorar, no se usa
-└── versions/                  # Código v1 archivado — no tocar
+└── tests/                     # 134 tests pytest
 ```
 
 ## Architecture Overview
