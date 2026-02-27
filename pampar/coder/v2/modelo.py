@@ -63,10 +63,6 @@ class PampaRCoderV2(nn.Module):
         # Weight tying: embedding = LM head
         self.lm_head.weight = self.tok_emb.weight
 
-        # Máscara causal (lower triangular)
-        mask = torch.tril(torch.ones(config.max_seq_len, config.max_seq_len))
-        self.register_buffer("mask", mask)
-
         # Inicializar pesos
         self.apply(self._init_weights)
 
@@ -111,17 +107,17 @@ class PampaRCoderV2(nn.Module):
         terr_acts, zona_acts = self.talamo(x, input_ids)
 
         # 3. Bloques territoriales con Early Exit
+        # El mask causal es manejado internamente por Flash Attention
         info: Dict = {"exit_capa": self.config.n_capas, "terr_acts": terr_acts}
-        mask = self.mask[:L, :L]
 
         for i, bloque in enumerate(self.bloques):
             if self.config.use_checkpoint and self.training and not use_early_exit:
                 x, conf = torch.utils.checkpoint.checkpoint(
-                    bloque, x, terr_acts, mask,
+                    bloque, x, terr_acts,
                     use_reentrant=False,
                 )
             else:
-                x, conf = bloque(x, terr_acts, mask)
+                x, conf = bloque(x, terr_acts)
 
             if use_early_exit and conf > self.config.umbral_exit:
                 if i >= self.config.capas_min - 1:

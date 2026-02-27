@@ -14,7 +14,7 @@ Componentes optimizados para escalar de 42M a 1.5B params:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
+from typing import Tuple
 
 from .config import ConfigV2
 
@@ -86,17 +86,21 @@ class RoPE(nn.Module):
 
 class BloqueAttn(nn.Module):
     """
-    Multi-head self-attention con RoPE y Grouped Query Attention (GQA).
+    Multi-head self-attention con RoPE, GQA y Flash Attention.
 
     GQA (Ainslie et al., 2023): Comparte KV heads entre múltiples Q heads.
     Reduce KV cache en inferencia sin perder calidad.
+
+    Flash Attention (Dao et al., 2022, vía F.scaled_dot_product_attention):
+    Implementación kernel-fused de softmax + dropout + matmul.
+    Usa 2x menos VRAM y es 2-4x más rápida que la atención manual.
+    El mask causal se aplica directamente con is_causal=True.
 
     Con config.n_kv_heads=0 → MHA estándar (backward compatible).
     Con config.n_kv_heads>0 → GQA con ese número de KV heads.
 
     Ejemplo PRESET_1_5B: 12 Q heads, 4 KV heads → ratio 3:1
     - KV cache es 3x menor que MHA
-    - Inferencia batch más rápida
     - Calidad prácticamente igual que MHA
     """
 
@@ -107,6 +111,7 @@ class BloqueAttn(nn.Module):
         self.head_dim = config.head_dim
         self.dim = config.dim
         self.n_rep = self.n_heads // self.n_kv_heads  # Q groups per KV head
+        self.dropout = config.dropout
 
         # Q projection: full n_heads
         self.q_proj = nn.Linear(config.dim, self.n_heads * self.head_dim, bias=False)
@@ -120,12 +125,6 @@ class BloqueAttn(nn.Module):
         # RoPE
         self.rope = RoPE(config.head_dim, config.max_seq_len)
 
-        # Dropout
-        self.attn_drop = nn.Dropout(config.dropout)
-
-        # Escala
-        self.scale = config.head_dim ** -0.5
-
     def _repeat_kv(self, x: torch.Tensor) -> torch.Tensor:
         """
         Repite KV heads para matchear Q heads (GQA → MHA-like).
@@ -138,17 +137,12 @@ class BloqueAttn(nn.Module):
         x = x.unsqueeze(2).expand(B, H, self.n_rep, L, D)
         return x.reshape(B, H * self.n_rep, L, D)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward de atención con GQA.
+        Forward de atención con GQA y Flash Attention.
 
         Args:
             x: [B, L, D] input embeddings
-            mask: [L, L] causal mask (1=attend, 0=mask)
 
         Returns:
             [B, L, D] output
@@ -168,16 +162,14 @@ class BloqueAttn(nn.Module):
         k = self._repeat_kv(k)  # [B, n_heads, L, D]
         v = self._repeat_kv(v)  # [B, n_heads, L, D]
 
-        # Scaled dot-product attention
-        attn = (q @ k.transpose(-2, -1)) * self.scale
+        # Flash Attention (PyTorch 2.0+): kernel-fused, 2x menos VRAM
+        # is_causal=True aplica máscara causal sin materializar el tensor
+        out = F.scaled_dot_product_attention(
+            q, k, v,
+            dropout_p=self.dropout if self.training else 0.0,
+            is_causal=True,
+        ).transpose(1, 2).reshape(B, L, self.dim)
 
-        if mask is not None:
-            attn = attn.masked_fill(mask[:L, :L] == 0, float("-inf"))
-
-        attn = F.softmax(attn, dim=-1)
-        attn = self.attn_drop(attn)
-
-        out = (attn @ v).transpose(1, 2).reshape(B, L, self.dim)
         return self.o_proj(out)
 
 
@@ -263,7 +255,6 @@ class BloqueTerritorial(nn.Module):
         self,
         x: torch.Tensor,
         terr_acts: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, float]:
         """
         Forward del bloque territorial.
@@ -271,14 +262,13 @@ class BloqueTerritorial(nn.Module):
         Args:
             x: [B, L, D] input
             terr_acts: [B, L, 4] territorial activations from Tálamo
-            mask: [L, L] causal mask
 
         Returns:
             x: [B, L, D] output
             confianza: float in [0,1] for Early Exit decision
         """
-        # 1. Atención + residual
-        x = x + self.drop(self.attn(self.norm1(x), mask))
+        # 1. Atención + residual (Flash Attention, causal)
+        x = x + self.drop(self.attn(self.norm1(x)))
 
         # 2. FFN por territorio con relaciones simbióticas
         h = self.norm2(x)

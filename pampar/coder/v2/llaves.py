@@ -139,9 +139,9 @@ def clasificar_token(token: str) -> Tuple[Zona, float]:
 class LlavesV2(nn.Module):
     """
     Sistema LLAVES v2 con lookup tables cuantizadas.
-    
-    Usa INT4 para almacenar las activaciones de zona por token,
-    reduciendo memoria 8x vs FP32.
+
+    Usa INT8 (uint8, 256 niveles) para almacenar las activaciones de zona
+    por token, reduciendo memoria 4x vs FP32. Error de cuantización < 0.4%.
     """
     
     def __init__(
