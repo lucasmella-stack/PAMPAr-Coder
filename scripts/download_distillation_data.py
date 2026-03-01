@@ -64,6 +64,22 @@ DATASETS_CONFIG = [
         "format": "qa",
         "estimated_tokens": "20M",
     },
+    {
+        "name": "Magicoder-OSS-75K",
+        "hf_id": "ise-uiuc/Magicoder-OSS-Instruct-75K",
+        "split": "train",
+        "text_field": ["problem", "solution"],
+        "format": "qa",
+        "estimated_tokens": "150M",
+    },
+    {
+        "name": "StarCoder2-Self-OSS-50K",
+        "hf_id": "bigcode/self-oss-instruct-sc2-exec-filter-50k",
+        "split": "train",
+        "text_field": ["prompt", "response"],
+        "format": "qa",
+        "estimated_tokens": "100M",
+    },
 ]
 
 
@@ -80,6 +96,9 @@ def format_instruction(item: Dict, fields: List[str]) -> str:
     if "query" in fields and item.get("query"):
         parts.append(f"### Query:\n{item['query']}")
     
+    if "prompt" in fields and item.get("prompt"):
+        parts.append(f"### Problem:\n{item['prompt']}")
+
     if "problem" in fields and item.get("problem"):
         parts.append(f"### Problem:\n{item['problem']}")
         

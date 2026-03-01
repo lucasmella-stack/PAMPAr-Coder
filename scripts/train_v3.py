@@ -310,13 +310,11 @@ class ViajeIntelectualV3:
 
         avg_loss = sum(self._historial_loss) / len(self._historial_loss) if self._historial_loss else 0.0
 
-        print(
-            f"\n[paso {self.paso_global:>6}  {hh:02d}h{mm:02d}m]"
-            f"  nivel={res['nivel_actual']}"
-            f"  dom={res['temas_dominados']}/{res['temas_total']}"
-            f"  {_pp_loss(loss)}"
-            f"  avg100={avg_loss:.3f}"
-            f"\n  tema → {nombre_tema}"
+        logger.info(
+            "[paso %6d  %02dh%02dm]  nivel=%d  dom=%d/%d  %s  avg100=%.3f  tema=%s",
+            self.paso_global, hh, mm,
+            res['nivel_actual'], res['temas_dominados'], res['temas_total'],
+            _pp_loss(loss), avg_loss, nombre_tema,
         )
 
     # ── Bucle principal ───────────────────────────────────────────────────────
@@ -385,6 +383,10 @@ class ViajeIntelectualV3:
                 loss = metricas["loss"]
                 losses_sesion.append(loss)
                 self.paso_global += 1
+
+                # ── Log en vivo cada 10 pasos
+                if self.paso_global % 10 == 0:
+                    logger.info("paso %d | %s | tema=%s", self.paso_global, _pp_loss(loss), nombre_tema)
 
                 # ── 2c. REPLAY BUFFER (clasificado con Pareto)
                 self._agregar_a_replay(tokens, loss)

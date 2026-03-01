@@ -266,6 +266,16 @@
       "nombre": "humaneval_python",
       "nivel": 3,
       "archivo": "python_real/humaneval_python.jsonl"
+    },
+    {
+      "nombre": "magicoder_oss_75k",
+      "nivel": 6,
+      "archivo": "python_real/magicoder_oss_75k.jsonl"
+    },
+    {
+      "nombre": "starcoder2_self_50k",
+      "nivel": 6,
+      "archivo": "python_real/starcoder2_self_oss_50k.jsonl"
     }
   ]
 }
