@@ -124,10 +124,17 @@ def _tokenizar(
 ) -> list[list[int]]:
     """Tokeniza ejemplos en chunks de max_seq_len+1 tokens."""
     chunks: list[list[int]] = []
-    for texto in ejemplos:
+    n = len(ejemplos)
+    # ~4 chars/token heurística → cap de caracteres antes de tokenizar
+    max_chars = max_seq_len * 6
+    for i, texto in enumerate(ejemplos):
+        if (i + 1) % 5000 == 0:
+            logger.info("  tokenizando %d/%d ...", i + 1, n)
+        # Truncar texto largo antes de tokenizar (evitar O(n²) en SPM)
+        if len(texto) > max_chars:
+            texto = texto[:max_chars]
         ids = tok.Encode(texto)
         if len(ids) > max_seq_len + 1:
-            # Truncar — SFT necesita el prompt completo, no dividir en overlapping
             chunks.append(ids[: max_seq_len + 1])
         elif len(ids) >= 16:
             chunks.append(ids)
