@@ -369,9 +369,27 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 256, tempe
 # =============================================================================
 
 def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
+    import textwrap
+
     # Si el output es formato instrucción, extraer solo el código después de ### Solution:
     if "### Solution:" in codigo:
         codigo = codigo.split("### Solution:")[-1].lstrip("\n")
+
+    # Extraer código dentro de ```python ... ``` si existe
+    if "```python" in codigo:
+        bloque = codigo.split("```python", 1)[1]
+        if "```" in bloque:
+            bloque = bloque.split("```", 1)[0]
+        codigo = bloque
+    elif "```" in codigo:
+        # Bloque sin tag de lenguaje
+        bloque = codigo.split("```", 1)[1]
+        if "```" in bloque:
+            bloque = bloque.split("```", 1)[0]
+        codigo = bloque
+
+    # Normalizar indentación (dedent elimina espacios líderes comunes)
+    codigo = textwrap.dedent(codigo).strip()
 
     try:
         ast.parse(codigo)
