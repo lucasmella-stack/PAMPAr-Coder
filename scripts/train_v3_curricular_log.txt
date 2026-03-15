@@ -90,3 +90,81 @@
 12:58:57 [INFO] paso 3680 | loss=0.339  ppl=1.4 | tema=programacion_dinamica
 12:59:03 [INFO] paso 3690 | loss=2.211  ppl=9.1 | tema=programacion_dinamica
 12:59:09 [INFO] paso 3700 | loss=2.252  ppl=9.5 | tema=arboles_binarios
+12:59:15 [INFO] paso 3710 | loss=0.359  ppl=1.4 | tema=arboles_binarios
+12:59:21 [INFO] paso 3720 | loss=0.367  ppl=1.4 | tema=arboles_binarios
+12:59:28 [INFO] paso 3730 | loss=1.773  ppl=5.9 | tema=heap_y_cola_prioridad
+12:59:33 [INFO] paso 3740 | loss=0.426  ppl=1.5 | tema=heap_y_cola_prioridad
+12:59:39 [INFO] paso 3750 | loss=0.433  ppl=1.5 | tema=heap_y_cola_prioridad
+12:59:40 [INFO] [paso   3751  00h08m]  nivel=1  dom=0/40  loss=0.815  ppl=2.3  avg100=0.925  tema=heap_y_cola_prioridad
+12:59:40 [INFO] ReplayPareto: 256 muestras  imp_media=0.873  imp_max=0.997
+12:59:45 [INFO] paso 3760 | loss=0.364  ppl=1.4 | tema=backtracking
+12:59:51 [INFO] paso 3770 | loss=0.480  ppl=1.6 | tema=backtracking
+12:59:57 [INFO] paso 3780 | loss=0.379  ppl=1.5 | tema=backtracking
+13:00:02 [INFO] paso 3790 | loss=0.267  ppl=1.3 | tema=recursion
+13:00:06 [INFO] paso 3800 | loss=0.376  ppl=1.5 | tema=recursion
+13:00:08 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 3800
+13:00:12 [INFO] paso 3810 | loss=0.667  ppl=1.9 | tema=recursion
+13:00:18 [INFO] paso 3820 | loss=0.708  ppl=2.0 | tema=singleton_factory
+13:00:23 [INFO] paso 3830 | loss=0.601  ppl=1.8 | tema=singleton_factory
+13:00:28 [INFO] paso 3840 | loss=1.901  ppl=6.7 | tema=singleton_factory
+13:00:32 [INFO] paso 3850 | loss=1.064  ppl=2.9 | tema=collections
+13:00:35 [INFO] paso 3860 | loss=0.824  ppl=2.3 | tema=collections
+13:00:38 [INFO] paso 3870 | loss=0.558  ppl=1.7 | tema=collections
+13:00:42 [INFO] paso 3880 | loss=0.638  ppl=1.9 | tema=dataclasses
+13:00:46 [INFO] paso 3890 | loss=0.913  ppl=2.5 | tema=dataclasses
+13:00:50 [INFO] paso 3900 | loss=0.909  ppl=2.5 | tema=dataclasses
+13:00:50 [INFO] [paso   3901  00h09m]  nivel=1  dom=0/40  loss=0.771  ppl=2.2  avg100=0.805  tema=dataclasses
+13:00:50 [INFO] ReplayPareto: 256 muestras  imp_media=0.874  imp_max=0.997
+13:00:56 [INFO] paso 3910 | loss=3.657  ppl=38.8 | tema=observer_strategy
+13:01:02 [INFO] paso 3920 | loss=1.800  ppl=6.0 | tema=observer_strategy
+13:01:08 [INFO] paso 3930 | loss=2.510  ppl=12.3 | tema=observer_strategy
+13:01:14 [INFO] paso 3940 | loss=0.284  ppl=1.3 | tema=decorator_pattern
+13:01:20 [INFO] paso 3950 | loss=0.399  ppl=1.5 | tema=decorator_pattern
+13:01:26 [INFO] paso 3960 | loss=0.228  ppl=1.3 | tema=decorator_pattern
+13:01:31 [INFO] paso 3970 | loss=0.650  ppl=1.9 | tema=unittest_pytest
+13:01:36 [INFO] paso 3980 | loss=0.495  ppl=1.6 | tema=unittest_pytest
+13:01:42 [INFO] paso 3990 | loss=0.623  ppl=1.9 | tema=unittest_pytest
+13:01:46 [INFO] paso 4000 | loss=0.518  ppl=1.7 | tema=functools
+13:01:49 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 4000
+13:01:53 [INFO] paso 4010 | loss=0.530  ppl=1.7 | tema=functools
+13:01:57 [INFO] paso 4020 | loss=0.941  ppl=2.6 | tema=functools
+13:02:04 [INFO] paso 4030 | loss=4.051  ppl=57.5 | tema=pathlib_y_os
+13:02:11 [INFO] paso 4040 | loss=2.603  ppl=13.5 | tema=pathlib_y_os
+13:02:18 [INFO] paso 4050 | loss=3.435  ppl=31.0 | tema=pathlib_y_os
+13:02:19 [INFO] [paso   4051  00h10m]  nivel=1  dom=0/40  loss=2.918  ppl=18.5  avg100=1.435  tema=pathlib_y_os
+13:02:19 [INFO] ReplayPareto: 256 muestras  imp_media=0.885  imp_max=0.997
+13:02:26 [INFO] paso 4060 | loss=4.538  ppl=93.5 | tema=regex
+13:02:32 [INFO] paso 4070 | loss=0.540  ppl=1.7 | tema=regex
+13:02:38 [INFO] paso 4080 | loss=1.756  ppl=5.8 | tema=regex
+13:02:46 [INFO] paso 4090 | loss=0.890  ppl=2.4 | tema=solid_principles
+13:02:52 [INFO] paso 4100 | loss=0.967  ppl=2.6 | tema=solid_principles
+13:02:59 [INFO] paso 4110 | loss=0.734  ppl=2.1 | tema=solid_principles
+13:03:03 [INFO] paso 4120 | loss=0.827  ppl=2.3 | tema=itertools
+13:03:07 [INFO] paso 4130 | loss=0.826  ppl=2.3 | tema=itertools
+13:03:10 [INFO] paso 4140 | loss=0.783  ppl=2.2 | tema=itertools
+13:03:16 [INFO] paso 4150 | loss=0.229  ppl=1.3 | tema=clean_code
+13:03:21 [INFO] paso 4160 | loss=0.262  ppl=1.3 | tema=clean_code
+13:03:26 [INFO] paso 4170 | loss=0.250  ppl=1.3 | tema=clean_code
+13:03:32 [INFO] paso 4180 | loss=4.056  ppl=57.7 | tema=funciones_basicas
+13:03:39 [INFO] paso 4190 | loss=2.063  ppl=7.9 | tema=funciones_basicas
+13:03:46 [INFO] paso 4200 | loss=3.728  ppl=41.6 | tema=funciones_basicas
+13:03:48 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 4200
+13:03:49 [INFO] [paso   4201  00h12m]  nivel=1  dom=0/40  loss=2.480  ppl=11.9  avg100=1.241  tema=funciones_basicas
+13:03:49 [INFO] ReplayPareto: 256 muestras  imp_media=0.889  imp_max=0.997
+13:03:55 [INFO] paso 4210 | loss=3.685  ppl=39.9 | tema=diccionarios_y_sets
+13:04:02 [INFO] paso 4220 | loss=0.543  ppl=1.7 | tema=diccionarios_y_sets
+13:04:09 [INFO] paso 4230 | loss=4.345  ppl=77.1 | tema=diccionarios_y_sets
+13:04:16 [INFO] paso 4240 | loss=2.512  ppl=12.3 | tema=api_design_rest
+13:04:22 [INFO] paso 4250 | loss=2.624  ppl=13.8 | tema=api_design_rest
+13:04:29 [INFO] paso 4260 | loss=2.583  ppl=13.2 | tema=api_design_rest
+13:04:36 [INFO] paso 4270 | loss=3.954  ppl=52.1 | tema=control_de_flujo
+13:04:43 [INFO] paso 4280 | loss=4.992  ppl=147.3 | tema=control_de_flujo
+13:04:50 [INFO] paso 4290 | loss=1.680  ppl=5.4 | tema=control_de_flujo
+13:04:56 [INFO] paso 4300 | loss=2.305  ppl=10.0 | tema=variables_y_tipos
+13:05:01 [INFO] paso 4310 | loss=0.626  ppl=1.9 | tema=variables_y_tipos
+13:05:06 [INFO] paso 4320 | loss=2.317  ppl=10.1 | tema=variables_y_tipos
+13:05:13 [INFO] paso 4330 | loss=3.729  ppl=41.6 | tema=manejo_de_errores
+13:05:20 [INFO] paso 4340 | loss=2.309  ppl=10.1 | tema=manejo_de_errores
+13:05:28 [INFO] paso 4350 | loss=4.589  ppl=98.4 | tema=manejo_de_errores
+13:05:28 [INFO] [paso   4351  00h13m]  nivel=1  dom=0/40  loss=3.179  ppl=24.0  avg100=2.920  tema=manejo_de_errores
+13:05:28 [INFO] ReplayPareto: 256 muestras  imp_media=0.906  imp_max=1.000

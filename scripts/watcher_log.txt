@@ -1,0 +1,13 @@
+[WATCHER] Esperando que train_v3 llegue a paso 6000...
+13:03:21 [INFO] paso 4160 | loss=0.262  ppl=1.3 | tema=clean_code
+13:03:26 [INFO] paso 4170 | loss=0.250  ppl=1.3 | tema=clean_code
+13:03:32 [INFO] paso 4180 | loss=4.056  ppl=57.7 | tema=funciones_basicas
+13:03:55 [INFO] paso 4210 | loss=3.685  ppl=39.9 | tema=diccionarios_y_sets
+13:04:02 [INFO] paso 4220 | loss=0.543  ppl=1.7 | tema=diccionarios_y_sets
+13:04:09 [INFO] paso 4230 | loss=4.345  ppl=77.1 | tema=diccionarios_y_sets
+13:04:22 [INFO] paso 4250 | loss=2.624  ppl=13.8 | tema=api_design_rest
+13:04:29 [INFO] paso 4260 | loss=2.583  ppl=13.2 | tema=api_design_rest
+13:04:36 [INFO] paso 4270 | loss=3.954  ppl=52.1 | tema=control_de_flujo
+13:04:56 [INFO] paso 4300 | loss=2.305  ppl=10.0 | tema=variables_y_tipos
+13:05:01 [INFO] paso 4310 | loss=0.626  ppl=1.9 | tema=variables_y_tipos
+13:05:06 [INFO] paso 4320 | loss=2.317  ppl=10.1 | tema=variables_y_tipos
