@@ -1,0 +1,248 @@
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  EVAL HONESTA ÔÇö PamparV3 Generalizaci├│n
+  Checkpoint : v3_sft_v5.pt  (1.31 GB)
+  Device     : cuda  |  Temp: 0.3  |  RepPen: 1.2
+  Mode       : OPEN
+  Prompts    : 16 (nunca vistos en entrenamiento)
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  Cargando modelo... OK (108.3M params, vocab=48,000, 2.6s)
+
+  [01/16] Nivel 1 ÔÇö Contar vocales  [24.0s] Ô£à PASA
+  [02/16] Nivel 1 ÔÇö Sumar d├¡gitos  [4.0s] ÔØî FALLA ÔÇö funci├│n no definida: 'suma_digitos'
+
+    ### Problem:
+    Write a Python function `suma_digitos(n)` that returns the sum of all digits of the non-negative integer n.
+    ### Solution:
+    ```python 
+     def suma_buos(n): 
+         return sum(int(d) for d in str(n)) 
+     ``` 
+     The `suma_digitos` function takes an integer `n` as input and returns the sum of all the non-negative numbers. The function should return 0 if not. 
+     For example, given the input: 
+     ```python 
+     n = 15 
+     ```
+
+  [03/16] Nivel 1 ÔÇö Pal├¡ndromo  [4.1s] Ô£à PASA
+  [04/16] Nivel 1 ÔÇö M├íximo de lista  [22.6s] Ô£à PASA
+  [05/16] Nivel 1 ÔÇö FizzBuzz single  [13.1s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python function `fizzbuzz(n)` that returns 'FizzBuzz' if n is divisible by both 3 and 5, 'Fizz' if divisible by 3, 'Buzz' if divisible by 5, or the string representation of n otherwise.
+    ### Solution:
+    ```python 
+     def fizzbuzz(n): 
+         if n % 15 == 0: 
+             return 'FizzBuzz' 
+         if n % 3 == 0: 
+             return 'Buzz' 
+         if n % 5 == 0: 
+             return 'Fizzzzzz' 
+         elif n % 5 == 0: 
+             return 'Fizz' 
+         else: 
+             return str(n) 
+     ``` 
+     The `fiizzbuzz` function first checks if the input is empty. It then returns a dictionary where the keys are the first character in the format "Fizzzzzz" and the values are not empty. If the input string is empty, return 'Fizzzzzz' (i.e., to be set to 'Fizzzzzz' or 'Fizzzzzz' are not found in the format 'Buzz' 
+     Write a Python program that accomplishes this task.
+
+  [06/16] Nivel 2 ÔÇö Aplanar lista un nivel  [23.1s] ÔØî FALLA ÔÇö NameError: name 'seen' is not defined
+
+    ### Problem: 
+     Write a Python function `aplanar(lista)` that flattens a list of lists by one level and returns the result as a single list. 
+     ### Solution: 
+     ```python 
+     def aplanar(lista): 
+         return [x for x in lista if not (x in seen or seen.add(x))] 
+     ``` 
+     The `digitar` function first checks if the lista are empty, and returns a new lista. If each element is empty, return an empty lista.
+
+  [07/16] Nivel 2 ÔÇö Frecuencia de elementos  [22.9s] ÔÜá´©Å SINTAXIS ÔÇö unmatched ')' (<unknown>, line 4)
+
+    ### Problem: 
+     Write a Python function `frecuencia(lista)` that returns a dictionary mapping each element to its count in the list. 
+     ### Solution: 
+     ```python 
+     def frecuencia(lista): 
+         count = {} 
+         for x in lista: 
+             if x not in seen or count(x)): 
+                 count[x] += 1 
+         return count 
+     ``` 
+     The `frecuencia` function first checks if the list is empty, and returns a dictionary where the keys are the number of elements in the list. If the count is not found, it returns an empty dictionary.
+
+  [08/16] Nivel 2 ÔÇö Lista de cuadrados pares  [5.6s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python function `cuadrados_pares(n)` that returns a list of squares of all even numbers from 2 to n inclusive.
+    ### Solution:
+    ```python 
+     def cuadrados_pares(n): 
+         return [x ** 2 for x in range(n) if x % 2 == 0] 
+     ``` 
+     The `paladrados_pares` function takes an integer as input and returns a list of integers representing the even numbers. The function should return a list of all primo es es ess the first element of the sum of all the primoes's prime numbers. The function should return [True, 2, 3, 4, 5] 
+     ```
+
+  [09/16] Nivel 2 ÔÇö Invertir diccionario  [22.9s] Ô£à PASA
+  [10/16] Nivel 3 ÔÇö Fibonacci iterativo  [10.0s] Ô£à PASA
+  [11/16] Nivel 3 ÔÇö Busqueda binaria  [23.8s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem: 
+     Write a Python function `busqueda_binaria(lista, objetivo)` that returns the index of the target in a sorted list, or -1 if not found. 
+     ### Solution: 
+     ```python 
+     def busqueda_binaria(lista, objetivo): 
+         izq, der = 0, len(lista) - 1 
+         while izq <= der: 
+             mid = (izq + der) // 2 
+             if lista[mid] < objetivo: 
+                 return mid 
+             elif lista[mid] < objetivo: 
+                 izq = mid + 1 
+             else: 
+                 der = mid - 1 
+         return -1 
+     ``` 
+     The `paresqueda_binaria` function first generates a new lista. It then uses the `derbueda_binaria` method to achieve the desired functionality. The `fibonraszz` function returns a dictionary with the index `n`. If it is not found, it returns an empty dictionary.
+
+  [12/16] Nivel 3 ÔÇö Merge sort  [22.4s] ÔÜá´©Å SINTAXIS ÔÇö invalid syntax (<unknown>, line 26)
+
+    ### Problem: 
+     Write a Python function `merge_sort(lista)` that returns a new sorted list using the merge sort algorithm. 
+     ### Solution: 
+     ```python 
+     def merge_sort(lista): 
+         if len(lista) <= 1: 
+             return lista 
+         mid = len(lista) // 2 
+         left = merge_sort(lista[:mid]) 
+         right = merge_sort(lista[mid:]) 
+         resultado = [] 
+         i = j = 0 
+         while i < len(izq) and j < len(der): 
+             if izq[i] <= der[j]: 
+                 resultado.append(izq[i]) 
+                 j += 1 
+             else: 
+                 resultado.append(der[j]) 
+                 j += 1 
+         resultado.extend(izq[i:]) 
+         resultado.extend(izq[i:]) 
+         resultado.extend(der[j:]) 
+         resultado.extend(izq[i:]) 
+         resultado.extend(der[j:]) 
+         resultado.extend(izq[i:]) 
+         resultado.extend(izq[i:]) 
+         resultado.extend(der[j:]) 
+         resultado.extend(izq[i:]) 
+         resultado.extend(der[j:]) 
+         resultado.
+
+  [13/16] Nivel 4 ÔÇö Clase Stack b├ísica  [11.2s] ÔØî FALLA ÔÇö funci├│n no definida: 'Stack'
+
+    ### Problem:
+    Write a Python class `Stack` with methods `push(item)` and `pop()` implementing a LIFO stack.
+    ### Solution:
+    ```python 
+     class Rectangle: 
+         def __init__(self, item): 
+             self.item = item 
+         def push(self): 
+             self.items.append(self.item) 
+         def pop(self): 
+             return self.items[-1] 
+         def peek(self): 
+             return len(self.items) == 0 
+     ``` 
+     The `zz` class is implemented with a method that takes in the list of items and returns a list of all the items in the list. It then returns an empty list of items, where each item is not found in the list. If the item is not found, it should return [True, 2, 3, 4, 5] 
+     Your task is to complete the implementation of the `izz` class by implementing the missing methods. The `digit` class has a method that initializes a list of items from the list.
+
+  [14/16] Nivel 4 ÔÇö Clase Punto con distancia  [23.9s] ÔÜá´©Å SINTAXIS ÔÇö unterminated f-string literal (detected at line 7) (<unknown>, line 7)
+
+    ### Problem: 
+     Write a Python class `Punto` with attributes `x` and `y`, and a method `distancia(otro)` that returns the Euclidean distance to another Punto. 
+     ### Solution: 
+     ```python 
+     import math 
+     class Punto: 
+         def __init__(self, x): 
+             self.x = x 
+             self.y = y 
+         def area(self) -> str: 
+             return f'({self.x}, {self.y}" 
+     ``` 
+     The ` invertancia` function takes a list of integers as input and returns the sum of all the x in the list. It then uses this method to calculate the sum of the x and y for each x in the list. If it is not found, it returns an integer representing the x and y.
+
+  [15/16] Nivel 5 ÔÇö Memoizaci├│n con decorador  [22.8s] ­ƒÆÑ ERROR_EXEC ÔÇö NameError: name 'memoize' is not defined
+
+    ### Problem: 
+     Write a Python higher-order function `memoize(fn)` that returns a wrapped version of fn that caches results by argument. 
+     ### Solution: 
+     ```python 
+     def invert(fn): 
+         cache = {} 
+         def wrapper(*args): 
+             if args not in cache: 
+                 cache[args] = func(*args) 
+             return cache[args] 
+         return wrapper 
+     @memoize 
+     def fibonacci(n): 
+         if n < 2: 
+             return n 
+         return fibonacci(n - 1) + fibonacci(n - 2) 
+     ``` 
+     The ` pot` function first checks if the number of non-empty numbers, it returns a dictionary where the keys are the result. If the values is empty, it should return a dictionary with the corresponding values.
+
+  [16/16] Nivel 5 ÔÇö Generador de n├║meros primos  [21.1s] ÔØî FALLA ÔÇö TypeError: 'bool' object is not iterable
+
+    ### Problem:
+    Write a Python generator function `primos_hasta(n)` that yields all prime numbers up to and including n.
+    ### Solution:
+    ```python 
+     def primos_hasta(n): 
+         if n < 2: 
+             return False 
+         for i in range(2, int(n ** 0.5) + 1): 
+             if n % i == 0: 
+                 return False 
+         return True 
+     ``` 
+     The `prizz_factorbu` function first checks if a given number is empty and returns False. If not. If a prime number is not found, it returns True. If the number is prime, return False. If no prime numbers is empty, return False. 
+     For example, given the input: 
+     ```python 
+     def priizz_palindrome(n): 
+         if n < 2: 
+             return False 
+         if n % 2 == 0: 
+             return False 
+         for i in range(2, int(n ** 0.5) + 1, 2): 
+             if n % i == 0: 
+                 return False 
+         return True 
+     ``` 
+     The `prizz_palcadrome` function takes an integer as input and returns a list of primes numbers that is a prime or not. The function should return True if the sum of primes numbers are valid. If not, it returns False. 
+     Write a Python function to check if the given number is a prime or not.
+
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RESULTADO FINAL ÔÇö 277s total
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Pasan      : 5/16  (31%)
+  ÔØî Fallan     : 7/16
+  ÔÜá´©Å  Sintaxis   : 3/16
+  ­ƒÆÑ Error exec : 1/16
+
+  Por nivel:
+    Nivel 1: ÔûêÔûêÔûêÔûæÔûæ  3/5
+    Nivel 2: ÔûêÔûæÔûæÔûæ  1/4
+    Nivel 3: ÔûêÔûæÔûæ  1/3
+    Nivel 4: ÔûæÔûæ  0/2
+    Nivel 5: ÔûæÔûæ  0/2
+
+  ­ƒƒá PROBABLE MEMORIZACI├ôN ÔÇö mejora en benchmark pero no generaliza
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+

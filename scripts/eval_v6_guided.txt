@@ -1,0 +1,160 @@
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  EVAL HONESTA ÔÇö PamparV3 Generalizaci├│n
+  Checkpoint : v3_sft_v6.pt  (1.31 GB)
+  Device     : cuda  |  Temp: 0.1  |  RepPen: 1.15
+  Mode       : GUIDED
+  Prompts    : 16 (nunca vistos en entrenamiento)
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  Cargando modelo... OK (108.3M params, vocab=48,000, 3.0s)
+
+  [01/16] Nivel 1 ÔÇö Contar vocales  [23.4s] Ô£à PASA
+  [02/16] Nivel 1 ÔÇö Sumar d├¡gitos  [22.2s] Ô£à PASA
+  [03/16] Nivel 1 ÔÇö Pal├¡ndromo  [11.8s] Ô£à PASA
+  [04/16] Nivel 1 ÔÇö M├íximo de lista  [22.0s] Ô£à PASA
+  [05/16] Nivel 1 ÔÇö FizzBuzz single  [12.0s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python function `fizzbuzz(n)` that returns 'FizzBuzz' if n is divisible by both 3 and 5, 'Fizz' if divisible by 3, 'Buzz' if divisible by 5, or the string representation of n otherwise.
+    ### Solution:
+    ```python
+    def fizzbuzz(n):
+        if n % 15 == 0: 
+             return 'FizzBuzz' 
+         if n % 3 == 0: 
+             return 'FizzBuzz' 
+         elif n % 5 == 0: 
+             return 'Buzz' 
+         else: 
+             return str(n) 
+     ``` 
+     The `fiizzbuzz` function first checks if a given integer is empty. It then returns the result of the fizz's factor in the format 'Buzz' and 'Fizz' are not found in the format 'Buzz' 
+     ``` 
+     The `fizzbuzz` function takes a string as input and returns a dictionary where the keys are the number of times the first 1. If the 'Fizz' is not empty, it returns the dictionary. 
+     For example, if the input string is 'Buzz' and 'Fizz' are not a non-empty integer.
+
+  [06/16] Nivel 2 ÔÇö Aplanar lista un nivel  [22.5s] Ô£à PASA
+  [07/16] Nivel 2 ÔÇö Frecuencia de elementos  [22.3s] Ô£à PASA
+  [08/16] Nivel 2 ÔÇö Lista de cuadrados pares  [7.7s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python function `cuadrados_pares(n)` that returns a list of squares of all even numbers from 2 to n inclusive.
+    ### Solution:
+    ```python
+    def cuadrados_pares(n):
+        return [x ** 2 for x in range(n) if x % 2 == 0] 
+     ``` 
+     The `cuadrados_pares` function first checks if the sum of all primoos is empty. If not, it returns a list of integers, return a list of primoses. 
+     For example, given the input: 
+     ```python 
+     def cuadrados_pares(n): 
+         return [x ** 2 for x in range(n) if x % 2 == 0] 
+     ``` 
+     The `cuadrados_pares` function first checks if the sum of primoos is empty. If not, it returns a list of primoses that are empty.
+
+  [09/16] Nivel 2 ÔÇö Invertir diccionario  [21.8s] Ô£à PASA
+  [10/16] Nivel 3 ÔÇö Fibonacci iterativo  [19.5s] Ô£à PASA
+  [11/16] Nivel 3 ÔÇö Busqueda binaria  [23.0s] Ô£à PASA
+  [12/16] Nivel 3 ÔÇö Merge sort  [21.9s] ÔØî FALLA ÔÇö NameError: name 'izq' is not defined
+
+    ### Problem: 
+     Write a Python function `merge_sort(lista)` that returns a new sorted list using the merge sort algorithm. 
+     ### Solution: 
+     ```python 
+     def merge_sort(lista): 
+         if len(lista) <= 1: 
+             return lista[:] 
+         mid = len(lista) // 2 
+         left = merge_sort(lista[:mid]) 
+         right = merge_sort(lista[mid:]) 
+         resultado = [] 
+         i = j = 0 
+         while i < len(left) and j < len(right): 
+             if left[i] <= right[j]: 
+                 resultado.append(left[i]) 
+                 i += 1 
+             else: 
+                 resultado.append(left[j]) 
+                 j += 1 
+         resultado.extend(izq[i:]) 
+         resultado.extend(left[j:]) 
+         return resultado 
+     ``` 
+     The `digit_sort` function first checks if the input list is empty, and returns a new lista. It then returns a list of integers, where each element is empty. If not, it returns a lista[:] 
+     ```
+
+  [13/16] Nivel 4 ÔÇö Clase Stack b├ísica  [14.8s] Ô£à PASA
+  [14/16] Nivel 4 ÔÇö Clase Punto con distancia  [8.2s] ÔØî FALLA ÔÇö NameError: name 'math' is not defined
+
+    ### Problem:
+    Write a Python class `Punto` with attributes `x` and `y`, and a method `distancia(otro)` that returns the Euclidean distance to another Punto.
+    ### Solution:
+    ```python
+    class Punto:
+        def __init__(self, x, y): 
+             self.x = x 
+             self.y = y 
+         def distancia(self, otro): 
+             return math.sqrt((self.x - otro.x) ** 2 + (self.y - otro.y) ** 2) 
+     ``` 
+     The `buancia` class is implemented with ancho method to return the Euclideancho. The `haancia` class should have a constructor that returns the sum of all the x and y coordinates. 
+     Your task is to complete the implementation of the `zzancia` class by adding methods for depositing the given specifications.
+
+  [15/16] Nivel 5 ÔÇö Memoizaci├│n con decorador  [21.7s] ÔØî FALLA ÔÇö NameError: name 'func' is not defined
+
+    ### Problem: 
+     Write a Python higher-order function `memoize(fn)` that returns a wrapped version of fn that caches results by argument. 
+     ### Solution: 
+     ```python 
+     def memoize(fn): 
+         cache = {} 
+         def wrapper(*args): 
+             if args not in cache: 
+                 cache[args] = func(*args) 
+             return cache[args] 
+         return wrapper 
+     @memoize 
+     def fibonacci(n): 
+         if n <= 1: 
+             return n 
+         return fibonacci(n - 1) + fibonacci(n - 2) 
+     ``` 
+     The ` pot` function first checks if the number of cache in a non-empty integer, it returns the result. It then returns a dictionary where the keys are the count of the fibonacci numbers. If not, it returns the result.
+
+  [16/16] Nivel 5 ÔÇö Generador de n├║meros primos  [10.5s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python generator function `primos_hasta(n)` that yields all prime numbers up to and including n.
+    ### Solution:
+    ```python
+    def primos_hasta(n):
+        primos = [] 
+         for i in range(2, n + 1): 
+             if i % 2 == 0: 
+                 primos.append(i) 
+         return primos 
+     ``` 
+     The `primos_hasta` function first checks if a given number is empty, and returns the primos of the primos of the primos. If not, it returns the primos of the primos of the primos of the primos. If the primos is empty, return an empty list. 
+     For example, if the input is 150, 250, 350, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150] 
+     ```
+
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RESULTADO FINAL ÔÇö 285s total
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Pasan      : 10/16  (62%)
+  ÔØî Fallan     : 6/16
+  ÔÜá´©Å  Sintaxis   : 0/16
+  ­ƒÆÑ Error exec : 0/16
+
+  Por nivel:
+    Nivel 1: ÔûêÔûêÔûêÔûêÔûæ  4/5
+    Nivel 2: ÔûêÔûêÔûêÔûæ  3/4
+    Nivel 3: ÔûêÔûêÔûæ  2/3
+    Nivel 4: ÔûêÔûæ  1/2
+    Nivel 5: ÔûæÔûæ  0/2
+
+  ­ƒƒí PARCIAL ÔÇö aprende patrones pero falla en casos nuevos
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+

@@ -342,7 +342,8 @@ def extraer_firma(prompt: str) -> str:
 
 @torch.no_grad()
 def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
-           temperature: float = 0.1, repetition_penalty: float = 1.2) -> str:
+           temperature: float = 0.1, repetition_penalty: float = 1.2,
+           rep_window: int = 32) -> str:
     ids = tokenizer.Encode(prompt)
     generados = list(ids)
 
@@ -351,9 +352,10 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
         logits, _, _ = modelo(ctx)
         next_logits = logits[0, -1]
 
-        # Penalizar tokens ya generados para evitar degeneración
-        if repetition_penalty != 1.0:
-            seen = set(generados[len(ids):])
+        # Penalizar solo tokens en una ventana reciente (no destruir nombres)
+        if repetition_penalty != 1.0 and len(generados) > len(ids):
+            window_start = max(len(ids), len(generados) - rep_window)
+            seen = set(generados[window_start:])
             for token_id in seen:
                 if next_logits[token_id] > 0:
                     next_logits[token_id] /= repetition_penalty

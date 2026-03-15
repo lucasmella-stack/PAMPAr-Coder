@@ -393,6 +393,60 @@ _add(
     "assert merge_sort([1,2,3])==[1,2,3]",
 )
 
+_add(
+    "Write a Python function `merge_sort(lista)` that returns a new sorted "
+    "list using the merge sort algorithm.",
+    textwrap.dedent("""\
+        def merge_sort(lista):
+            if len(lista) <= 1:
+                return lista[:]
+            mid = len(lista) // 2
+            left = merge_sort(lista[:mid])
+            right = merge_sort(lista[mid:])
+            result = []
+            i = j = 0
+            while i < len(left) and j < len(right):
+                if left[i] <= right[j]:
+                    result.append(left[i])
+                    i += 1
+                else:
+                    result.append(right[j])
+                    j += 1
+            result.extend(left[i:])
+            result.extend(right[j:])
+            return result
+    """).strip(),
+    "assert merge_sort([3,1,4,1,5,9,2,6])==[1,1,2,3,4,5,6,9]; "
+    "assert merge_sort([])==[]; assert merge_sort([1])==[1]",
+)
+
+_add(
+    "Create a Python function `merge_sort(lista)` implementing the merge sort "
+    "algorithm. Split the list, recursively sort halves, and merge them.",
+    textwrap.dedent("""\
+        def merge_sort(lista):
+            if len(lista) <= 1:
+                return list(lista)
+            medio = len(lista) // 2
+            izq = merge_sort(lista[:medio])
+            der = merge_sort(lista[medio:])
+            resultado = []
+            i = j = 0
+            while i < len(izq) and j < len(der):
+                if izq[i] <= der[j]:
+                    resultado.append(izq[i])
+                    i += 1
+                else:
+                    resultado.append(der[j])
+                    j += 1
+            resultado.extend(izq[i:])
+            resultado.extend(der[j:])
+            return resultado
+    """).strip(),
+    "assert merge_sort([9,1,5,3])==[1,3,5,9]; "
+    "assert merge_sort([2])==[2]; assert merge_sort([])==[]",
+)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. CLASES / PUNTO (fallo: self.y = x typo sistemático)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -606,6 +660,61 @@ _add(
 )
 
 _add(
+    "Write a Python generator function `primos_hasta(n)` that yields all prime "
+    "numbers up to and including n.",
+    textwrap.dedent("""\
+        def primos_hasta(n):
+            for num in range(2, n + 1):
+                es_primo = True
+                for i in range(2, int(num ** 0.5) + 1):
+                    if num % i == 0:
+                        es_primo = False
+                        break
+                if es_primo:
+                    yield num
+    """).strip(),
+    "assert list(primos_hasta(10))==[2,3,5,7]; assert list(primos_hasta(1))==[]; "
+    "assert list(primos_hasta(2))==[2]; assert list(primos_hasta(20))==[2,3,5,7,11,13,17,19]",
+)
+
+_add(
+    "Write a Python generator function `primos_hasta(n)` that yields all "
+    "prime numbers from 2 to n inclusive. Use trial division up to sqrt.",
+    textwrap.dedent("""\
+        def primos_hasta(n):
+            def es_primo(x):
+                if x < 2:
+                    return False
+                for i in range(2, int(x ** 0.5) + 1):
+                    if x % i == 0:
+                        return False
+                return True
+            for num in range(2, n + 1):
+                if es_primo(num):
+                    yield num
+    """).strip(),
+    "assert list(primos_hasta(20))==[2,3,5,7,11,13,17,19]; "
+    "assert list(primos_hasta(1))==[]",
+)
+
+_add(
+    "Implement a Python generator `primos_hasta(n)` that yields each prime "
+    "number up to n. Check primality by testing divisors up to the square root.",
+    textwrap.dedent("""\
+        def primos_hasta(n):
+            for candidate in range(2, n + 1):
+                is_prime = True
+                for div in range(2, int(candidate ** 0.5) + 1):
+                    if candidate % div == 0:
+                        is_prime = False
+                        break
+                if is_prime:
+                    yield candidate
+    """).strip(),
+    "assert list(primos_hasta(10))==[2,3,5,7]; assert list(primos_hasta(0))==[]",
+)
+
+_add(
     "Write a Python function `primos_hasta(n)` that returns all prime numbers "
     "up to and including n using the Sieve of Eratosthenes.",
     textwrap.dedent("""\
@@ -684,9 +793,15 @@ EJEMPLOS_GENERALES: list[dict] = [
     {"problem": "Write a Python function `maximo(lista)` that returns the maximum element without using max().",
      "solution": "def maximo(lista):\n    m = lista[0]\n    for x in lista[1:]:\n        if x > m:\n            m = x\n    return m",
      "checks": "assert maximo([3,1,4,1,5])==5; assert maximo([0])==0; assert maximo([-1,-5])==-1"},
-    {"problem": "Write a Python function `aplanar(lst)` that flattens a 2D list into a 1D list.",
-     "solution": "def aplanar(lst):\n    return [x for sublist in lst for x in sublist]",
-     "checks": "assert aplanar([[1,2],[3,4]])==[1,2,3,4]; assert aplanar([])==[]"},
+    {"problem": "Write a Python function `aplanar(lista)` that flattens a list of lists by one level and returns the result as a single list.",
+     "solution": "def aplanar(lista):\n    return [x for sublist in lista for x in sublist]",
+     "checks": "assert aplanar([[1,2],[3,4],[5]])==[1,2,3,4,5]; assert aplanar([])==[]"},
+    {"problem": "Write a Python function `aplanar(lista)` that takes a list of lists and returns a flat list with all elements.",
+     "solution": "def aplanar(lista):\n    result = []\n    for sublist in lista:\n        result.extend(sublist)\n    return result",
+     "checks": "assert aplanar([[1],[2,3],[4]])==[1,2,3,4]; assert aplanar([])==[]"},
+    {"problem": "Create a Python function `aplanar(lista)` that flattens nested sublists into one list.",
+     "solution": "def aplanar(lista):\n    return [elem for sub in lista for elem in sub]",
+     "checks": "assert aplanar([[1,2],[3]])==[1,2,3]; assert aplanar([[]])==[]"},
     {"problem": "Write a Python function `quitar_duplicados(lista)` that removes duplicates while preserving order.",
      "solution": "def quitar_duplicados(lista):\n    seen = set()\n    return [x for x in lista if not (x in seen or seen.add(x))]",
      "checks": "assert quitar_duplicados([1,2,1,3,2])==[1,2,3]; assert quitar_duplicados([])==[]"},
@@ -694,6 +809,15 @@ EJEMPLOS_GENERALES: list[dict] = [
      "solution": "def rotar(lista, k):\n    if not lista:\n        return lista\n    k = k % len(lista)\n    return lista[-k:] + lista[:-k] if k else lista[:]",
      "checks": "assert rotar([1,2,3,4,5],2)==[4,5,1,2,3]; assert rotar([],3)==[]"},
     # ── Diccionarios ──────────────────────────────────────────────────────────
+    {"problem": "Write a Python function `frecuencia(lista)` that returns a dictionary mapping each element to its count in the list.",
+     "solution": "def frecuencia(lista):\n    freq = {}\n    for x in lista:\n        freq[x] = freq.get(x, 0) + 1\n    return freq",
+     "checks": "assert frecuencia([1,2,2,3,3,3])=={1:1,2:2,3:3}; assert frecuencia([])=={}"},
+    {"problem": "Write a Python function `frecuencia(lista)` that counts how many times each element appears and returns a dict.",
+     "solution": "def frecuencia(lista):\n    resultado = {}\n    for elem in lista:\n        resultado[elem] = resultado.get(elem, 0) + 1\n    return resultado",
+     "checks": "assert frecuencia([1,1,2])=={1:2,2:1}; assert frecuencia([])=={}"},
+    {"problem": "Create a Python function `frecuencia(lista)` that returns a frequency dictionary of all elements.",
+     "solution": "def frecuencia(lista):\n    freq = {}\n    for x in lista:\n        if x in freq:\n            freq[x] += 1\n        else:\n            freq[x] = 1\n    return freq",
+     "checks": "assert frecuencia(['a','b','a'])=={'a':2,'b':1}; assert frecuencia([])=={}"},
     {"problem": "Write a Python function `frecuencias(lista)` that returns a dict counting occurrences of each element.",
      "solution": "def frecuencias(lista):\n    freq = {}\n    for x in lista:\n        freq[x] = freq.get(x, 0) + 1\n    return freq",
      "checks": "assert frecuencias([1,2,1,3])=={1:2,2:1,3:1}; assert frecuencias([])=={}"},
@@ -713,6 +837,22 @@ EJEMPLOS_GENERALES: list[dict] = [
      "solution": "class Stack:\n    def __init__(self):\n        self.items = []\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        return self.items.pop()\n\n    def peek(self):\n        return self.items[-1]\n\n    def is_empty(self):\n        return len(self.items) == 0",
      "checks": "s=Stack(); assert s.is_empty(); s.push(1); s.push(2); "
                "assert s.peek()==2; assert s.pop()==2; assert not s.is_empty()"},
+    {"problem": "Write a Python class `Stack` with methods `push(item)` and `pop()` implementing a LIFO stack.",
+     "solution": "class Stack:\n    def __init__(self):\n        self.items = []\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        return self.items.pop()",
+     "checks": "s=Stack(); s.push(1); s.push(2); assert s.pop()==2; assert s.pop()==1"},
+    {"problem": "Create a Python class `Stack` that uses a list internally to implement push and pop operations.",
+     "solution": "class Stack:\n    def __init__(self):\n        self.items = []\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        return self.items.pop()\n\n    def size(self):\n        return len(self.items)",
+     "checks": "s=Stack(); s.push(10); s.push(20); assert s.size()==2; assert s.pop()==20"},
+    # ── Punto con distancia ───────────────────────────────────────────────────
+    {"problem": "Write a Python class `Punto` with attributes `x` and `y`, and a method `distancia(otro)` that returns the Euclidean distance to another Punto.",
+     "solution": "import math\n\nclass Punto:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\n    def distancia(self, otro):\n        return math.sqrt((self.x - otro.x) ** 2 + (self.y - otro.y) ** 2)",
+     "checks": "p1=Punto(0,0); p2=Punto(3,4); assert p1.distancia(p2)==5.0"},
+    {"problem": "Create a Python class `Punto` with `x` and `y` coordinates and a `distancia(otro)` method for Euclidean distance.",
+     "solution": "class Punto:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\n    def distancia(self, otro):\n        return ((self.x - otro.x) ** 2 + (self.y - otro.y) ** 2) ** 0.5",
+     "checks": "p=Punto(0,0); q=Punto(3,4); assert p.distancia(q)==5.0; assert q.distancia(p)==5.0"},
+    {"problem": "Implement a Python class `Punto` representing a 2D point with `x`, `y` attributes and a `distancia` method to compute distance to another point.",
+     "solution": "import math\n\nclass Punto:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\n    def distancia(self, otro):\n        dx = self.x - otro.x\n        dy = self.y - otro.y\n        return math.sqrt(dx * dx + dy * dy)",
+     "checks": "a=Punto(1,1); b=Punto(4,5); assert a.distancia(b)==5.0"},
     {"problem": "Write a Python class `Queue` with methods `enqueue(item)`, `dequeue()`, `front()`, and `is_empty()`.",
      "solution": "from collections import deque\n\nclass Queue:\n    def __init__(self):\n        self.items = deque()\n\n    def enqueue(self, item):\n        self.items.append(item)\n\n    def dequeue(self):\n        return self.items.popleft()\n\n    def front(self):\n        return self.items[0]\n\n    def is_empty(self):\n        return len(self.items) == 0",
      "checks": "q=Queue(); assert q.is_empty(); q.enqueue(1); q.enqueue(2); "
@@ -784,8 +924,8 @@ def generar_variaciones_todos(n_variaciones: int = 3) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Genera SFT v5 con verificación en runtime")
     parser.add_argument("--output", type=Path, default=ROOT / "data" / "sft_v5.jsonl")
-    parser.add_argument("--variaciones", type=int, default=4,
-                        help="Variaciones por ejemplo base (default=4)")
+    parser.add_argument("--variaciones", type=int, default=6,
+                        help="Variaciones por ejemplo base (default=6)")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 

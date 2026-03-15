@@ -1,0 +1,236 @@
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  EVAL HONESTA ÔÇö PamparV3 Generalizaci├│n
+  Checkpoint : v3_sft_v4.pt  (1.31 GB)
+  Device     : cuda  |  Temp: 0.4  |  RepPen: 1.2
+  Mode       : OPEN
+  Prompts    : 16 (nunca vistos en entrenamiento)
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  Cargando modelo... OK (108.3M params, vocab=48,000, 4.0s)
+
+  [01/16] Nivel 1 ÔÇö Contar vocales  [32.4s] Ô£à PASA
+  [02/16] Nivel 1 ÔÇö Sumar d├¡gitos  [26.7s] Ô£à PASA
+  [03/16] Nivel 1 ÔÇö Pal├¡ndromo  [22.9s] ÔØî FALLA ÔÇö funci├│n no definida: 'es_palindromo'
+
+    ### Problem: 
+     Write a Python function `es_palindromo(s)` that returns True if the string is a palindrome, False otherwise. 
+     ### Solution: 
+     ```python 
+     def es_palindromeo(s): 
+         return s == s[::-1] 
+     ``` 
+     The `es_palindromeo` function first checks if the string contains a palabraso, and returns True. If not.startswith any other other in the string, it returns False. 
+     Write a function ` range_palindromear(s) -> bool: 
+     ```python 
+     def es_palindromeo(s): 
+         return s == s[::-1] 
+     ``` 
+     The `es_palindromeo` function takes inicio as input and returns a list of strings representing all the palindromeo in its order.
+
+  [04/16] Nivel 1 ÔÇö M├íximo de lista  [22.9s] Ô£à PASA
+  [05/16] Nivel 1 ÔÇö FizzBuzz single  [23.5s] ÔÜá´©Å SINTAXIS ÔÇö unterminated string literal (detected at line 7) (<unknown>, line 7)
+
+    ### Problem: 
+     Write a Python function `fizzbuzz(n)` that returns 'FizzBuzz' if n is divisible by both 3 and 5, 'Fizz' if divisible by 3, 'Buzz' if divisible by 5, or the string representation of n otherwise. 
+     ### Solution: 
+     ```python 
+     def fizzbuzz(n): 
+         if n % 5 == 0: 
+             return 'F digit IndexError' 
+         if n % 3 == 0: 
+             return 'Ftracdizz' 
+         if n % 5 == 0: 
+             return 'Fizz ''.join(n) 
+         return str(n) 
+     ```
+
+  [06/16] Nivel 2 ÔÇö Aplanar lista un nivel  [22.9s] ÔØî FALLA ÔÇö funci├│n no definida: 'aplanar'
+
+    ### Problem: 
+     Write a Python function `aplanar(lista)` that flattens a list of lists by one level and returns the result as a single list. 
+     ### Solution: 
+     ```python 
+     def digitizzar(lista): 
+         resultado = [] 
+         for item in lista: 
+             if isinstance(item, list): 
+                 resultado.extend(aplanar(item)) 
+         return resultado 
+     ``` 
+     The `trastrongar` function first checks if the lista is empty, and returns a list of all the elements in the lista. If not, it returns True. If any other, it returns a dictionary 
+     ```
+
+  [07/16] Nivel 2 ÔÇö Frecuencia de elementos  [22.7s] ÔØî FALLA ÔÇö AttributeError: 'dict' object has no attribute 'extend'
+
+    ### Problem: 
+     Write a Python function `frecuencia(lista)` that returns a dictionary mapping each element to its count in the list. 
+     ### Solution: 
+     ```python 
+     def frecuencia(lista): 
+         resultado = {} 
+         for item in lista: 
+             if not isinstance(item, list): 
+                 resultado.extend(aplanar) 
+         return resultado 
+     ``` 
+     The `frecuencia` function first checks if a list of elements, and returns the count of all the element in the list. If a element is empty, it returns the count of the count of each element in the list.
+
+  [08/16] Nivel 2 ÔÇö Lista de cuadrados pares  [7.4s] ÔÜá´©Å SINTAXIS ÔÇö invalid syntax (<unknown>, line 1)
+
+    ### Problem:
+    Write a Python function `cuadrados_pares(n)` that returns a list of squares of all even numbers from 2 to n inclusive.
+    ### Solution:
+    ```python 
+     defcuadrados_pares(n): 
+         return [i for i in range(2, n + 1, 2)] 
+     ``` 
+     The `paladrado_cad` function first calculates the sum of all primoes numbers from 0 to 1. If not, it returns a list of prime numbers that are empty. 
+     Write a function `fila_ cont(n)` that takes a list of integers as input and returns a list of prime numbers. 
+     For example, given the input list `n = 5`, the function should return [1, 2, 3] and 4 is 5, 6, 7, 8, 9]] 
+     ```
+
+  [09/16] Nivel 2 ÔÇö Invertir diccionario  [21.8s] ÔØî FALLA ÔÇö NameError: name 'rala' is not defined
+
+    ### Problem: 
+     Write a Python function `invertir_dict(d)` that returns a new dictionary with keys and values swapped. 
+     ### Solution: 
+     ```python 
+     def invertir_dict(d): 
+         return {v: k for k, v in d.items() if v > rala} 
+     ```
+
+  [10/16] Nivel 3 ÔÇö Fibonacci iterativo  [10.9s] ÔØî FALLA ÔÇö verificador ÔåÆ False
+
+    ### Problem:
+    Write a Python function `fibonacci(n)` that returns the n-th Fibonacci number (0-indexed: fibonacci(0)=0, fibonacci(1)=1, fibonacci(7)=13).
+    ### Solution:
+    ```python 
+     def fibonacci(n): 
+         if n <= 0: 
+             return 1 
+         a, b = 0, 1 
+         for _ in range(2, n + 1): 
+             a, b = b, a + b 
+         return b 
+     ``` 
+     The `fibonacci` function first checks if the fibonacci number is 0. If it is not 0, it returns 0.5. It then returns `True` if the fibonacci number is 1, and `False` otherwise. 
+     Write a Python function `fibonacci_number(n)` that takes in a Fibonacci number as input and returns the sum of the fibonacci number. 
+     For example, given the input: 
+     ``` 
+     n = 10 
+     ```
+
+  [11/16] Nivel 3 ÔÇö Busqueda binaria  [23.0s] ÔÜá´©Å SINTAXIS ÔÇö unmatched ']' (<unknown>, line 1)
+
+    ### Problem: 
+     Write a Python function `busqueda_binaria(lista, objetivo)` that returns the index of the target in a sorted list, or -1 if not found. 
+     ### Solution: 
+     ```python 
+     def contoresa_]) -> int: 
+         return sorted(set(lista)) 
+     ``` 
+     The `cursfereda_bindicts` function first extracts the index of a given lista. If not, it returns the index of the target element in the lista.
+
+  [12/16] Nivel 3 ÔÇö Merge sort  [22.6s] ÔØî FALLA ÔÇö funci├│n no definida: 'merge_sort'
+
+    ### Problem: 
+     Write a Python function `merge_sort(lista)` that returns a new sorted list using the merge sort algorithm. 
+     ### Solution: 
+     ```python 
+     def quick_sort(lista): 
+         if len(lista) <= 1: 
+             return lista 
+         pivote = lista[len(lista) // 2] 
+         izq = merge_sort(lista[:len]) 
+         izq = merge_sort(lista[mid:]) 
+         izq = merge_sort(lista[mid:]) 
+         while izq <= der: 
+             mid = (izq + der) // 2 
+             if izq[mid] == objetivo: 
+                 izq = mid + 1 
+             else: 
+                 der = mid - 1 
+         return -1 
+     ``` 
+     The ` invert_sort` function iterates through the list of integers and returns a dictionary where the keys are the result. If the lista, it returns the sorted lista. If not, it returns the sorted lista.
+
+  [13/16] Nivel 4 ÔÇö Clase Stack b├ísica  [22.9s] ÔÜá´©Å SINTAXIS ÔÇö invalid syntax (<unknown>, line 1)
+
+    ### Problem: 
+     Write a Python class `Stack` with methods `push(item)` and `pop()` implementing a LIFO stack. 
+     ### Solution: 
+     ```python 
+     classstrong: 
+         def __init__(self): 
+             self._ad = None 
+         def push(self, item): 
+             self._ad = item 
+         def pop(self) -> None: 
+             if not self._ad: 
+                 raise IndexError('No se puede') 
+             return self._result.pop() 
+     ``` 
+     The `digit` class is implemented with an `__init__` method that initializes the given item in a list of integers and returns an empty list. The `may` method initializes a new list of integers, where each element contains a unique number representing the element of the list. If the element is greater than or equal to the list, it returns the list.
+
+  [14/16] Nivel 4 ÔÇö Clase Punto con distancia  [23.9s] ÔÜá´©Å SINTAXIS ÔÇö unterminated string literal (detected at line 6) (<unknown>, line 6)
+
+    ### Problem: 
+     Write a Python class `Punto` with attributes `x` and `y`, and a method `distancia(otro)` that returns the Euclidean distance to another Punto. 
+     ### Solution: 
+     ```python 
+     class Punto: 
+         def __init__(self): 
+             self._alto = {} 
+         def pushancia(self, x): 
+             if x in self._alto: 
+                 raise ValueError('No se puede dividir por cero") 
+             return self._alto.get(x) 
+     ``` 
+     The `cdto_palar_base` function takes a list of integers as input and returns the sum of all the peda list in order. It then calculates the sum of all the peda list in the list. If not, it returns an empty list.
+
+  [15/16] Nivel 5 ÔÇö Memoizaci├│n con decorador  [22.9s] ÔÜá´©Å SINTAXIS ÔÇö closing parenthesis ')' does not match opening parenthesis '[' (<unknown>, line 2)
+
+    ### Problem: 
+     Write a Python higher-order function `memoize(fn)` that returns a wrapped version of fn that caches results by argument. 
+     ### Solution: 
+     ```python 
+     def invert(ap): 
+         return [i * i for i in range(len( digit), len(mat), len( zip))) 
+     ``` 
+     The `curs` function takes in a list of integers `bu`, and returns the result. The `zz` function iterates through each integer, it checks if the number is empty, and returns the result.
+
+  [16/16] Nivel 5 ÔÇö Generador de n├║meros primos  [22.0s] ÔØî FALLA ÔÇö funci├│n no definida: 'primos_hasta'
+
+    ### Problem: 
+     Write a Python generator function `primos_hasta(n)` that yields all prime numbers up to and including n. 
+     ### Solution: 
+     ```python 
+     def primos_izuplic(n): 
+         if n < 2: 
+             return False 
+         for i in range(2, int(n ** 0.5) + 1): 
+             if n % i == 0: 
+                 return False 
+         return True 
+     ```
+
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RESULTADO FINAL ÔÇö 351s total
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Pasan      : 3/16  (19%)
+  ÔØî Fallan     : 7/16
+  ÔÜá´©Å  Sintaxis   : 6/16
+  ­ƒÆÑ Error exec : 0/16
+
+  Por nivel:
+    Nivel 1: ÔûêÔûêÔûêÔûæÔûæ  3/5
+    Nivel 2: ÔûæÔûæÔûæÔûæ  0/4
+    Nivel 3: ÔûæÔûæÔûæ  0/3
+    Nivel 4: ÔûæÔûæ  0/2
+    Nivel 5: ÔûæÔûæ  0/2
+
+  ­ƒö┤ NO GENERALIZA ÔÇö 134k pasos no fueron suficientes
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
