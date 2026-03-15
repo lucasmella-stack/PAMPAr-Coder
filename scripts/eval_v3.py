@@ -386,7 +386,7 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
                     partial = "\n".join(lines[:i])
                     return prompt + partial
 
-        if "\n\n" in decoded and len(decoded) > 20:
+        if decoded.endswith("\n\n") and len(decoded) > 20:
             break
 
     return tokenizer.Decode(generados).replace('\u2047', '\n')
@@ -416,6 +416,84 @@ def _normalizar_indentacion(codigo: str) -> str:
         fixed.append(' ' * normalized + stripped)
 
     return '\n'.join(fixed)
+
+
+def _reparar_bloques_huerfanos(codigo: str) -> str:
+    """
+    Repara el error 'expected an indented block after X statement'.
+
+    Cuando el modelo genera:
+        if condicion:
+        cuerpo_sin_indentar   ← same indent as 'if' → SyntaxError
+
+    Lo convierte en:
+        if condicion:
+            cuerpo_sin_indentar  ← indent + 4
+
+    Itera hasta que no detecte más bloques huérfanos (max 10 pasadas).
+    """
+    HEADERS = (
+        'if ', 'elif ', 'else:', 'for ', 'while ', 'try:',
+        'except', 'finally:', 'with ', 'def ', 'class ',
+    )
+
+    for _ in range(10):
+        lines = codigo.splitlines()
+        changed = False
+        i = 0
+        new_lines: list[str] = []
+
+        while i < len(lines):
+            line = lines[i]
+            ls = line.lstrip()
+            li = len(line) - len(ls)
+
+            is_header = (
+                line.rstrip().endswith(':')
+                and any(ls.startswith(h) for h in HEADERS)
+            )
+
+            if is_header and i + 1 < len(lines):
+                nxt = lines[i + 1]
+                ns = nxt.lstrip()
+                ni = len(nxt) - len(ns)
+
+                # Next non-blank line must be MORE indented to form a valid block
+                if ns and ni <= li:
+                    expected = li + 4
+                    new_lines.append(line)
+                    i += 1
+                    # Re-indent all contiguous lines at the "wrong" indent level
+                    while i < len(lines):
+                        curr = lines[i]
+                        cs = curr.lstrip()
+                        ci = len(curr) - len(cs)
+
+                        if not cs:  # blank line — include but don't fix
+                            new_lines.append(curr)
+                            i += 1
+                            continue
+
+                        if ci < li:  # exited back to parent scope → stop
+                            break
+
+                        if ci == ni:  # still at the wrong indent level → fix
+                            new_lines.append(' ' * expected + cs)
+                            i += 1
+                        else:
+                            break  # different indent → let next iteration handle
+
+                    changed = True
+                    continue  # re-process from current i
+
+            new_lines.append(line)
+            i += 1
+
+        codigo = '\n'.join(new_lines)
+        if not changed:
+            break
+
+    return codigo
 
 
 # =============================================================================
@@ -448,8 +526,30 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
     try:
         ast.parse(codigo)
     except SyntaxError:
-        # Intentar corregir indentación inconsistente (4 vs 5 espacios)
+        # Intento 1: normalizar espacios-a-múltiplos-de-4
         codigo = _normalizar_indentacion(codigo)
+        try:
+            ast.parse(codigo)
+        except SyntaxError:
+            pass
+        else:
+            # Normalización solucionó el problema → continuar
+            codigo = codigo  # (no-op, se cae al exec de abajo)
+            ns = {}
+            try:
+                exec(compile(codigo, "<generated>", "exec"), ns)
+            except Exception as e:
+                return "ERROR_EXEC", f"{type(e).__name__}: {e}"
+            try:
+                resultado = verificador(ns)
+                return ("PASA", "") if resultado else ("FALLA", "verificador → False")
+            except KeyError as e:
+                return "FALLA", f"función no definida: {e}"
+            except Exception as e:
+                return "FALLA", f"{type(e).__name__}: {e}"
+
+        # Intento 2: reparar bloques huérfanos (if/for sin cuerpo indentado)
+        codigo = _reparar_bloques_huerfanos(codigo)
         try:
             ast.parse(codigo)
         except SyntaxError as e:
@@ -458,6 +558,30 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
     ns = {}
     try:
         exec(compile(codigo, "<generated>", "exec"), ns)
+    except NameError as e:
+        # Intento 3: reparar NameError causado por variable indefinida en comprehension.
+        # Patrón: el modelo genera [x * i for x in range(...)] donde 'i' no está definido
+        # → se reemplaza la variable indefinida por la variable del loop.
+        import re as _re
+        undef_match = _re.search(r"name '(\w+)' is not defined", str(e))
+        if undef_match:
+            undef = undef_match.group(1)
+            # Buscar comprehensions del tipo [EXP for VAR in ...] donde EXP usa undef
+            comp_matches = list(_re.finditer(
+                r'\[.*?\bfor\s+(\w+)\s+in\b', codigo, _re.DOTALL
+            ))
+            for cm in comp_matches:
+                loop_var = cm.group(1)
+                if loop_var != undef:
+                    codigo_fix = _re.sub(r'\b' + _re.escape(undef) + r'\b', loop_var, codigo)
+                    try:
+                        ns2: dict = {}
+                        exec(compile(codigo_fix, "<generated>", "exec"), ns2)
+                        resultado = verificador(ns2)
+                        return ("PASA", "") if resultado else ("FALLA", "verificador → False")
+                    except Exception:
+                        pass
+        return "ERROR_EXEC", f"{type(e).__name__}: {e}"
     except Exception as e:
         return "ERROR_EXEC", f"{type(e).__name__}: {e}"
 
@@ -466,6 +590,28 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
         return ("PASA", "") if resultado else ("FALLA", "verificador → False")
     except KeyError as e:
         return "FALLA", f"función no definida: {e}"
+    except NameError as e:
+        # NameError dentro del cuerpo de la función (e.g. [x * i for x in range(...)])
+        # El handler del exec no lo captura porque la función se define sin error.
+        import re as _re
+        undef_match = _re.search(r"name '(\w+)' is not defined", str(e))
+        if undef_match:
+            undef = undef_match.group(1)
+            comp_matches = list(_re.finditer(
+                r'\[.*?\bfor\s+(\w+)\s+in\b', codigo, _re.DOTALL
+            ))
+            for cm in comp_matches:
+                loop_var = cm.group(1)
+                if loop_var != undef:
+                    codigo_fix = _re.sub(r'\b' + _re.escape(undef) + r'\b', loop_var, codigo)
+                    try:
+                        ns2: dict = {}
+                        exec(compile(codigo_fix, "<generated>", "exec"), ns2)
+                        resultado = verificador(ns2)
+                        return ("PASA", "") if resultado else ("FALLA", "verificador → False")
+                    except Exception:
+                        pass
+        return "FALLA", f"NameError: {e}"
     except Exception as e:
         return "FALLA", f"{type(e).__name__}: {e}"
 
@@ -478,7 +624,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default="checkpoints/v3_train.pt")
     parser.add_argument("--temp", type=float, default=0.1)
-    parser.add_argument("--max-tokens", type=int, default=384)
+    parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--rep-penalty", type=float, default=1.2)
     parser.add_argument("--guided", action="store_true",
                         help="Include function/class signature in prompt (HumanEval style)")

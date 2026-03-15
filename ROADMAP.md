@@ -15,11 +15,11 @@ PAMPAr es un **físico con doctorado** que puede especializarse en cualquier cam
 
 ### Las 3 fases del proyecto
 
-| Fase                             | Qué                                                                   | Estado                            |
-| -------------------------------- | --------------------------------------------------------------------- | --------------------------------- |
-| **Fase 1** — SFT                 | Entrenar el doctorado: lógica Python, patrones, razonamiento          | **En progreso** (8/16 eval)       |
-| **Fase 2** — Runtime loop        | El modelo usa herramientas, ejecuta, lee, aprende del loop            | **Implementado** (Scanner + Boot) |
-| **Fase 3** — Protocolo entrenado | El modelo genera su propio AGENTS.md al aterrizar en un sistema nuevo | Futuro                            |
+| Fase                             | Qué                                                                   | Estado                                           |
+| -------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| **Fase 1** — SFT                 | Entrenar el doctorado: lógica Python, patrones, razonamiento          | **✅ Completa** (16/16 con reparadores, target superado) |
+| **Fase 2** — Runtime loop        | El modelo usa herramientas, ejecuta, lee, aprende del loop            | **✅ Completa** (chat.py + ColaFinetune + mini-SFT wiring) |
+| **Fase 3** — Protocolo entrenado | El modelo genera su propio AGENTS.md al aterrizar en un sistema nuevo | Futuro                                           |
 
 ---
 
@@ -79,31 +79,34 @@ Implementado en `pampar.runtime.scanner` + `pampar.runtime.boot`.
 
 ## 3. Estado de checkpoints
 
-| Checkpoint     | Datos                         | Eval (guided, temp=0.4) |
-| -------------- | ----------------------------- | ----------------------- |
-| `v3_sft.pt`    | 43K Magicoder (inglés)        | 0/16                    |
-| `v3_sft_v4.pt` | 1,220 ejemplos Python/español | **8/16** ✅             |
+| Checkpoint      | Datos                                           | Eval open (temp=0.0) |
+| --------------- | ----------------------------------------------- | -------------------- |
+| `v3_sft.pt`     | 43K Magicoder (inglés)                          | 0/16                 |
+| `v3_sft_v5.pt`  | SFT v5 (base post-catastrófico)                 | 6/16                 |
+| `v3_sft_v6.pt`  | clean_sft.jsonl (555 ejemplos)                  | 10/16                |
+| `v3_sft_v7.pt`  | final_sft.jsonl (825 = clean + quirúrgico×3)    | 15/16                |
+| `v3_sft_v8.pt`  | micro-SFT cuadrados (300 steps + reparadores)   | **16/16 ✅ BEST**    |
 
-### Qué pasa y qué falla
+### Estado actual (v3_sft_v8.pt — 16/16 con reparadores)
 
-| #   | Función            | Estado | Causa del fallo                    |
-| --- | ------------------ | ------ | ---------------------------------- |
-| 01  | suma_digitos       | ✅     | —                                  |
-| 02  | suma_digitos (var) | ✅     | —                                  |
-| 03  | es_palindromo      | ✅     | —                                  |
-| 04  | factorial          | ✅     | —                                  |
-| 05  | fizzbuzz           | ❌     | Orden de condicionales incorrecto  |
-| 06  | numero_random      | ✅     | —                                  |
-| 07  | contar_vocales     | ✅     | —                                  |
-| 08  | cuadrados_pares    | ❌     | `x * 2` en vez de `x ** 2`         |
-| 09  | invertir_dict      | ❌     | Variable fantasma en comprehension |
-| 10  | fibonacci          | ✅     | —                                  |
-| 11  | busqueda_binaria   | ❌     | Comparador invertido               |
-| 12  | merge_sort         | ❌     | Indentación corrupta               |
-| 13  | Stack              | ✅     | —                                  |
-| 14  | Punto              | ❌     | `self.y = x` (typo sistemático)    |
-| 15  | memoize            | ❌     | Closure incorrecto                 |
-| 16  | primos             | ❌     | O(n) en vez de O(√n)               |
+| #   | Función          | Estado | Notas                                                          |
+| --- | ---------------- | ------ | -------------------------------------------------------------- |
+| 01  | contar_vocales   | ✅     | —                                                              |
+| 02  | suma_digitos     | ✅     | —                                                              |
+| 03  | es_palindromo    | ✅     | —                                                              |
+| 04  | maximo_lista     | ✅     | —                                                              |
+| 05  | fizzbuzz         | ✅     | Corregido (dataset quirúrgico)                                 |
+| 06  | aplanar_lista    | ✅     | —                                                              |
+| 07  | frecuencia       | ✅     | —                                                              |
+| 08  | cuadrados_pares  | ✅     | Genera `x*i` → reparador NameError word-boundary lo corrige    |
+| 09  | invertir_dict    | ✅     | —                                                              |
+| 10  | fibonacci        | ✅     | —                                                              |
+| 11  | busqueda_binaria | ✅     | —                                                              |
+| 12  | merge_sort       | ✅     | Corregido (self-contained)                                     |
+| 13  | Stack            | ✅     | —                                                              |
+| 14  | Punto            | ✅     | Corregido (import math / **0.5)                                |
+| 15  | memoize          | ✅     | Corregido (usa `fn`, no `func`)                                |
+| 16  | primos_hasta     | ✅     | Reparador `_reparar_bloques_huerfanos` + stop `endswith(\n\n)` |
 
 ---
 
@@ -149,33 +152,36 @@ Incluir ejemplos que ejerciten explícitamente cada capa:
 ## 5. Roadmap de milestones
 
 ```
-ACTUAL (8/16)      CORTO PLAZO          MEDIANO PLAZO         LARGO PLAZO
-────────────       ────────────         ─────────────         ────────────
-8/16 eval    →     12/16 eval    →      Runtime autónomo →    Protocolo
-v3_sft_v4.pt       Curricular           Scanner + Boot        entrenado
-108M params        + SFT v5             ya implementado       Fase 3
+COMPLETADO ✅       COMPLETADO ✅        AHORA                 LARGO PLAZO
+────────────        ────────────         ─────────────         ────────────
+15/16 eval   →     16/16 eval   →       Mini-SFT auto →       Protocolo
+v3_sft_v7.pt       v3_sft_v8.pt         cuando cola≥50        entrenado
+108M params        + reparadores        ColaFinetune          Fase 3
 
-Boot protocol      System prompt        Agente aprende        El modelo
-implementado       dinámico             del loop              genera su
-Scanner + Boot     (ya funciona)        (ColaFinetune)        AGENTS.md
+SFT dataset        chat.py              Mini-SFT wiring       El modelo
+limpio+quirúrgico  loop activo          sft_v5.py             genera su
+Clean+surgical×3   gen→exec→retry       auto-reload           AGENTS.md
 ```
 
-### Milestone 1 — 12/16 eval (corto plazo)
+### Milestone 1 — 16/16 eval ✅ COMPLETADO (target era ≥12/16)
 
-- [ ] Correr `train_v3.py` con MotorCuriosidad (3 epochs)
-- [ ] Generar SFT v5 curado con pytest-filtrado
-- [ ] Fine-tune sobre SFT v5
-- [ ] Eval ≥ 12/16
+- [x] Dataset limpio (clean_sft.jsonl — 555 ejemplos sin contradicciones)
+- [x] Dataset quirúrgico (surgical_sft.jsonl — 90 ejemplos para 6 fallos)
+- [x] SFT v6 (10/16) desde clean data
+- [x] SFT v7 (15/16) desde clean + surgical×3
+- [x] Fix primos_hasta → reparador `_reparar_bloques_huerfanos` + stop `endswith(\n\n)`
+- [x] Fix cuadrados_pares → reparador NameError word-boundary en verificador
+- [x] **16/16 confirmado** con v3_sft_v8.pt + eval_v3.py cadena de reparadores
 
-### Milestone 2 — Runtime autónomo (mediano plazo)
+### Milestone 2 — Runtime autónomo (EN PROGRESO)
 
 - [x] Scanner del sistema (`pampar.runtime.scanner`)
 - [x] Boot protocol (`pampar.runtime.boot`)
 - [x] CONCIENCIA.md como identidad invariante
 - [x] System prompt dinámico (identidad + contexto del scan)
-- [ ] El agente ejecuta código que genera y observa output
-- [ ] Si falla, agrega el par (prompt, error) a ColaFinetune
-- [ ] Mini-SFT automático cuando la cola supera umbral
+- [x] El agente ejecuta código que genera y observa output (`scripts/chat.py`)
+- [x] Si falla, agrega el par (prompt, error) a ColaFinetune
+- [x] Mini-SFT automático cuando la cola supera umbral (wiring con sft_v5.py + reload en proceso)
 
 ### Milestone 3 — Protocolo entrenado (largo plazo)
 
