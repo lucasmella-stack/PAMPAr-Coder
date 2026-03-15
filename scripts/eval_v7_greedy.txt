@@ -1,0 +1,56 @@
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  EVAL HONESTA ÔÇö PamparV3 Generalizaci├│n
+  Checkpoint : v3_sft_v7.pt  (1.31 GB)
+  Device     : cuda  |  Temp: 0.0  |  RepPen: 1.2
+  Mode       : OPEN
+  Prompts    : 16 (nunca vistos en entrenamiento)
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  Cargando modelo... OK (108.3M params, vocab=48,000, 3.4s)
+
+  [01/16] Nivel 1 ÔÇö Contar vocales  [39.0s] Ô£à PASA
+  [02/16] Nivel 1 ÔÇö Sumar d├¡gitos  [6.9s] Ô£à PASA
+  [03/16] Nivel 1 ÔÇö Pal├¡ndromo  [39.5s] Ô£à PASA
+  [04/16] Nivel 1 ÔÇö M├íximo de lista  [41.2s] Ô£à PASA
+  [05/16] Nivel 1 ÔÇö FizzBuzz single  [40.9s] Ô£à PASA
+  [06/16] Nivel 2 ÔÇö Aplanar lista un nivel  [6.9s] Ô£à PASA
+  [07/16] Nivel 2 ÔÇö Frecuencia de elementos  [41.6s] Ô£à PASA
+  [08/16] Nivel 2 ÔÇö Lista de cuadrados pares  [40.9s] ÔØî FALLA ÔÇö NameError: name 'i' is not defined
+
+    ### Problem: 
+     Write a Python function `cuadrados_pares(n)` that returns a list of squares of all even numbers from 2 to n inclusive. 
+     ### Solution: 
+     ```python 
+     def cuadrados_pares(n): 
+         return [x * i for x in range(2, n + 1, 2)] 
+     ``` 
+     The `cuadrados_pares` function takes a list of integers as input and returns the resultado in the list. If not, it returns a list of all primoos is empty.
+
+  [09/16] Nivel 2 ÔÇö Invertir diccionario  [39.8s] Ô£à PASA
+  [10/16] Nivel 3 ÔÇö Fibonacci iterativo  [41.2s] Ô£à PASA
+  [11/16] Nivel 3 ÔÇö Busqueda binaria  [39.9s] Ô£à PASA
+  [12/16] Nivel 3 ÔÇö Merge sort  [41.4s] Ô£à PASA
+  [13/16] Nivel 4 ÔÇö Clase Stack b├ísica  [39.6s] Ô£à PASA
+  [14/16] Nivel 4 ÔÇö Clase Punto con distancia  [10.4s] Ô£à PASA
+  [15/16] Nivel 5 ÔÇö Memoizaci├│n con decorador  [40.7s] Ô£à PASA
+  [16/16] Nivel 5 ÔÇö Generador de n├║meros primos  [43.1s] Ô£à PASA
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RESULTADO FINAL ÔÇö 553s total
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Pasan      : 15/16  (94%)
+  ÔØî Fallan     : 1/16
+  ÔÜá´©Å  Sintaxis   : 0/16
+  ­ƒÆÑ Error exec : 0/16
+
+  Por nivel:
+    Nivel 1: ÔûêÔûêÔûêÔûêÔûê  5/5
+    Nivel 2: ÔûêÔûêÔûêÔûæ  3/4
+    Nivel 3: ÔûêÔûêÔûê  3/3
+    Nivel 4: ÔûêÔûê  2/2
+    Nivel 5: ÔûêÔûê  2/2
+
+  ­ƒƒó GENERALIZA BIEN ÔÇö el modelo aprendi├│ de verdad
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+

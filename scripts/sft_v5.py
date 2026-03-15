@@ -62,7 +62,7 @@ def _cargar_targeted(ruta: Path) -> list[str]:
         try:
             obj = json.loads(linea)
             texto = obj.get("text", "")
-            if texto and "### Solution:" in texto and "def " in texto:
+            if texto and "### Solution:" in texto:
                 ejemplos.append(texto)
         except json.JSONDecodeError:
             continue
