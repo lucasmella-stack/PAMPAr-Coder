@@ -3,5 +3,7 @@
 """Runtime — Orquestador del sistema PAMPAr."""
 
 from .agente import Agente
+from .scanner import Scanner
+from .boot import BootProtocol
 
-__all__ = ["Agente"]
+__all__ = ["Agente", "Scanner", "BootProtocol"]

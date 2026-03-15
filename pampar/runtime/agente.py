@@ -37,6 +37,7 @@ from pampar.memoria.rag import RAGResidual
 from pampar.memoria.cola_finetune import ColaFinetune
 from pampar.skills.lector_archivos import LectorArchivos
 from pampar.skills.ejecutar_codigo import EjecutorCodigo
+from pampar.runtime.boot import BootProtocol
 
 
 # =============================================================================
@@ -124,10 +125,13 @@ class Agente:
         # ── Skills ───────────────────────────────────────────────────────────
         self.lector = LectorArchivos(workspace_root=workspace_root)
         self.ejecutor = EjecutorCodigo(cwd=workspace_root)
-
+        # ── Boot Protocol ────────────────────────────────────────────────────
+        self.boot = BootProtocol(workspace_root=workspace_root)
+        self._scan_resultado = self.boot.ejecutar(self.rag)
+        self._system_prompt = self.boot.generar_system_prompt()
         # ── Estado ───────────────────────────────────────────────────────────
         self._historial: List[Dict[str, str]] = []  # [{"role": "user/assistant", "text": "..."}]
-        self._textos_rag: List[str] = []            # Cache de textos en RAG para novelty
+
 
         print(f"[Agente] Listo en {self.device} | RAG: {self.rag.stats()['total_entradas']} entradas")
 
@@ -159,7 +163,6 @@ class Agente:
         if entrada.nivel >= 1:
             self.rag.agregar(entrada)
             self.cola_ft.agregar(entrada)
-            self._textos_rag.append(mensaje)
 
         # 2. Recuperar contexto del RAG
         resultados_rag = self.rag.recuperar(mensaje, nivel_minimo=1)
@@ -209,7 +212,7 @@ class Agente:
 
     def _construir_prompt(self, mensaje: str, ctx_rag: str) -> str:
         """Construye el prompt completo con system, RAG, historial y mensaje."""
-        partes = [SYSTEM_PROMPT]
+        partes = [self._system_prompt]
 
         if ctx_rag:
             partes.append(ctx_rag)

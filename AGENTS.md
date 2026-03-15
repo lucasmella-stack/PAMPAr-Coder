@@ -1,78 +1,98 @@
-# PAMPAr-Coder Repository Guidelines
+# PAMPAr-Coder — Protocolo de Despliegue
 
-> For AI agents: Claude Code, Codex (OpenAI), Gemini CLI, etc.
-> For GitHub Copilot: see `.github/copilot-instructions.md`
+> **PAMPAr** = Procesador Autónomo Modular de Patrones y Razonamiento
+> Este archivo es el **protocolo de despliegue** — se regenera en cada boot según el entorno.
+> Para la identidad invariante del modelo, ver `CONCIENCIA.md`.
+
+---
+
+## Visión
+
+PAMPAr es como un **físico con doctorado** que puede especializarse en cualquier campo:
+
+- El **doctorado** (razonamiento computacional profundo) está en los **pesos** — 108M params entrenados.
+- La **especialización** (conocimiento de dominio) viene del **entorno** donde se despliega.
+- Este archivo **ES** la descripción del laboratorio donde el físico aterrizó.
+
+---
+
+## Protocolo de 3 archivos
+
+Inspirado en el patrón OpenClaw, PAMPAr usa 3 archivos al boot:
+
+| Archivo            | Propósito                                                     | Mutabilidad                               |
+| ------------------ | ------------------------------------------------------------- | ----------------------------------------- |
+| `CONCIENCIA.md`    | Quién soy — identidad, principios, método de pensamiento      | **Invariante** entre despliegues          |
+| `AGENTS.md` (este) | Dónde estoy — entorno, workspace, capacidades disponibles     | **Mutable** — se regenera por el Scanner  |
+| `TOOLS.md`         | Qué puedo hacer — skills detectados, herramientas disponibles | **Mutable** — se actualiza con el entorno |
+
+### Secuencia de boot
+
+```
+1. Cargar CONCIENCIA.md → vectorizar en RAG como L3 (nunca se purga)
+2. Scanner inspecciona: workspace (ast.parse), paquetes (importlib), servicios (socket)
+3. Generar AGENTS.md contextual con el resultado del scan
+4. Generar TOOLS.md con skills detectados
+5. Vectorizar AGENTS.md + TOOLS.md en RAG como L2 (se actualizan)
+6. Listo — el modelo tiene identidad + contexto + herramientas
+```
+
+---
+
+## Scanner del sistema
+
+El módulo `pampar.runtime.scanner` inspecciona el entorno al boot:
+
+```python
+from pampar.runtime.scanner import Scanner
+
+scanner = Scanner(workspace_root=".")
+resultado = scanner.scan()
+
+# resultado.workspace → archivos, estructura, lenguajes detectados
+# resultado.paquetes  → paquetes instalados con versiones
+# resultado.servicios → puertos abiertos, servicios detectados
+# resultado.sistema   → OS, Python version, GPU, RAM
+```
+
+### Qué escanea
+
+| Dimensión     | Método                      | Qué detecta                                       |
+| ------------- | --------------------------- | ------------------------------------------------- |
+| **Workspace** | `ast.parse` + glob          | Archivos `.py`, funciones, clases, imports        |
+| **Paquetes**  | `importlib.metadata`        | Paquetes instalados con versiones                 |
+| **Servicios** | `socket.connect`            | PostgreSQL (5432), Redis (6379), HTTP (8000/3000) |
+| **Sistema**   | `platform.*` + `torch.cuda` | OS, Python ver, GPU disponible, VRAM, RAM         |
+| **Voz**       | `shutil.which`              | espeak, SAPI (Windows), say (macOS)               |
+
+El scanner NO ejecuta código del workspace — solo lee estructura y metadata (AST, no eval).
+
+---
 
 ## Quick Reference
 
-| Area       | Convention                                                             |
-| ---------- | ---------------------------------------------------------------------- |
-| Language   | Python 3.13+                                                           |
-| Framework  | PyTorch 2.x                                                            |
-| Tokenizer  | SentencePiece BPE — **48K** (`pampar_48k.model`) para modelo activo v3 |
-| Testing    | pytest — **109 tests, todos deben pasar**                              |
-| Type hints | Always required                                                        |
-| Docstrings | Google style                                                           |
-| Training   | Local — todo corre en la GPU del desarrollador (GTX 1650, 4 GB VRAM)   |
-| NO cloud   | No hay RunPod, no hay AWS, no hay nada remoto                          |
+| Area       | Convention                                       |
+| ---------- | ------------------------------------------------ |
+| Language   | Python 3.13+                                     |
+| Framework  | PyTorch 2.x                                      |
+| Tokenizer  | SentencePiece BPE — **48K** (`pampar_48k.model`) |
+| Testing    | pytest — **109 tests, todos deben pasar**        |
+| Type hints | Always required                                  |
+| Docstrings | Google style                                     |
+| Training   | Local — GTX 1650, 4 GB VRAM                      |
+| NO cloud   | Todo corre local y offline                       |
 
-## Estado actual del proyecto (Feb 2026)
+## Estado actual (Mar 2026)
 
-- **Modelo activo**: `PamparV3` — **108.3M params, vocab 48K**, arquitectura 2D (4 streams × 5 niveles)
-- **Checkpoint**: ninguno entrenado aún — pesos aleatorios listos para entrenamiento
-- **Tokenizer activo**: `data/tokenizer/pampar_48k.model` (48K vocab)
-- **Tests**: **109/109 passing** (4.2s)
-- **Siguiente paso**: escribir script de entrenamiento autónomo para v3
+- **Modelo activo**: `PamparV3` — **108.3M params, vocab 48K**, 4 streams × 5 niveles
+- **Mejor checkpoint**: `v3_sft_v4.pt` — **8/16 eval** (guided, temp=0.4)
+- **Tokenizer**: `data/tokenizer/pampar_48k.model`
+- **Tests**: **109/109 passing**
+- **Boot protocol**: Scanner + CONCIENCIA + AGENTS dinámico
 
-## Project Structure
+---
 
-```
-PAMPAr-Coder/
-├── pampar/
-│   ├── __init__.py
-│   ├── coder/
-│   │   ├── v3/                     # ← ARQUITECTURA ACTIVA
-│   │   │   ├── modelo.py           # PamparV3 — 108.3M params
-│   │   │   ├── config.py           # ConfigV3 + PRESET_V3 / PRESET_V3_SMALL / PRESET_V3_LARGE
-│   │   │   ├── talamo.py           # TalamoInicial — LLAVES 80% + attn 20%
-│   │   │   └── bloques.py          # NivelProfundo: GQA + StreamFFN (SwiGLU) + LateralGates
-│   │   └── deprecated/             # PampaRCoderV2 (42M, 16K vocab) — solo referencia
-│   ├── memoria/
-│   │   ├── clasificador.py         # ClasificadorPareto — niveles 0-3 de importancia
-│   │   ├── rag.py                  # RAGResidual — recuperación por similitud léxica
-│   │   └── cola_finetune.py        # ColaFinetune — cola de candidatos a fine-tuning
-│   ├── skills/
-│   │   ├── base.py                 # Skill, ResultadoSkill
-│   │   ├── lector_archivos.py      # LectorArchivos — lee .py/.json/.md (sandboxed)
-│   │   └── ejecutar_codigo.py      # EjecutorCodigo — subprocess con timeout
-│   └── runtime/
-│       └── agente.py               # Agente — loop de inferencia + acciones [LEER:][EJECUTAR:]
-├── biblioteca/
-│   ├── indice.json                 # 39 temas Python, 5 categorías, niveles 1-6
-│   └── *.jsonl                     # ~140 MB de ejemplos de código
-├── data/
-│   ├── tokenizer/
-│   │   ├── pampar_48k.model        # ACTIVO — 48K vocab (PamparV3)
-│   │   └── code_tokenizer.model    # LEGACY — 16K vocab (deprecated v2 únicamente)
-│   ├── code/                       # GitHub code dumps
-│   └── distillation/               # Datos de destilación
-├── checkpoints/                    # Futuro home de pampar_v3_best.pt
-├── scripts/
-│   ├── aprender_solo.py            # Loop de entrenamiento autónomo (era v2 — necesita v3 port)
-│   ├── smoke_test_viaje.py         # Smoke test pre-entrenamiento
-│   ├── probar_modelo.py            # Prueba interactiva / automática
-│   └── ...                         # Utilidades: curado de datos, eval, benchmark
-└── tests/
-    ├── conftest.py                 # Fixtures compartidas (modelo mini, tokenizer mock)
-    ├── test_v3_arquitectura.py     # ConfigV3, forward pass, loss, generate, early exit
-    ├── test_memoria.py             # ClasificadorPareto, RAGResidual, ColaFinetune
-    ├── test_skills.py              # LectorArchivos, EjecutorCodigo
-    └── test_runtime.py             # SYSTEM_PROMPT, Agente (lógica sin GPU)
-```
-
-## Architecture Overview — PamparV3 (v3)
-
-PamparV3 es una arquitectura cortical 2D inspirada en el cerebro humano:
+## Arquitectura — PamparV3
 
 ### Grilla 2D: 4 streams × 5 niveles
 
@@ -85,119 +105,120 @@ Cada NivelProfundo (×5):
   1. GQA Atención compartida (8 Q heads / 2 KV heads, head_dim=80)
   2. Re-routing ligero del Tálamo (Linear dim→52, sin bias)
   3. 4 × StreamFFN SwiGLU independientes (uno por stream)
-  4. Lateral gates por stream (bottleneck=128, como fibras blancas)
+  4. Lateral gates por stream (bottleneck=128, fibras blancas)
 
 → norm_f (RMSNorm) → lm_head (weight-tied, vocab=48K)
 ```
 
-### Componentes clave
+### Streams ↔ Capas lingüísticas
 
-1. **TalamoInicial** — orquestador: LLAVES (80% reglas INT8) + attn_proj (20%) + context_conv
-2. **52 Zonas de Brodmann** — representación interna de especialización de código
-3. **4 Territorios/Streams** — SINTAXIS (1-15), SEMÁNTICA (16-30), LÓGICO (31-42), ESTRUCTURAL (43-52)
-4. **Lateral Gates** — cada stream recibe del resto: comunicación horizontal por nivel
-5. **Early Exit** — si confianza > 90%, salta niveles restantes (mínimo 2)
+| Stream | Territorio  | Zonas   | Especialización                           | Capa lingüística |
+| ------ | ----------- | ------- | ----------------------------------------- | ---------------- |
+| 0      | SINTAXIS    | B01-B15 | Keywords, delimitadores, puntuación       | Sintaxis         |
+| 1      | SEMANTICA   | B16-B30 | Variables, tipos, literales               | Semántica        |
+| 2      | LOGICO      | B31-B42 | Operadores, flujo de control, excepciones | Pragmática       |
+| 3      | ESTRUCTURAL | B43-B52 | Indentación, bloques, patrones            | Discurso         |
 
-### Parámetros PRESET_V3
+### PRESET_V3
 
-| Parámetro         | Valor       |
-| ----------------- | ----------- |
-| `dim`             | 640         |
-| `n_streams`       | 4           |
-| `n_levels`        | 5           |
-| `n_heads`         | 8           |
-| `n_kv_heads`      | 2 (GQA 4:1) |
-| `ffn_mult`        | 4.0         |
-| `vocab_size`      | 48 000      |
-| `max_seq_len`     | 4096        |
-| **Total params**  | **108.3M**  |
-| **VRAM fp16**     | 200 MB      |
-| **VRAM training** | 1.4 GB      |
+| Parámetro        | Valor       |
+| ---------------- | ----------- |
+| `dim`            | 640         |
+| `n_streams`      | 4           |
+| `n_levels`       | 5           |
+| `n_heads`        | 8           |
+| `n_kv_heads`     | 2 (GQA 4:1) |
+| `vocab_size`     | 48 000      |
+| `max_seq_len`    | 4096        |
+| **Total params** | **108.3M**  |
 
-## Módulos de Memoria, Skills y Runtime
+---
 
-### `pampar.memoria`
+## Estructura del proyecto
 
-- `ClasificadorPareto` — clasifica texto en nivel 0 (ruido) a 3 (valioso) según densidad, loss, novedad
-- `RAGResidual` — recuperación: guarda entradas L1+, busca por tokens comunes
-- `ColaFinetune` — acumula ejemplos L3; exporta JSONL formato Alpaca cuando hay ≥ umbral
+```
+PAMPAr-Coder/
+├── AGENTS.md                    # Protocolo de despliegue (este archivo)
+├── ROADMAP.md                   # Plan de evolución
+├── pampar/
+│   ├── CONCIENCIA.md            # Identidad invariante (pertenece al modelo)
+│   ├── coder/
+│   │   └── v3/                  # ARQUITECTURA ACTIVA
+│   │       ├── modelo.py        # PamparV3 — forward, generate
+│   │       ├── config.py        # ConfigV3, presets
+│   │       ├── talamo.py        # TalamoInicial — routing
+│   │       ├── bloques.py       # BloqueAttn, StreamFFN, LateralGate
+│   │       ├── llaves.py        # LlavesV2 — lookup INT8
+│   │       └── zonas.py         # 52 Zonas de Brodmann
+│   ├── memoria/
+│   │   ├── clasificador.py      # ClasificadorPareto — niveles 0-3
+│   │   ├── rag.py               # RAGResidual — vector store
+│   │   └── cola_finetune.py     # ColaFinetune — buffer SFT
+│   ├── skills/
+│   │   ├── base.py              # Skill ABC + ResultadoSkill
+│   │   ├── lector_archivos.py   # LectorArchivos — sandboxed
+│   │   └── ejecutar_codigo.py   # EjecutorCodigo — subprocess
+│   ├── runtime/
+│   │   ├── agente.py            # Agente — orquestador principal
+│   │   ├── scanner.py           # Scanner — inspección del entorno
+│   │   └── boot.py              # BootProtocol — secuencia de arranque
+│   └── training/
+│       ├── curiosidad.py        # MotorCuriosidad — ZPD de Vygotsky
+│       └── lector.py            # LectorBiblioteca — carga JSONL
+├── data/
+│   └── tokenizer/
+│       └── pampar_48k.model     # Vocab 48K bilingüe
+├── checkpoints/
+│   └── v3_sft_v4.pt             # Mejor checkpoint (8/16)
+└── tests/
+    ├── test_v3_arquitectura.py
+    ├── test_memoria.py
+    ├── test_skills.py
+    └── test_runtime.py
+```
 
-### `pampar.skills`
-
-- `LectorArchivos` — lee archivos `.py/.json/.md/.txt` dentro del workspace, sandboxed
-- `EjecutorCodigo` — corre código Python en subprocess con timeout (5s default)
-
-### `pampar.runtime.Agente`
-
-Loop de chat con herramientas:
-
-- Detecta acciones `[LEER: path]`, `[EJECUTAR: code]`, `[TESTS: code]`
-- Mantiene historial de N turnos
-- Integra RAG y cola de fine-tuning
-- `aceptar_finetune()` / `rechazar_finetune()` — feedback del usuario para datos
+---
 
 ## Critical Rules
 
-- **vocab_size DEBE coincidir con el tokenizer**: PamparV3 = 48K → usar `pampar_48k.model`
-- LLAVES son reglas INT8 pre-computadas, **nunca** en el grafo de gradientes
-- Los 4 streams procesan en paralelo — no hay secuencialidad entre streams en un nivel
-- `targets.reshape(-1)` siempre, nunca `.view(-1)` (puede fallar con tensores no-contiguos)
-- `terr_acts` tiene shape `[B, L, 4]` — clamp al indexar fuera del batch
+- **vocab_size = 48K** → DEBE coincidir con `pampar_48k.model`
+- LLAVES son INT8 pre-computadas — **nunca** en el grafo de gradientes
+- Los 4 streams procesan en **paralelo** — sin secuencialidad entre streams
+- `targets.reshape(-1)` siempre, nunca `.view(-1)` (tensores no-contiguos)
 - `generate()` usa `max_tokens`, NO `max_new_tokens`
-- Los imports externos usan `pampar.memoria.*`, `pampar.skills.*`, `pampar.runtime.*`
-- Al hacer `patch()` en tests: usar `"pampar.runtime.agente.spm"`, no `"runtime.agente.spm"`
-- NO hay cloud, NO hay RunPod — todo corre local en la GPU del desarrollador
-
-## Tokenizers disponibles
-
-| Archivo                | Vocab   | Usar con                     |
-| ---------------------- | ------- | ---------------------------- |
-| `pampar_48k.model`     | **48K** | **PamparV3 — modelo activo** |
-| `code_tokenizer.model` | 16K     | `deprecated/` v2 únicamente  |
+- Imports: `pampar.memoria.*`, `pampar.skills.*`, `pampar.runtime.*`
+- Tests: `patch("pampar.runtime.agente.spm")`, no `"runtime.agente.spm"`
+- **NO hay cloud** — todo corre local offline
 
 ## Naming Conventions
 
-- **Español** para conceptos del dominio: `Talamo`, `Territorio`, `Zona`, `LLAVES`, `Agente`
+- **Español** para conceptos del dominio: `Talamo`, `Territorio`, `Zona`, `LLAVES`, `Agente`, `Scanner`
 - **Inglés** para ML estándar: `forward`, `embedding`, `hidden_states`, `loss`, `generate`
-- **Config v3**: `ConfigV3` con presets `PRESET_V3`, `PRESET_V3_SMALL`, `PRESET_V3_LARGE`
-- **Config v2 (deprecated)**: `ConfigV2` con `PRESET_4GB`, `PRESET_8GB`, `PRESET_24GB`, `PRESET_1_5B`
 
 ## Uso desde Python
 
 ```python
-from pampar.coder.v3 import PamparV3, PRESET_V3
-import torch
+from pampar.runtime import Agente
 
-model = PamparV3(PRESET_V3)
-model.eval()
+# Boot completo: scanner + CONCIENCIA + AGENTS + modelo
+agente = Agente(
+    checkpoint="checkpoints/v3_sft_v4.pt",
+    workspace_root=".",
+)
 
-# Forward
-ids = torch.randint(0, 48_000, (1, 64))
-logits, loss, info = model(ids)
-# logits: [1, 64, 48000]  |  info: {"exit_nivel": int, "terr_acts": Tensor}
-
-# Con loss
-targets = ids.clone()
-_, loss, _ = model(ids, targets=targets)
-
-# Generación
-gen = model.generate(ids, max_tokens=100, temperature=0.8, top_k=50, top_p=0.95)
+# Interactuar
+respuesta = agente.responder("escribí una función fibonacci")
 ```
 
-## Workflow actual
+## Workflow
 
 ```powershell
-# 1. Siempre primero — tests completos
+# Tests completos
 python -m pytest tests/ -v             # 109/109
 
-# 2. Verificar inferencia end-to-end
+# Verificar inferencia
 python _test_inferencia.py
-
-# 3. TODO: entrenamiento v3 (próxima fase)
-# Requiere portar/crear scripts/train_v3.py con PamparV3 + pampar_48k.model
 ```
-
-## Instructions Files
 
 Detailed instructions in `.github/instructions/`:
 

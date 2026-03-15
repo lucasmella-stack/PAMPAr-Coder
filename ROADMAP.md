@@ -1,15 +1,31 @@
-# PAMPAr-Coder — Arquitectura y Roadmap
+# PAMPAr-Coder — Roadmap
 
-> Estado técnico actual, decisiones de diseño, y plan de evolución.
-> Última actualización: limpieza de `deprecated/` completada ✅
+> Plan de evolución. Última actualización: Mar 2026.
+> Para la identidad del modelo ver `CONCIENCIA.md`. Para el protocolo de despliegue ver `AGENTS.md`.
 
 ---
 
-## 1. Arquitectura actual — PamparV3
+## 1. Visión
 
-### 1.1 Visión general
+PAMPAr es un **físico con doctorado** que puede especializarse en cualquier campo:
 
-PamparV3 es un LLM de **108M parámetros** diseñado para código Python/español, optimizado para correr en hardware limitado (GTX 1650, 4.3 GiB VRAM).
+- El **doctorado** (razonamiento computacional) está en los **pesos** — 108M params.
+- La **especialización** viene del **entorno** — se descubre al boot con el Scanner.
+- El protocolo de 3 archivos (`CONCIENCIA.md` + `AGENTS.md` + `TOOLS.md`) es la interfaz entre el modelo y su despliegue.
+
+### Las 3 fases del proyecto
+
+| Fase                             | Qué                                                                   | Estado                            |
+| -------------------------------- | --------------------------------------------------------------------- | --------------------------------- |
+| **Fase 1** — SFT                 | Entrenar el doctorado: lógica Python, patrones, razonamiento          | **En progreso** (8/16 eval)       |
+| **Fase 2** — Runtime loop        | El modelo usa herramientas, ejecuta, lee, aprende del loop            | **Implementado** (Scanner + Boot) |
+| **Fase 3** — Protocolo entrenado | El modelo genera su propio AGENTS.md al aterrizar en un sistema nuevo | Futuro                            |
+
+---
+
+## 2. Arquitectura actual — PamparV3
+
+### 2.1 Grilla cortical 2D
 
 ```
 Tokens (int)
@@ -28,322 +44,188 @@ Tokens (int)
              ▼
   ┌──────────────────────────────────────────────┐
   │          5 × NivelProfundo                   │
-  │                                              │
-  │  ┌─────────────────────────────────────┐     │
-  │  │ Para cada nivel:                    │     │
-  │  │                                     │     │
-  │  │  TalamoNivel (re-routing ligero)    │     │
-  │  │         │                           │     │
-  │  │  [× 4 streams en paralelo]          │     │
-  │  │  BloqueAttn — GQA 4:1              │     │
-  │  │    8 Q heads, 2 KV heads           │     │
-  │  │    head_dim=80, RoPE, Flash Attn   │     │
-  │  │         │                           │     │
-  │  │  StreamFFN — SwiGLU                │     │
-  │  │    hidden=640×4=2560               │     │
-  │  │         │                           │     │
-  │  │  LateralGate (bottleneck=128)      │     │
-  │  │    cada stream recibe info         │     │
-  │  │    de los otros 3 streams          │     │
-  │  │                                     │     │
-  │  │  Early Exit (umbral=0.90)          │     │
-  │  │    si max_prob ≥ 0.90 en ≥90%     │     │
-  │  │    de tokens → salir antes         │     │
-  │  └─────────────────────────────────────┘     │
+  │  TalamoNivel → 4× BloqueAttn GQA 4:1       │
+  │  → 4× StreamFFN SwiGLU → LateralGate       │
+  │  → Early Exit (umbral 0.90)                 │
   └──────────────────────────────────────────────┘
-             │ [B, L, dim] — combinación de 4 streams
+             │
              ▼
         RMSNorm + lm_head → logits [B, L, 48000]
 ```
 
-### 1.2 Los 4 streams (territorios)
+### 2.2 Streams ↔ Capas lingüísticas
 
-| Stream | Territorio  | Zonas   | Especialización                            |
-| ------ | ----------- | ------- | ------------------------------------------ |
-| 0      | SINTAXIS    | B01-B15 | Keywords, delimitadores, puntuación        |
-| 1      | SEMANTICA   | B16-B30 | Variables, tipos, literales, magic methods |
-| 2      | LOGICO      | B31-B42 | Operadores, flujo de control, excepciones  |
-| 3      | ESTRUCTURAL | B43-B52 | Indentación, bloques, patrones             |
+| Stream | Territorio  | Zonas   | Capa lingüística                  |
+| ------ | ----------- | ------- | --------------------------------- |
+| 0      | SINTAXIS    | B01-B15 | Sintaxis — estructura del código  |
+| 1      | SEMANTICA   | B16-B30 | Semántica — significado           |
+| 2      | LOGICO      | B31-B42 | Pragmática — intención, flujo     |
+| 3      | ESTRUCTURAL | B43-B52 | Discurso — organización, patrones |
 
-### 1.3 Sistema LLAVES (v2, ahora en v3/)
+Los 4 streams procesan en paralelo. Cada NivelProfundo tiene Lateral Gates (bottleneck=128) para comunicación entre streams — como las fibras blancas del cerebro.
 
-- **52 Zonas de Brodmann** para código (inspiradas en neurociencia)
-- **INT8** lookup tables: 52 bytes/token vs 208 bytes en FP32
-- `clasificar_token()`: reglas exactas + regex → asigna zona + confianza
-- `LlavesV2.forward()`: lookup en tabla → `[B, L, 52]` activaciones
-- `agregar_zonas_a_territorios()`: reduce 52→4 por media por territorio
-
-### 1.4 Archivos del modelo
+### 2.3 Boot Protocol
 
 ```
-pampar/coder/v3/
-├── config.py      # ConfigV3 dataclass, PRESET_V3/SMALL/LARGE
-├── modelo.py      # PamparV3 — forward, generate, gradient checkpointing
-├── talamo.py      # TalamoInicial — routing entrada
-├── bloques.py     # RMSNorm, RoPE, BloqueAttn, StreamFFN, LateralGate,
-│                  # TalamoNivel, NivelProfundo
-├── llaves.py      # LlavesV2, clasificar_token, normalizar  ← MOVIDO de deprecated/
-└── zonas.py       # Zona (52), Territorio (4), ZONAS, ZONA_TERRITORIO ← MOVIDO de deprecated/
+1. CONCIENCIA.md → RAG L3 (identidad inmutable)
+2. Scanner → workspace (ast), paquetes (importlib), servicios (socket), sistema (platform)
+3. AGENTS.md contextual → RAG L2 (entorno mutable)
+4. System prompt dinámico = identidad + contexto + acciones
 ```
 
-### 1.5 Sistema de memoria del agente
-
-```
-pampar/memoria/
-├── clasificador.py   # ClasificadorPareto — niveles 0-3 (importancia del chunk)
-├── rag_residual.py   # RAGResidual — vector store + retrieval BM25-like
-└── cola_finetune.py  # ColaFinetune — acumula ejemplos para futuro SFT
-```
-
-### 1.6 Training
-
-```
-pampar/training/
-├── curiosidad.py   # MotorCuriosidad — ZPD de Vygotsky para elección de temas
-└── lector.py       # LectorBiblioteca — lee JSONL de biblioteca/ (39 temas)
-```
-
----
-
-## 2. La idea: Vectorización del sistema
-
-### 2.1 Qué significa
-
-La idea es que el **system prompt del agente** (actualmente un string estático inyectado en cada prompt) sea **vectorizado y almacenado en RAGResidual** como entradas de nivel 3 (máxima importancia), en lugar de ocupar tokens del contexto.
-
-**Estado actual:**
-
-```python
-# agente.py — el system prompt ocupa ~300 tokens SIEMPRE
-prompt = f"[SYSTEM]\n{SYSTEM_PROMPT}\n[USER]\n{msg}\n[ASSISTANT]\n"
-```
-
-**Visión propuesta:**
-
-```python
-# El system prompt se vectoriza una sola vez al iniciar el agente
-# y se recupera como contexto semántico comprimido, no como tokens
-
-rag.agregar(EntradaRAG(
-    texto=SYSTEM_PROMPT,
-    tipo="system",
-    nivel=3,            # máxima importancia, nunca se purga
-    territorio="LOGICO" # instrucciones = flujo lógico
-))
-
-# En cada turno, el contexto RAG enriquece el prompt, no lo reemplaza
-ctx = rag.recuperar(query=msg_usuario, top_k=3)
-prompt = f"{ctx.formatear()}\n[USER]\n{msg_usuario}\n[ASSISTANT]\n"
-```
-
-### 2.2 Por qué importa
-
-| Problema actual                                          | Solución con vectorización                                     |
-| -------------------------------------------------------- | -------------------------------------------------------------- |
-| System prompt ocupa ~300 tokens fijos                    | Se recuperan solo los fragmentos relevantes                    |
-| Contexto disponible = 4096 - 300 = ~3796                 | Contexto útil ≈ 4096 (system comprimido)                       |
-| El agente "olvida" instrucciones si el contexto se llena | RAG siempre recupera lo relevante                              |
-| Un solo system prompt para todos los casos               | RAG semántico: recupera la regla más aplicable al query actual |
-
-### 2.3 Cómo implementarlo (plan técnico)
-
-**Fase 1** — Fragmentar el system prompt en chunks semánticos:
-
-```python
-# En lugar de un SYSTEM_PROMPT monolítico, fragmentar por "regla"
-REGLAS = [
-    "Leer el archivo antes de modificarlo.",
-    "Ejecutar tests después de cada cambio.",
-    "Responder en español cuando el usuario habla en español.",
-    ...
-]
-for regla in REGLAS:
-    rag.agregar(EntradaRAG(texto=regla, tipo="system", nivel=3))
-```
-
-**Fase 2** — Recuperación dinámica:
-
-```python
-# El agente recupera las 3 reglas más relevantes para el query actual
-ctx = rag.recuperar(query=msg_usuario, top_k=3)
-prompt = construir_prompt(msg_usuario, ctx_rag=ctx.formatear())
-```
-
-**Fase 3** (avanzada) — Embeddings reales:
-
-- Entrenar un encoder pequeño (128-256 dim) como tower separado de PamparV3
-- Vectorizar chunks con el encoder, guardar en FAISS
-- Recuperar por similitud coseno, no por overlap de palabras
+Implementado en `pampar.runtime.scanner` + `pampar.runtime.boot`.
 
 ---
 
 ## 3. Estado de checkpoints
 
-| Checkpoint     | Datos                         | Score eval (guided, temp=0.4) | Notas                    |
-| -------------- | ----------------------------- | ----------------------------- | ------------------------ |
-| `v3_sft.pt`    | 43K Magicoder (inglés)        | 0/16                          | Genera nombres en inglés |
-| `v3_sft_v4.pt` | 1,220 ejemplos Python/español | **8/16 (50%)**                | ✅ Mejor actual          |
+| Checkpoint     | Datos                         | Eval (guided, temp=0.4) |
+| -------------- | ----------------------------- | ----------------------- |
+| `v3_sft.pt`    | 43K Magicoder (inglés)        | 0/16                    |
+| `v3_sft_v4.pt` | 1,220 ejemplos Python/español | **8/16** ✅             |
 
-### Casos del eval que pasan con v3_sft_v4.pt
+### Qué pasa y qué falla
 
-| #   | Función            | Estado               |
-| --- | ------------------ | -------------------- |
-| 01  | suma_digitos       | ✅                   |
-| 02  | suma_digitos (var) | ✅                   |
-| 03  | es_palindromo      | ✅                   |
-| 04  | factorial          | ✅                   |
-| 06  | numero_random      | ✅ (suerte con rand) |
-| 07  | contar_vocales     | ✅                   |
-| 10  | fibonacci          | ✅                   |
-| 13  | Stack              | ✅                   |
-
-### Casos que fallan (y por qué)
-
-| #   | Función          | Fallo    | Causa raíz                                  |
-| --- | ---------------- | -------- | ------------------------------------------- |
-| 05  | fizzbuzz         | LÓGICA   | Genera `if n % 15 == 0` en orden incorrecto |
-| 08  | cuadrados_pares  | LÓGICA   | Genera `x * 2` en vez de `x ** 2`           |
-| 09  | invertir_dict    | LÓGICA   | Variable fantasma `{v: k for v, k in ...}`  |
-| 11  | busqueda_binaria | LÓGICA   | Comparador invertido                        |
-| 12  | merge_sort       | SINTAXIS | Indentación corrupta en función recursiva   |
-| 14  | Punto            | LÓGICA   | `self.x = x; self.y = x` (typo sistemático) |
-| 15  | memoize          | LÓGICA   | No implementa closure correctamente         |
-| 16  | primos           | TIEMPO   | Genera trial division en O(n) no O(√n)      |
+| #   | Función            | Estado | Causa del fallo                    |
+| --- | ------------------ | ------ | ---------------------------------- |
+| 01  | suma_digitos       | ✅     | —                                  |
+| 02  | suma_digitos (var) | ✅     | —                                  |
+| 03  | es_palindromo      | ✅     | —                                  |
+| 04  | factorial          | ✅     | —                                  |
+| 05  | fizzbuzz           | ❌     | Orden de condicionales incorrecto  |
+| 06  | numero_random      | ✅     | —                                  |
+| 07  | contar_vocales     | ✅     | —                                  |
+| 08  | cuadrados_pares    | ❌     | `x * 2` en vez de `x ** 2`         |
+| 09  | invertir_dict      | ❌     | Variable fantasma en comprehension |
+| 10  | fibonacci          | ✅     | —                                  |
+| 11  | busqueda_binaria   | ❌     | Comparador invertido               |
+| 12  | merge_sort         | ❌     | Indentación corrupta               |
+| 13  | Stack              | ✅     | —                                  |
+| 14  | Punto              | ❌     | `self.y = x` (typo sistemático)    |
+| 15  | memoize            | ❌     | Closure incorrecto                 |
+| 16  | primos             | ❌     | O(n) en vez de O(√n)               |
 
 ---
 
 ## 4. Plan de entrenamiento
 
-### Fase A — Pre-training curricular con MotorCuriosidad (PRÓXIMO PASO)
+### Fase A — Entrenamiento curricular con MotorCuriosidad
 
-**Objetivo:** reforzar las bases de lógica Python que el modelo introduce incorrectamente.
+Objetivo: reforzar las bases de lógica que el modelo falla.
 
 ```bash
 python scripts/train_v3.py \
   --checkpoint checkpoints/v3_sft_v4.pt \
   --biblioteca data/biblioteca/ \
-  --lr 3e-5 \
-  --epochs 3
+  --lr 3e-5 --epochs 3
 ```
 
-**Cómo funciona `MotorCuriosidad`:**
+Temas prioritarios basados en fallos del eval:
 
-- Evalúa `curiosidad(tema) = zona_proximal × novedad × urgencia_temporal × bonus_mejora`
-- ZPD de Vygotsky: elige temas donde `loss_media` está en la "zona óptima" (ni muy fácil ni imposible)
-- Esto maximiza la tasa de aprendizaje real por batch consumido
+1. `bucles_for_while` — fizzbuzz, cuadrados_pares
+2. `diccionarios` — invertir_dict
+3. `busqueda_algoritmos` — búsqueda binaria
+4. `recursion` — merge_sort
+5. `clases_oop` — Punto, memoize
+6. `matematica_basica` — primos, potencias
 
-**Temas prioritarios basados en fallos del eval:**
+### Fase B — SFT v5 (post-curricular)
 
-1. `bucles_for_while` — (fizzbuzz, cuadrados_pares)
-2. `diccionarios` — (invertir_dict)
-3. `busqueda_algoritmos` — (búsqueda binaria)
-4. `recursion` — (merge_sort)
-5. `clases_oop` — (Punto, memoize)
-6. `matematica_basica` — (primos, potencias)
+- ~18K ejemplos curados (3K por topic × 6 topics)
+- Formato Alpaca, filtrado con pytest
+- Generados por el propio modelo + verificación automática
 
-### Fase B — SFT v5 (después del curricular)
+### Fase C — Matriz lingüística como dato de entrenamiento
 
-**Datos a generar** (`scripts/generar_curriculum.py` usando PamparV3):
+Incluir ejemplos que ejerciten explícitamente cada capa:
 
-- ~3,000 ejemplos por topic × 6 tópicos = 18K ejemplos
-- Formato Alpaca: `{"instruction": ..., "input": ..., "output": ...}`
-- Curado automático: solo ejemplos donde pytest pasa
-
-```bash
-python scripts/destilar.py \
-  --modelo checkpoints/v3_post_curricular.pt \
-  --output data/distillation/sft_v5_curado.jsonl \
-  --n 18000 --filtrar-con-pytest
-```
-
-### Fase C — Objetivo 12/16
-
-Para pasar de 8→12/16 se necesitan:
-
-- fizzbuzz (5): orden de condicionales — dato de curricular
-- cuadrados_pares (8): `**` vs `*` — dato de curricular
-- invertir_dict (9): comprensión de dict — dato de curricular
-- busqueda_binaria (11): comparadores — dato de curricular
-
-Los 4 casos restantes (merge_sort, Punto, memoize, primos) requieren SFT v5 focalizado.
+- **Pragmática**: "El usuario quiere X, yo debo hacer Y" (comprensión de intención)
+- **Semántica**: Renombrar variables, inferir tipos, naming conventions
+- **Sintaxis**: Indentación correcta, keywords, delimitadores, f-strings
+- **Discurso**: Organización de código (imports → constantes → clases → funciones → main)
 
 ---
 
-## 5. Roadmap de capacidades
+## 5. Roadmap de milestones
 
 ```
-ESTADO ACTUAL          CORTO PLAZO           MEDIANO PLAZO         LARGO PLAZO
-─────────────          ──────────────        ─────────────         ─────────────
-8/16 eval      →       12/16 eval     →      Runtime loop   →      VS Code ext.
+ACTUAL (8/16)      CORTO PLAZO          MEDIANO PLAZO         LARGO PLAZO
+────────────       ────────────         ─────────────         ────────────
+8/16 eval    →     12/16 eval    →      Runtime autónomo →    Protocolo
+v3_sft_v4.pt       Curricular           Scanner + Boot        entrenado
+108M params        + SFT v5             ya implementado       Fase 3
 
-v3_sft_v4.pt           v3_post_curricular   Agente ejecuta         Integración
-108M params            + SFT v5             tests, lee archivos    IDE completa
-                                            y aprende del loop
-
-Vectorización          Fragmentar           Encoder semántico      RAG con FAISS
-system prompt          SYSTEM_PROMPT        128-dim embeddings      cosine search
-(Fase 1: texto)        (Fase 2: indexar)    (Fase 3: vectores)
+Boot protocol      System prompt        Agente aprende        El modelo
+implementado       dinámico             del loop              genera su
+Scanner + Boot     (ya funciona)        (ColaFinetune)        AGENTS.md
 ```
 
-### Milestone 1 — 12/16 (corto plazo)
+### Milestone 1 — 12/16 eval (corto plazo)
 
-- [ ] Correr `train_v3.py` con biblioteca/ + MotorCuriosidad (3 epochs)
+- [ ] Correr `train_v3.py` con MotorCuriosidad (3 epochs)
 - [ ] Generar SFT v5 curado con pytest-filtrado
 - [ ] Fine-tune sobre SFT v5
-- [ ] Eval guided+temp=0.4 → objetivo ≥ 12/16
+- [ ] Eval ≥ 12/16
 
-### Milestone 2 — Runtime loop (mediano plazo)
+### Milestone 2 — Runtime autónomo (mediano plazo)
 
-- [ ] El agente ejecuta el código que genera y observa el output
-- [ ] Si falla, agrega el par (prompt, error) a `ColaFinetune`
-- [ ] Cuando la cola supera umbral → trigger de mini-SFT automático
-- [ ] Vectorizar SYSTEM_PROMPT en RAGResidual (Fase 1)
+- [x] Scanner del sistema (`pampar.runtime.scanner`)
+- [x] Boot protocol (`pampar.runtime.boot`)
+- [x] CONCIENCIA.md como identidad invariante
+- [x] System prompt dinámico (identidad + contexto del scan)
+- [ ] El agente ejecuta código que genera y observa output
+- [ ] Si falla, agrega el par (prompt, error) a ColaFinetune
+- [ ] Mini-SFT automático cuando la cola supera umbral
 
-### Milestone 3 — VS Code extension (largo plazo)
+### Milestone 3 — Protocolo entrenado (largo plazo)
+
+- [ ] Entrenar el modelo para generar AGENTS.md al aterrizar en un sistema nuevo
+- [ ] El modelo "sabe" escanear: genera `scan_sistema()` como código, no como regla
+- [ ] CONCIENCIA se refuerza con RLHF/DPO sobre interacciones reales
+- [ ] El protocolo de 3 archivos es algo que el modelo produce, no solo consume
+
+### Milestone 4 — VS Code extension
 
 - [ ] Extension que carga PamparV3 localmente (CPU/GPU)
-- [ ] Completado inline de código con el modelo
+- [ ] Completado inline de código
 - [ ] Panel de chat con el agente
 - [ ] Memoria persistente entre sesiones (RAG en disco)
 
+### Milestone 5 — Voz (cuando el sistema la tiene)
+
+- [ ] Detectar motores de voz al boot (espeak, SAPI, say) — ya implementado en Scanner
+- [ ] TTS para respuestas cuando el usuario lo pide
+- [ ] Zero-dependency: usa lo que el OS tiene instalado
+
 ---
 
-## 6. Estructura de carpetas (post-limpieza)
+## 6. Estructura de carpetas
 
 ```
 PAMPAr-Coder/
+├── CONCIENCIA.md                 # Identidad invariante del modelo
+├── AGENTS.md                     # Protocolo de despliegue (mutable)
+├── ROADMAP.md                    # Este archivo
 ├── pampar/
-│   ├── coder/
-│   │   ├── __init__.py         # exporta solo v3
-│   │   └── v3/
-│   │       ├── __init__.py
-│   │       ├── config.py       # ConfigV3, presets
-│   │       ├── modelo.py       # PamparV3 — forward, generate
-│   │       ├── talamo.py       # TalamoInicial — routing entrada
-│   │       ├── bloques.py      # BloqueAttn, StreamFFN, LateralGate, etc.
-│   │       ├── llaves.py       # LlavesV2 + clasificar_token (era deprecated/)
-│   │       └── zonas.py        # 52 Zonas de Brodmann (era deprecated/)
+│   ├── coder/v3/                 # Arquitectura activa (108M)
+│   │   ├── modelo.py             # PamparV3
+│   │   ├── config.py             # ConfigV3, presets
+│   │   ├── talamo.py             # TalamoInicial
+│   │   ├── bloques.py            # BloqueAttn, StreamFFN, LateralGate
+│   │   ├── llaves.py             # LlavesV2 — lookup INT8
+│   │   └── zonas.py              # 52 Zonas de Brodmann
 │   ├── memoria/
-│   │   ├── clasificador.py     # ClasificadorPareto — importancia 0-3
-│   │   ├── rag_residual.py     # RAGResidual — vector store de sesión
-│   │   └── cola_finetune.py    # buffer de ejemplos para SFT online
+│   │   ├── clasificador.py       # ClasificadorPareto — L0 a L3
+│   │   ├── rag.py                # RAGResidual — vector store
+│   │   └── cola_finetune.py      # ColaFinetune — buffer SFT
+│   ├── runtime/
+│   │   ├── agente.py             # Agente — orquestador principal
+│   │   ├── scanner.py            # Scanner — inspección del entorno
+│   │   └── boot.py               # BootProtocol — secuencia de arranque
 │   └── training/
-│       ├── curiosidad.py       # MotorCuriosidad (ZPD)
-│       └── lector.py           # LectorBiblioteca — carga data/biblioteca/
-├── scripts/
-│   ├── train_v3.py             # training curricular con MotorCuriosidad
-│   ├── eval_v3.py              # evaluación (guided mode, normaliz. indent)
-│   ├── destilar.py             # generación de SFT data desde modelo base
-│   └── generar_curriculum.py   # generación de ejemplos por tema
+│       ├── curiosidad.py         # MotorCuriosidad — ZPD
+│       └── lector.py             # LectorBiblioteca
 ├── checkpoints/
-│   ├── v3_sft_v4.pt            # ✅ mejor checkpoint (8/16)
-│   └── history.json
-└── data/
-    ├── biblioteca/             # 39 temas Python (JSONL) — para curricular
-    ├── distillation/           # datos SFT curados
-    └── tokenizer/
-        └── pampar_48k.model    # vocab 48K bilingüe (Python + español)
+│   └── v3_sft_v4.pt              # Mejor checkpoint (8/16)
+└── tests/                        # 109+ tests
 ```
-
-> **Nota:** `deprecated/` fue eliminado. `LlavesV2` y `zonas.py` viven ahora en `pampar/coder/v3/` donde pertenecen.
-> Scripts legacy (`aprender_solo.py`, `evaluate_v2.py`, etc.) siguen apuntando a v2 — ignorar o portar según necesidad.
