@@ -13,6 +13,7 @@ Uso:
 
 import argparse
 import ast
+import re
 import sys
 import time
 from pathlib import Path
@@ -321,11 +322,27 @@ def cargar_tokenizer(vocab_size: int = 48000):
 
 
 # =============================================================================
+# Extracción de firma para modo guiado
+# =============================================================================
+
+def extraer_firma(prompt: str) -> str:
+    """Extract function/class signature from prompt for guided generation."""
+    m = re.search(r'class `(\w+)`', prompt)
+    if m:
+        return f"class {m.group(1)}:"
+    m = re.search(r'function `(\w+\([^)]*\))`', prompt)
+    if m:
+        return f"def {m.group(1)}:"
+    return ""
+
+
+# =============================================================================
 # Generación greedy / top-p
 # =============================================================================
 
 @torch.no_grad()
-def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 256, temperature: float = 0.4) -> str:
+def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
+           temperature: float = 0.1, repetition_penalty: float = 1.2) -> str:
     ids = tokenizer.Encode(prompt)
     generados = list(ids)
 
@@ -333,6 +350,15 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 256, tempe
         ctx = torch.tensor([generados[-512:]], dtype=torch.long, device=device)
         logits, _, _ = modelo(ctx)
         next_logits = logits[0, -1]
+
+        # Penalizar tokens ya generados para evitar degeneración
+        if repetition_penalty != 1.0:
+            seen = set(generados[len(ids):])
+            for token_id in seen:
+                if next_logits[token_id] > 0:
+                    next_logits[token_id] /= repetition_penalty
+                else:
+                    next_logits[token_id] *= repetition_penalty
 
         if temperature <= 0.0:
             next_token = int(next_logits.argmax())
@@ -365,6 +391,32 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 256, tempe
 
 
 # =============================================================================
+# Normalización de indentación
+# =============================================================================
+
+def _normalizar_indentacion(codigo: str) -> str:
+    """Corregir indentación inconsistente (ej. 5 espacios → 4) redondeando a múltiplos de 4."""
+    lines = codigo.split('\n')
+    if not lines:
+        return codigo
+
+    fixed = [lines[0]]  # Primera línea (def/class) se mantiene
+    for line in lines[1:]:
+        stripped = line.lstrip()
+        if not stripped:
+            fixed.append('')
+            continue
+        spaces = len(line) - len(stripped)
+        # Redondear a múltiplo de 4 más cercano, mínimo 4 si dentro de función/clase
+        normalized = round(spaces / 4) * 4
+        if normalized < 4 and lines[0].lstrip().startswith(('def ', 'class ')):
+            normalized = 4
+        fixed.append(' ' * normalized + stripped)
+
+    return '\n'.join(fixed)
+
+
+# =============================================================================
 # Ejecución segura
 # =============================================================================
 
@@ -393,8 +445,13 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
 
     try:
         ast.parse(codigo)
-    except SyntaxError as e:
-        return "SINTAXIS", str(e)
+    except SyntaxError:
+        # Intentar corregir indentación inconsistente (4 vs 5 espacios)
+        codigo = _normalizar_indentacion(codigo)
+        try:
+            ast.parse(codigo)
+        except SyntaxError as e:
+            return "SINTAXIS", str(e)
 
     ns = {}
     try:
@@ -418,8 +475,11 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default="checkpoints/v3_train.pt")
-    parser.add_argument("--temp", type=float, default=0.4)
-    parser.add_argument("--max-tokens", type=int, default=256)
+    parser.add_argument("--temp", type=float, default=0.1)
+    parser.add_argument("--max-tokens", type=int, default=384)
+    parser.add_argument("--rep-penalty", type=float, default=1.2)
+    parser.add_argument("--guided", action="store_true",
+                        help="Include function/class signature in prompt (HumanEval style)")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--device", type=str, default="auto",
                         help="'auto', 'cuda' o 'cpu'")
@@ -434,7 +494,9 @@ def main():
     print(f"\n{'═'*65}")
     print(f"  EVAL HONESTA — PamparV3 Generalización")
     print(f"  Checkpoint : {checkpoint.name}  ({checkpoint.stat().st_size/1e9:.2f} GB)")
-    print(f"  Device     : {device}  |  Temp: {args.temp}")
+    mode_str = "GUIDED" if args.guided else "OPEN"
+    print(f"  Device     : {device}  |  Temp: {args.temp}  |  RepPen: {args.rep_penalty}")
+    print(f"  Mode       : {mode_str}")
     print(f"  Prompts    : {len(CASOS)} (nunca vistos en entrenamiento)")
     print(f"{'═'*65}\n")
 
@@ -452,9 +514,15 @@ def main():
         print(f"  [{i:02d}/{len(CASOS)}] Nivel {caso['nivel']} — {caso['desc']}", end="  ", flush=True)
 
         t_gen = time.time()
+        prompt_gen = caso["prompt"]
+        if args.guided:
+            firma = extraer_firma(caso["prompt"])
+            if firma:
+                # Incluir hint de indentación (4 espacios) para primar al modelo
+                prompt_gen = caso["prompt"] + "```python\n" + firma + "\n    "
         codigo = generar(
-            modelo, tokenizer, caso["prompt"],
-            device, args.max_tokens, args.temp
+            modelo, tokenizer, prompt_gen,
+            device, args.max_tokens, args.temp, args.rep_penalty
         )
         dt = time.time() - t_gen
 

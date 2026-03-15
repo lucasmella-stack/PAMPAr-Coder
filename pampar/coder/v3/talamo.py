@@ -25,7 +25,7 @@ import torch.nn.functional as F
 from typing import Optional, Tuple
 
 from .config import ConfigV3
-from ..deprecated.llaves import LlavesV2, agregar_zonas_a_territorios
+from .llaves import LlavesV2, agregar_zonas_a_territorios
 
 
 class TalamoInicial(nn.Module):
