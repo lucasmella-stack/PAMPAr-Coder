@@ -1,281 +1,292 @@
 {
-  "version": "1.0",
-  "descripcion": "Biblioteca de conocimiento para PAMPAr — viaje intelectual autónomo",
   "python_basico": [
     {
       "nombre": "variables_y_tipos",
       "nivel": 1,
-      "archivo": "python_basico/variables_y_tipos.jsonl"
+      "archivo": "python_basico/variables_y_tipos.jsonl",
+      "tiene_datos": true,
+      "n_samples": 482
     },
     {
       "nombre": "strings_y_formato",
       "nivel": 1,
-      "archivo": "python_basico/strings_y_formato.jsonl"
+      "archivo": "python_basico/strings_y_formato.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "listas_y_tuplas",
       "nivel": 1,
-      "archivo": "python_basico/listas_y_tuplas.jsonl"
+      "archivo": "python_basico/listas_y_tuplas.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "diccionarios_y_sets",
       "nivel": 2,
-      "archivo": "python_basico/diccionarios_y_sets.jsonl"
+      "archivo": "python_basico/diccionarios_y_sets.jsonl",
+      "tiene_datos": true,
+      "n_samples": 1656
     },
     {
       "nombre": "control_de_flujo",
       "nivel": 2,
-      "archivo": "python_basico/control_de_flujo.jsonl"
+      "archivo": "python_basico/control_de_flujo.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "comprensiones",
       "nivel": 2,
-      "archivo": "python_basico/comprensiones.jsonl"
+      "archivo": "python_basico/comprensiones.jsonl",
+      "tiene_datos": true,
+      "n_samples": 133
     },
     {
       "nombre": "funciones_basicas",
       "nivel": 3,
-      "archivo": "python_basico/funciones_basicas.jsonl"
+      "archivo": "python_basico/funciones_basicas.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "funciones_avanzadas",
       "nivel": 3,
-      "archivo": "python_basico/funciones_avanzadas.jsonl"
-    },
-    {
-      "nombre": "decoradores",
-      "nivel": 4,
-      "archivo": "python_basico/decoradores.jsonl"
-    },
-    {
-      "nombre": "generadores",
-      "nivel": 4,
-      "archivo": "python_basico/generadores.jsonl"
-    },
-    {
-      "nombre": "context_managers",
-      "nivel": 4,
-      "archivo": "python_basico/context_managers.jsonl"
-    },
-    {
-      "nombre": "clases_y_oop",
-      "nivel": 4,
-      "archivo": "python_basico/clases_y_oop.jsonl"
-    },
-    {
-      "nombre": "herencia_y_polimorfismo",
-      "nivel": 4,
-      "archivo": "python_basico/herencia_y_polimorfismo.jsonl"
+      "archivo": "python_basico/funciones_avanzadas.jsonl",
+      "tiene_datos": true,
+      "n_samples": 326
     },
     {
       "nombre": "manejo_de_errores",
       "nivel": 3,
-      "archivo": "python_basico/manejo_de_errores.jsonl"
+      "archivo": "python_basico/manejo_de_errores.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "modulos_y_paquetes",
       "nivel": 3,
-      "archivo": "python_basico/modulos_y_paquetes.jsonl"
+      "archivo": "python_basico/modulos_y_paquetes.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
     },
     {
       "nombre": "type_hints",
       "nivel": 3,
-      "archivo": "python_basico/type_hints.jsonl"
+      "archivo": "python_basico/type_hints.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
+    },
+    {
+      "nombre": "decoradores",
+      "nivel": 4,
+      "archivo": "python_basico/decoradores.jsonl",
+      "tiene_datos": true,
+      "n_samples": 776
+    },
+    {
+      "nombre": "generadores",
+      "nivel": 4,
+      "archivo": "python_basico/generadores.jsonl",
+      "tiene_datos": true,
+      "n_samples": 120
+    },
+    {
+      "nombre": "context_managers",
+      "nivel": 4,
+      "archivo": "python_basico/context_managers.jsonl",
+      "tiene_datos": true,
+      "n_samples": 1584
+    },
+    {
+      "nombre": "clases_y_oop",
+      "nivel": 4,
+      "archivo": "python_basico/clases_y_oop.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2000
+    },
+    {
+      "nombre": "herencia_y_polimorfismo",
+      "nivel": 4,
+      "archivo": "python_basico/herencia_y_polimorfismo.jsonl",
+      "tiene_datos": true,
+      "n_samples": 164
     },
     {
       "nombre": "async_y_await",
       "nivel": 5,
-      "archivo": "python_basico/async_y_await.jsonl"
+      "archivo": "python_basico/async_y_await.jsonl",
+      "tiene_datos": true,
+      "n_samples": 65
     }
   ],
   "algoritmos": [
     {
       "nombre": "busqueda_binaria",
       "nivel": 3,
-      "archivo": "algoritmos/busqueda_binaria.jsonl"
+      "archivo": "algoritmos/busqueda_binaria.jsonl",
+      "tiene_datos": true,
+      "n_samples": 174
     },
     {
       "nombre": "sorting_clasico",
       "nivel": 3,
-      "archivo": "algoritmos/sorting_clasico.jsonl"
+      "archivo": "algoritmos/sorting_clasico.jsonl",
+      "tiene_datos": true,
+      "n_samples": 59
     },
     {
       "nombre": "recursion",
       "nivel": 4,
-      "archivo": "algoritmos/recursion.jsonl"
-    },
-    {
-      "nombre": "programacion_dinamica",
-      "nivel": 5,
-      "archivo": "algoritmos/programacion_dinamica.jsonl"
-    },
-    {
-      "nombre": "grafos_bfs_dfs",
-      "nivel": 5,
-      "archivo": "algoritmos/grafos_bfs_dfs.jsonl"
-    },
-    {
-      "nombre": "arboles_binarios",
-      "nivel": 5,
-      "archivo": "algoritmos/arboles_binarios.jsonl"
-    },
-    {
-      "nombre": "heap_y_cola_prioridad",
-      "nivel": 5,
-      "archivo": "algoritmos/heap_y_cola_prioridad.jsonl"
+      "archivo": "algoritmos/recursion.jsonl",
+      "tiene_datos": true,
+      "n_samples": 50
     },
     {
       "nombre": "two_pointers",
       "nivel": 4,
-      "archivo": "algoritmos/two_pointers.jsonl"
+      "archivo": "algoritmos/two_pointers.jsonl",
+      "tiene_datos": true,
+      "n_samples": 3
     },
     {
       "nombre": "sliding_window",
       "nivel": 4,
-      "archivo": "algoritmos/sliding_window.jsonl"
+      "archivo": "algoritmos/sliding_window.jsonl",
+      "tiene_datos": false,
+      "n_samples": 0
+    },
+    {
+      "nombre": "programacion_dinamica",
+      "nivel": 5,
+      "archivo": "algoritmos/programacion_dinamica.jsonl",
+      "tiene_datos": true,
+      "n_samples": 8
+    },
+    {
+      "nombre": "grafos_bfs_dfs",
+      "nivel": 5,
+      "archivo": "algoritmos/grafos_bfs_dfs.jsonl",
+      "tiene_datos": true,
+      "n_samples": 399
+    },
+    {
+      "nombre": "arboles_binarios",
+      "nivel": 5,
+      "archivo": "algoritmos/arboles_binarios.jsonl",
+      "tiene_datos": true,
+      "n_samples": 40
+    },
+    {
+      "nombre": "heap_y_cola_prioridad",
+      "nivel": 5,
+      "archivo": "algoritmos/heap_y_cola_prioridad.jsonl",
+      "tiene_datos": true,
+      "n_samples": 26
     },
     {
       "nombre": "backtracking",
       "nivel": 5,
-      "archivo": "algoritmos/backtracking.jsonl"
+      "archivo": "algoritmos/backtracking.jsonl",
+      "tiene_datos": true,
+      "n_samples": 8
     }
   ],
   "patrones_diseno": [
     {
       "nombre": "singleton_factory",
       "nivel": 5,
-      "archivo": "patrones_diseno/singleton_factory.jsonl"
+      "archivo": "patrones_diseno/singleton_factory.jsonl",
+      "tiene_datos": true,
+      "n_samples": 15
     },
     {
       "nombre": "observer_strategy",
       "nivel": 5,
-      "archivo": "patrones_diseno/observer_strategy.jsonl"
+      "archivo": "patrones_diseno/observer_strategy.jsonl",
+      "tiene_datos": true,
+      "n_samples": 141
     },
     {
       "nombre": "decorator_pattern",
       "nivel": 5,
-      "archivo": "patrones_diseno/decorator_pattern.jsonl"
-    },
-    {
-      "nombre": "command_pattern",
-      "nivel": 6,
-      "archivo": "patrones_diseno/command_pattern.jsonl"
-    },
-    {
-      "nombre": "iterator_pattern",
-      "nivel": 5,
-      "archivo": "patrones_diseno/iterator_pattern.jsonl"
+      "archivo": "patrones_diseno/decorator_pattern.jsonl",
+      "tiene_datos": false,
+      "n_samples": 0
     }
   ],
   "stdlib_python": [
     {
-      "nombre": "pathlib_y_os",
-      "nivel": 3,
-      "archivo": "stdlib_python/pathlib_y_os.jsonl"
-    },
-    {
       "nombre": "collections",
       "nivel": 3,
-      "archivo": "stdlib_python/collections.jsonl"
-    },
-    {
-      "nombre": "itertools",
-      "nivel": 4,
-      "archivo": "stdlib_python/itertools.jsonl"
-    },
-    {
-      "nombre": "functools",
-      "nivel": 4,
-      "archivo": "stdlib_python/functools.jsonl"
-    },
-    {
-      "nombre": "json_y_csv",
-      "nivel": 2,
-      "archivo": "stdlib_python/json_y_csv.jsonl"
+      "archivo": "stdlib_python/collections.jsonl",
+      "tiene_datos": false,
+      "n_samples": 0
     },
     {
       "nombre": "dataclasses",
       "nivel": 3,
-      "archivo": "stdlib_python/dataclasses.jsonl"
+      "archivo": "stdlib_python/dataclasses.jsonl",
+      "tiene_datos": true,
+      "n_samples": 4
     },
     {
-      "nombre": "threading_multiprocess",
-      "nivel": 5,
-      "archivo": "stdlib_python/threading_multiprocess.jsonl"
+      "nombre": "pathlib_y_os",
+      "nivel": 3,
+      "archivo": "stdlib_python/pathlib_y_os.jsonl",
+      "tiene_datos": true,
+      "n_samples": 89
     },
     {
       "nombre": "unittest_pytest",
       "nivel": 3,
-      "archivo": "stdlib_python/unittest_pytest.jsonl"
+      "archivo": "stdlib_python/unittest_pytest.jsonl",
+      "tiene_datos": true,
+      "n_samples": 57
+    },
+    {
+      "nombre": "itertools",
+      "nivel": 4,
+      "archivo": "stdlib_python/itertools.jsonl",
+      "tiene_datos": true,
+      "n_samples": 2
+    },
+    {
+      "nombre": "functools",
+      "nivel": 4,
+      "archivo": "stdlib_python/functools.jsonl",
+      "tiene_datos": false,
+      "n_samples": 0
     },
     {
       "nombre": "regex",
       "nivel": 4,
-      "archivo": "stdlib_python/regex.jsonl"
-    },
-    {
-      "nombre": "logging",
-      "nivel": 3,
-      "archivo": "stdlib_python/logging.jsonl"
+      "archivo": "stdlib_python/regex.jsonl",
+      "tiene_datos": true,
+      "n_samples": 783
     }
   ],
   "ingenieria_software": [
     {
-      "nombre": "solid_principles",
-      "nivel": 5,
-      "archivo": "ingenieria_software/solid_principles.jsonl"
-    },
-    {
       "nombre": "clean_code",
       "nivel": 4,
-      "archivo": "ingenieria_software/clean_code.jsonl"
+      "archivo": "ingenieria_software/clean_code.jsonl",
+      "tiene_datos": true,
+      "n_samples": 4
     },
     {
-      "nombre": "testing_avanzado",
+      "nombre": "solid_principles",
       "nivel": 5,
-      "archivo": "ingenieria_software/testing_avanzado.jsonl"
-    },
-    {
-      "nombre": "refactoring",
-      "nivel": 5,
-      "archivo": "ingenieria_software/refactoring.jsonl"
-    },
-    {
-      "nombre": "git_y_ci_cd",
-      "nivel": 4,
-      "archivo": "ingenieria_software/git_y_ci_cd.jsonl"
+      "archivo": "ingenieria_software/solid_principles.jsonl",
+      "tiene_datos": false,
+      "n_samples": 0
     },
     {
       "nombre": "api_design_rest",
       "nivel": 5,
-      "archivo": "ingenieria_software/api_design_rest.jsonl"
-    }
-  ],
-  "python_real": [
-    {
-      "nombre": "flytech_python",
-      "nivel": 2,
-      "archivo": "python_real/flytech_python.jsonl"
-    },
-    {
-      "nombre": "python_instrucciones",
-      "nivel": 2,
-      "archivo": "python_real/python_instrucciones.jsonl"
-    },
-    {
-      "nombre": "humaneval_python",
-      "nivel": 3,
-      "archivo": "python_real/humaneval_python.jsonl"
-    },
-    {
-      "nombre": "magicoder_oss_75k",
-      "nivel": 6,
-      "archivo": "python_real/magicoder_oss_75k.jsonl"
-    },
-    {
-      "nombre": "starcoder2_self_50k",
-      "nivel": 6,
-      "archivo": "python_real/starcoder2_self_oss_50k.jsonl"
+      "archivo": "ingenieria_software/api_design_rest.jsonl",
+      "tiene_datos": true,
+      "n_samples": 567
     }
   ]
 }

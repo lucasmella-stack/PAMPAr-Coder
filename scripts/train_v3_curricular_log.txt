@@ -1,0 +1,92 @@
+12:51:32 [INFO] Device: cuda
+12:51:32 [INFO] GPU: NVIDIA GeForce GTX 1650  (4.3 GiB VRAM)
+12:51:32 [INFO] Tokenizer cargado ÔÇö vocab=48000
+12:51:32 [INFO] Reanudando desde checkpoints\v3_sft_v4.pt
+12:51:34 [INFO] Modelo cargado ÔÇö paso 3001
+12:51:34 [INFO] PamparV3 ÔÇö 108.3M par├ímetros
+12:51:36 [INFO] ├ìndice cargado ÔÇö 40 temas mapeados
+12:51:36 [INFO] Motor listo ÔÇö 40 temas nuevos registrados
+12:51:36 [INFO] Estado motor: nivel=1  dominados=0/40
+12:51:36 [INFO] Iniciando ViajeIntelectualV3 ÔÇö 6000 pasos
+12:51:36 [INFO] Checkpoint ÔåÆ checkpoints\v3_sft_v4.pt
+12:51:43 [INFO] paso 3010 | loss=4.841  ppl=126.5 | tema=funciones_basicas
+12:51:49 [INFO] paso 3020 | loss=3.829  ppl=46.0 | tema=funciones_basicas
+12:51:55 [INFO] paso 3030 | loss=3.676  ppl=39.5 | tema=funciones_basicas
+12:52:00 [INFO] paso 3040 | loss=1.979  ppl=7.2 | tema=variables_y_tipos
+12:52:05 [INFO] paso 3050 | loss=2.498  ppl=12.2 | tema=variables_y_tipos
+12:52:10 [INFO] paso 3060 | loss=0.391  ppl=1.5 | tema=variables_y_tipos
+12:52:20 [INFO] paso 3070 | loss=1.880  ppl=6.6 | tema=diccionarios_y_sets
+12:52:27 [INFO] paso 3080 | loss=4.159  ppl=64.0 | tema=diccionarios_y_sets
+12:52:33 [INFO] paso 3090 | loss=2.060  ppl=7.8 | tema=diccionarios_y_sets
+12:52:42 [INFO] paso 3100 | loss=4.283  ppl=72.5 | tema=control_de_flujo
+12:52:49 [INFO] paso 3110 | loss=3.854  ppl=47.2 | tema=control_de_flujo
+12:52:55 [INFO] paso 3120 | loss=4.407  ppl=82.0 | tema=control_de_flujo
+12:53:06 [INFO] paso 3130 | loss=2.555  ppl=12.9 | tema=listas_y_tuplas
+12:53:13 [INFO] paso 3140 | loss=2.060  ppl=7.8 | tema=listas_y_tuplas
+12:53:19 [INFO] paso 3150 | loss=3.585  ppl=36.1 | tema=listas_y_tuplas
+12:53:20 [INFO] [paso   3151  00h01m]  nivel=1  dom=0/40  loss=3.266  ppl=26.2  avg100=3.100  tema=listas_y_tuplas
+12:53:20 [INFO] ReplayPareto: 150 muestras  imp_media=0.667  imp_max=0.992
+12:53:28 [INFO] paso 3160 | loss=2.828  ppl=16.9 | tema=strings_y_formato
+12:53:34 [INFO] paso 3170 | loss=3.265  ppl=26.2 | tema=strings_y_formato
+12:53:40 [INFO] paso 3180 | loss=4.641  ppl=103.7 | tema=strings_y_formato
+12:53:50 [INFO] paso 3190 | loss=2.046  ppl=7.7 | tema=manejo_de_errores
+12:53:56 [INFO] paso 3200 | loss=4.130  ppl=62.2 | tema=manejo_de_errores
+12:53:58 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 3200
+12:54:05 [INFO] paso 3210 | loss=3.383  ppl=29.5 | tema=manejo_de_errores
+12:54:14 [INFO] paso 3220 | loss=2.611  ppl=13.6 | tema=modulos_y_paquetes
+12:54:20 [INFO] paso 3230 | loss=4.851  ppl=127.8 | tema=modulos_y_paquetes
+12:54:27 [INFO] paso 3240 | loss=1.873  ppl=6.5 | tema=modulos_y_paquetes
+12:54:36 [INFO] paso 3250 | loss=2.831  ppl=17.0 | tema=type_hints
+12:54:43 [INFO] paso 3260 | loss=2.787  ppl=16.2 | tema=type_hints
+12:54:49 [INFO] paso 3270 | loss=2.225  ppl=9.3 | tema=type_hints
+12:54:56 [INFO] paso 3280 | loss=2.503  ppl=12.2 | tema=funciones_avanzadas
+12:55:01 [INFO] paso 3290 | loss=0.364  ppl=1.4 | tema=funciones_avanzadas
+12:55:06 [INFO] paso 3300 | loss=2.559  ppl=12.9 | tema=funciones_avanzadas
+12:55:06 [INFO] [paso   3301  00h03m]  nivel=1  dom=0/40  loss=1.251  ppl=3.5  avg100=2.251  tema=funciones_avanzadas
+12:55:06 [INFO] ReplayPareto: 256 muestras  imp_media=0.729  imp_max=0.997
+12:55:11 [INFO] paso 3310 | loss=1.602  ppl=5.0 | tema=comprensiones
+12:55:16 [INFO] paso 3320 | loss=0.453  ppl=1.6 | tema=comprensiones
+12:55:21 [INFO] paso 3330 | loss=3.880  ppl=48.4 | tema=comprensiones
+12:55:25 [INFO] paso 3340 | loss=1.871  ppl=6.5 | tema=generadores
+12:55:31 [INFO] paso 3350 | loss=2.541  ppl=12.7 | tema=generadores
+12:55:35 [INFO] paso 3360 | loss=0.597  ppl=1.8 | tema=generadores
+12:55:42 [INFO] paso 3370 | loss=2.793  ppl=16.3 | tema=decoradores
+12:55:49 [INFO] paso 3380 | loss=2.733  ppl=15.4 | tema=decoradores
+12:55:56 [INFO] paso 3390 | loss=3.662  ppl=38.9 | tema=decoradores
+12:56:02 [INFO] paso 3400 | loss=0.602  ppl=1.8 | tema=herencia_y_polimorfismo
+12:56:04 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 3400
+12:56:11 [INFO] paso 3410 | loss=1.331  ppl=3.8 | tema=herencia_y_polimorfismo
+12:56:18 [INFO] paso 3420 | loss=1.537  ppl=4.6 | tema=herencia_y_polimorfismo
+12:56:27 [INFO] paso 3430 | loss=2.251  ppl=9.5 | tema=clases_y_oop
+12:56:33 [INFO] paso 3440 | loss=4.191  ppl=66.1 | tema=clases_y_oop
+12:56:40 [INFO] paso 3450 | loss=3.237  ppl=25.5 | tema=clases_y_oop
+12:56:41 [INFO] [paso   3451  00h05m]  nivel=1  dom=0/40  loss=2.797  ppl=16.4  avg100=2.193  tema=clases_y_oop
+12:56:41 [INFO] ReplayPareto: 256 muestras  imp_media=0.838  imp_max=0.997
+12:56:49 [INFO] paso 3460 | loss=1.679  ppl=5.4 | tema=context_managers
+12:56:55 [INFO] paso 3470 | loss=2.117  ppl=8.3 | tema=context_managers
+12:57:02 [INFO] paso 3480 | loss=1.737  ppl=5.7 | tema=context_managers
+12:57:09 [INFO] paso 3490 | loss=1.938  ppl=6.9 | tema=busqueda_binaria
+12:57:15 [INFO] paso 3500 | loss=1.893  ppl=6.6 | tema=busqueda_binaria
+12:57:22 [INFO] paso 3510 | loss=1.726  ppl=5.6 | tema=busqueda_binaria
+12:57:27 [INFO] paso 3520 | loss=0.319  ppl=1.4 | tema=sorting_clasico
+12:57:32 [INFO] paso 3530 | loss=1.702  ppl=5.5 | tema=sorting_clasico
+12:57:36 [INFO] paso 3540 | loss=0.318  ppl=1.4 | tema=sorting_clasico
+12:57:42 [INFO] paso 3550 | loss=0.523  ppl=1.7 | tema=async_y_await
+12:57:47 [INFO] paso 3560 | loss=0.574  ppl=1.8 | tema=async_y_await
+12:57:53 [INFO] paso 3570 | loss=0.377  ppl=1.5 | tema=async_y_await
+12:57:58 [INFO] paso 3580 | loss=0.302  ppl=1.4 | tema=sliding_window
+12:58:03 [INFO] paso 3590 | loss=0.290  ppl=1.3 | tema=sliding_window
+12:58:07 [INFO] paso 3600 | loss=0.308  ppl=1.4 | tema=sliding_window
+12:58:09 [INFO] Ô£ô Checkpoint guardado ÔåÆ paso 3600
+12:58:10 [INFO] [paso   3601  00h06m]  nivel=1  dom=0/40  loss=0.329  ppl=1.4  avg100=0.749  tema=sliding_window
+12:58:10 [INFO] ReplayPareto: 256 muestras  imp_media=0.865  imp_max=0.997
+12:58:14 [INFO] paso 3610 | loss=0.193  ppl=1.2 | tema=two_pointers
+12:58:19 [INFO] paso 3620 | loss=0.224  ppl=1.3 | tema=two_pointers
+12:58:25 [INFO] paso 3630 | loss=0.166  ppl=1.2 | tema=two_pointers
+12:58:32 [INFO] paso 3640 | loss=2.336  ppl=10.3 | tema=grafos_bfs_dfs
+12:58:39 [INFO] paso 3650 | loss=2.180  ppl=8.8 | tema=grafos_bfs_dfs
+12:58:45 [INFO] paso 3660 | loss=3.408  ppl=30.2 | tema=grafos_bfs_dfs
+12:58:51 [INFO] paso 3670 | loss=0.397  ppl=1.5 | tema=programacion_dinamica
+12:58:57 [INFO] paso 3680 | loss=0.339  ppl=1.4 | tema=programacion_dinamica
+12:59:03 [INFO] paso 3690 | loss=2.211  ppl=9.1 | tema=programacion_dinamica
+12:59:09 [INFO] paso 3700 | loss=2.252  ppl=9.5 | tema=arboles_binarios
