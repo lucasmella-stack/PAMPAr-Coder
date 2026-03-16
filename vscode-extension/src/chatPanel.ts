@@ -98,18 +98,26 @@ export class ChatPanel {
     // Construir prompt con historial (ventana de las últimas 6 entradas)
     const prompt = this.buildPrompt(userText);
 
-    const response = await this.client.infer({
-      prompt,
-      max_tokens: maxTokens,
-      temperature,
-    });
+    try {
+      const response = await this.client.infer({
+        prompt,
+        max_tokens: maxTokens,
+        temperature,
+      });
 
-    const assistantText = response.error
-      ? `⚠️ Error: ${response.error}`
-      : response.text.trim();
+      const assistantText = response.error
+        ? `⚠️ Error: ${response.error}`
+        : response.text.trim();
 
-    this.history.push({ role: "assistant", content: assistantText });
-    void this.webview.postMessage({ type: "assistant", text: assistantText });
+      this.history.push({ role: "assistant", content: assistantText });
+      void this.webview.postMessage({ type: "assistant", text: assistantText });
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      void this.webview.postMessage({
+        type: "assistant",
+        text: `⚠️ ${errMsg}`,
+      });
+    }
   }
 
   private buildPrompt(latestUserText: string): string {

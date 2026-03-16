@@ -47,8 +47,22 @@ export class InferenceClient implements vscode.Disposable {
   // ------------------------------------------------------------------
 
   async infer(req: InferenceRequest): Promise<InferenceResponse> {
+    if (!this.proc) {
+      return {
+        text: "",
+        error: "Proceso Python no iniciado. Revisa Output > PAMPAr Inference",
+      };
+    }
     if (!this.ready) {
       await this.waitReady();
+    }
+    // Verificar que el proceso siga vivo después de waitReady
+    if (!this.proc) {
+      return {
+        text: "",
+        error:
+          "Python terminó antes de procesar la solicitud. Revisa Output > PAMPAr Inference",
+      };
     }
     return new Promise((resolve) => {
       this.pendingResolve = resolve;
@@ -88,9 +102,17 @@ export class InferenceClient implements vscode.Disposable {
 
     // Si no hay checkpoint configurado, intentar autodetección
     const resolvedCheckpoint = checkpointPath || this.autoDetectCheckpoint();
+    this.outputChannel.appendLine(`[PAMPAr] pythonPath: ${pythonPath}`);
+    this.outputChannel.appendLine(
+      `[PAMPAr] checkpoint: ${resolvedCheckpoint ?? "(no encontrado)"}`,
+    );
+    this.outputChannel.appendLine(`[PAMPAr] device: ${device}`);
     if (!resolvedCheckpoint) {
       this.outputChannel.appendLine(
         '[PAMPAr] No hay checkpoint configurado. Ejecuta "PAMPAr: Seleccionar checkpoint".',
+      );
+      void vscode.window.showErrorMessage(
+        "PAMPAr: No se encontró checkpoint. Configura pampar.checkpointPath.",
       );
       return;
     }
@@ -131,13 +153,35 @@ export class InferenceClient implements vscode.Disposable {
     this.rl = readline.createInterface({ input: this.proc.stdout! });
     this.rl.on("line", (line: string) => this.handleLine(line));
 
+    this.proc.on("error", (err) => {
+      this.outputChannel.appendLine(
+        `[PAMPAr] Error al lanzar proceso: ${err.message}`,
+      );
+      void vscode.window.showErrorMessage(`PAMPAr: ${err.message}`);
+      this.rejectPending(`Error al lanzar Python: ${err.message}`);
+      this.ready = false;
+      this.proc = undefined;
+    });
+
     this.proc.on("exit", (code) => {
       this.outputChannel.appendLine(
         `[PAMPAr] Proceso terminó con código ${code}`,
       );
+      if (code !== 0) {
+        const msg = `Python terminó con código ${code}. Revisa Output > PAMPAr Inference`;
+        this.rejectPending(msg);
+        void vscode.window.showErrorMessage(`PAMPAr: ${msg}`);
+      }
       this.ready = false;
       this.proc = undefined;
     });
+  }
+
+  private rejectPending(msg: string): void {
+    this.pendingResolve?.({ text: "", error: msg });
+    this.pendingResolve = undefined;
+    this.pendingBootResolve?.(null);
+    this.pendingBootResolve = undefined;
   }
 
   private stop(): void {
@@ -186,7 +230,7 @@ export class InferenceClient implements vscode.Disposable {
     }
   }
 
-  private waitReady(timeoutMs = 30_000): Promise<void> {
+  private waitReady(timeoutMs = 45_000): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.ready) {
         resolve();
