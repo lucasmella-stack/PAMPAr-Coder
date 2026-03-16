@@ -187,3 +187,47 @@
 22:26:40 [INFO] paso  1660/2000 | loss=3.368  avg100=3.218  lr=8.2e-08  ppl=25.0  (1.1 p/s)
 22:26:49 [INFO] paso  1670/2000 | loss=3.113  avg100=3.211  lr=8.1e-08  ppl=24.8  (1.1 p/s)
 22:26:58 [INFO] paso  1680/2000 | loss=3.243  avg100=3.210  lr=7.9e-08  ppl=24.8  (1.1 p/s)
+22:27:07 [INFO] paso  1690/2000 | loss=3.116  avg100=3.208  lr=7.7e-08  ppl=24.7  (1.1 p/s)
+22:27:16 [INFO] paso  1700/2000 | loss=3.210  avg100=3.211  lr=7.5e-08  ppl=24.8  (1.1 p/s)
+22:27:25 [INFO] paso  1710/2000 | loss=3.188  avg100=3.219  lr=7.4e-08  ppl=25.0  (1.1 p/s)
+22:27:34 [INFO] paso  1720/2000 | loss=3.292  avg100=3.215  lr=7.2e-08  ppl=24.9  (1.1 p/s)
+22:27:43 [INFO] paso  1730/2000 | loss=3.240  avg100=3.220  lr=7.1e-08  ppl=25.0  (1.1 p/s)
+22:27:52 [INFO] paso  1740/2000 | loss=3.303  avg100=3.216  lr=6.9e-08  ppl=24.9  (1.1 p/s)
+22:28:00 [INFO] paso  1750/2000 | loss=3.076  avg100=3.213  lr=6.8e-08  ppl=24.8  (1.1 p/s)
+22:28:09 [INFO] paso  1760/2000 | loss=3.156  avg100=3.206  lr=6.6e-08  ppl=24.7  (1.1 p/s)
+22:28:18 [INFO] paso  1770/2000 | loss=3.159  avg100=3.212  lr=6.5e-08  ppl=24.8  (1.1 p/s)
+22:28:27 [INFO] paso  1780/2000 | loss=3.307  avg100=3.212  lr=6.4e-08  ppl=24.8  (1.1 p/s)
+22:28:36 [INFO] paso  1790/2000 | loss=3.067  avg100=3.203  lr=6.3e-08  ppl=24.6  (1.1 p/s)
+22:28:45 [INFO] paso  1800/2000 | loss=3.140  avg100=3.203  lr=6.1e-08  ppl=24.6  (1.1 p/s)
+22:28:45 [INFO] -- Epoch 10/30 --
+22:28:54 [INFO] paso  1810/2000 | loss=3.073  avg100=3.200  lr=6.0e-08  ppl=24.5  (1.1 p/s)
+22:29:03 [INFO] paso  1820/2000 | loss=3.164  avg100=3.203  lr=5.9e-08  ppl=24.6  (1.1 p/s)
+22:29:12 [INFO] paso  1830/2000 | loss=3.136  avg100=3.198  lr=5.8e-08  ppl=24.5  (1.1 p/s)
+22:29:21 [INFO] paso  1840/2000 | loss=3.150  avg100=3.194  lr=5.7e-08  ppl=24.4  (1.1 p/s)
+22:29:29 [INFO] paso  1850/2000 | loss=3.260  avg100=3.195  lr=5.6e-08  ppl=24.4  (1.1 p/s)
+22:29:38 [INFO] paso  1860/2000 | loss=3.039  avg100=3.193  lr=5.6e-08  ppl=24.4  (1.1 p/s)
+22:29:47 [INFO] paso  1870/2000 | loss=2.977  avg100=3.186  lr=5.5e-08  ppl=24.2  (1.1 p/s)
+22:29:56 [INFO] paso  1880/2000 | loss=3.246  avg100=3.185  lr=5.4e-08  ppl=24.2  (1.1 p/s)
+22:30:05 [INFO] paso  1890/2000 | loss=2.971  avg100=3.186  lr=5.4e-08  ppl=24.2  (1.1 p/s)
+22:30:14 [INFO] paso  1900/2000 | loss=3.268  avg100=3.188  lr=5.3e-08  ppl=24.2  (1.1 p/s)
+22:30:23 [INFO] paso  1910/2000 | loss=3.216  avg100=3.185  lr=5.2e-08  ppl=24.2  (1.1 p/s)
+22:30:32 [INFO] paso  1920/2000 | loss=3.212  avg100=3.183  lr=5.2e-08  ppl=24.1  (1.1 p/s)
+22:30:41 [INFO] paso  1930/2000 | loss=3.414  avg100=3.184  lr=5.1e-08  ppl=24.1  (1.1 p/s)
+22:30:50 [INFO] paso  1940/2000 | loss=3.179  avg100=3.185  lr=5.1e-08  ppl=24.2  (1.1 p/s)
+22:30:59 [INFO] paso  1950/2000 | loss=3.161  avg100=3.178  lr=5.1e-08  ppl=24.0  (1.1 p/s)
+22:31:07 [INFO] paso  1960/2000 | loss=3.127  avg100=3.183  lr=5.0e-08  ppl=24.1  (1.1 p/s)
+22:31:16 [INFO] paso  1970/2000 | loss=3.419  avg100=3.189  lr=5.0e-08  ppl=24.3  (1.1 p/s)
+22:31:25 [INFO] paso  1980/2000 | loss=3.123  avg100=3.183  lr=5.0e-08  ppl=24.1  (1.1 p/s)
+22:31:34 [INFO] paso  1990/2000 | loss=3.124  avg100=3.181  lr=5.0e-08  ppl=24.1  (1.1 p/s)
+22:31:43 [INFO] paso  2000/2000 | loss=3.147  avg100=3.180  lr=5.0e-08  ppl=24.0  (1.1 p/s)
+22:31:45 [INFO] Checkpoint SFT-v5 guardado -> paso 2000
+22:31:46 [INFO] Checkpoint SFT-v5 guardado -> paso 2000
+-- SFT-v5 Completado --
+  Pasos: 2000
+  Tiempo: 0h30m
+  Loss final (avg100): 3.180
+  PPL final: 24.0
+  Checkpoint: checkpoints\v3_sft_agents_v2.pt
+
+  Evaluar con:
+    python -X utf8 scripts/eval_v3.py --checkpoint checkpoints/v3_sft_v5.pt

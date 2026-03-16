@@ -1,0 +1,168 @@
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  EVAL MILESTONE 3 ÔÇö Generaci├│n de AGENTS.md
+  Checkpoint : checkpoints/v3_sft_agents_v3.pt
+  Device     : cuda  |  Temp: 0.1  |  RepPen: 1.15
+  Casos      : 6
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+  Modelo cargado (108.3M params)
+
+  [01/6] ML PyTorch GPU  [53.1s] ÔØî score=0.00  secciones=0/4  info=0/5  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # **ejemplo.com/ 
+     # **: 3.14 
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+         """ 
+         def __init__(self, *args): 
+             self.args =args 
+             self.lo = 0 
+         def area(self, *args): 
+             if args not in cache: 
+    ...
+
+  [02/6] FastAPI + PostgreSQL  [35.1s] ÔØî score=0.00  secciones=0/4  info=0/4  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # **ejemplo.com/ 
+     # **- 30.14 
+     # **ejemplo.com/ 
+     # **: 3.16.16 
+     # ** 3.14 
+     # ** 3.14.16 
+     ``` 
+     This function should return the number of times `name` and `name` otherwise. 
+     > 
+     - `get_ejecutar(100)` should return `4.16` 
+     - `get_ejecut``: 
+     - `get_ejecutar` 
+     - `get_ejecutar` 
+     - `get_ejecutar` 
+     - `get_ejecutar(100, 100) 
+     - `get_ejecutar` 
+     - `get_ejecutar` 
+     - `get_ejecutar(0.15, 2.0) 
+     
+    ...
+
+  [03/6] CLI / Script simple  [28.9s] ÔØî score=0.00  secciones=0/4  info=0/4  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # Por  
+      funciones en un generator de diferio 
+     import math 
+     import math 
+     class Punto: 
+         def __init__(self, radio): 
+             self._radio = radio 
+         @property 
+         def area(self) -> float: 
+             return math.pi * self._radio ** 2 
+         def perimetro(self): 
+             return vo * math.pi * radio 
+         def __len__(self, otro: float) -> None: 
+             self._radio.append(cmd) 
+         def w
+    ...
+
+  [04/6] Django + Celery  [6.3s] ÔØî score=0.00  secciones=0/4  info=0/4  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # BIEN  
+      Protocolo de Despli elante 
+     # Solution 
+     # Solution 
+     # Solution 
+     import math 
+     import math 
+     def perimetro_viclo(10): 
+         r = math.sqrt(10, 100) 
+         r = math.sqrt((r - r)) 
+         return r * r == 2 
+     ```
+    ...
+
+  [05/6] Data Science sin GPU  [15.6s] ÔØî score=0.00  secciones=0/4  info=0/4  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # Solution 
+     import math 
+     import math 
+     class Punto: 
+         def __init__(self, radio): 
+             self._radio = radio 
+         def area(self, *args): 
+             self._radio = math.sqrt((args, **kwargs) ** 2 + (x - 3)) 
+             if self._radio: 
+                 return 0 
+             return math.pi * self.radio 
+         def __len__(self) -> float: 
+             return math.sqrt * self.radio ** 2 
+         def perimetro(s
+    ...
+
+  [06/6] GTX 1650 Local  [10.4s] ÔØî score=0.00  secciones=0/4  info=0/4  formato=Ô£ù
+
+    --- Output (primeros 400 chars) ---
+    # BIEN  
+      Protocolo de Despli elante 
+     def enviar_email(dest): 
+         def __init__(self, radio): 
+             self.radio = radio 
+         def __str__(self, radio: float): 
+             self.radio = radio 
+         def area(self): 
+             return self.radio ** 2 
+         def perimetro(self): 
+             return 2 * math.pi * self.radio 
+     ```
+    ...
+
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RESULTADO MILESTONE 3 ÔÇö 158s total
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Aprobados  : 0/6  (umbral score ÔëÑ 0.60)
+  ­ƒôè Score prom : 0.000
+  ­ƒôè Score m├¡n  : 0.000
+  ­ƒôè Score m├íx  : 0.000
+
+  Por criterio:
+    Secciones correctas : 0/6
+    Info del scan       : 0/6
+    Formato v├ílido      : 0/6
+
+  ­ƒöº NECESITA SFT ÔÇö score por debajo del umbral de progreso
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
