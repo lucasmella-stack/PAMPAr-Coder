@@ -116,7 +116,7 @@ export class InferenceClient implements vscode.Disposable {
     this.proc = spawn(pythonPath, scriptArgs, {
       cwd: workspaceRoot,
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env },
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
 
     this.proc.stderr?.on("data", (data: Buffer) => {

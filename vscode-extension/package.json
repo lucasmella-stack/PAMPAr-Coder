@@ -3,8 +3,12 @@
   "displayName": "PAMPAr Coder",
   "description": "PamparV3 — asistente de código 108M, corre localmente (CPU/GPU)",
   "version": "0.1.0",
-  "publisher": "lucasmella-stack",
+  "publisher": "lucasmellastack",
   "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucasmella-stack/PAMPAr-Coder"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
