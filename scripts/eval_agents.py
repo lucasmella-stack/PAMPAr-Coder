@@ -243,8 +243,8 @@ def _generar(modelo, tok, prompt: str, device, max_tokens=800, temp=0.1, rep_pen
         decoded = tok.Decode(gen[len(ids):]).replace("\u2047", "\n")
 
         # Detener en nueva sección de instrucción
-        if decoded.count("### Problem:") > 0:
-            idx = decoded.index("### Problem:")
+        if decoded.count("### Scan:") > 0:
+            idx = decoded.index("### Scan:")
             if idx > 50:
                 return decoded[:idx].rstrip()
 
@@ -336,7 +336,7 @@ def main() -> None:
     resultados: list[ResultadoCaso] = []
 
     for i, caso in enumerate(CASOS_EVAL, 1):
-        prompt = f"### Problem:\n{caso['scan']}\n### Solution:\n"
+        prompt = f"### Scan:\n{caso['scan']}\n### Protocolo:\n"
         print(f"  [{i:02d}/{len(CASOS_EVAL)}] {caso['nombre']}", end="  ", flush=True)
         t0 = time.time()
 

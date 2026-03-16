@@ -8,7 +8,7 @@ Genera pares (resumen_scan → AGENTS.md) variando el entorno sintéticamente.
 El modelo aprende a producir un AGENTS.md coherente dado el output del Scanner.
 
 Formato de cada ejemplo:
-  {"text": "### Problem:\\n{resumen_scan}\\n### Solution:\\n{agents_md}"}
+  {"text": "### Scan:\\n{resumen_scan}\\n### Protocolo:\\n{agents_md}"}
 
 Uso:
   python -X utf8 scripts/generar_dataset_agentes.py
@@ -374,7 +374,7 @@ def generar_ejemplo(cfg: dict) -> dict:
     """Genera un ejemplo SFT completo (problema + solución)."""
     problema = _resumen_scan(cfg)
     solucion = _agents_md(cfg)
-    texto = f"### Problem:\n{problema}\n### Solution:\n{solucion}"
+    texto = f"### Scan:\n{problema}\n### Protocolo:\n{solucion}"
     return {"text": texto}
 
 

@@ -18,6 +18,7 @@ from typing import Optional
 from pampar.memoria.clasificador import EntradaMemoria
 from pampar.memoria.rag import RAGResidual
 from .scanner import ResultadoScan, Scanner
+from .generar_agents import generar_agents_md
 
 
 def _fragmentar_markdown(texto: str) -> list[str]:
@@ -134,19 +135,21 @@ class BootProtocol:
             rag.agregar(entrada)
 
     def _inyectar_contexto(self, rag: RAGResidual, scan: ResultadoScan) -> None:
-        """Inyecta el resultado del scan como entradas L2 en el RAG."""
-        resumen = scan.resumen
-        if not resumen.strip():
-            return
+        """Genera el AGENTS.md contextual y lo inyecta como entradas L2 en el RAG."""
+        # Generar el AGENTS.md determinista desde el scan
+        agents_md = generar_agents_md(scan)
 
-        entrada = EntradaMemoria(
-            texto=resumen,
-            tipo="entorno",
-            nivel=2,
-            importancia=0.8,
-            frecuencia=1,
-        )
-        rag.agregar(entrada)
+        # Fragmentar por secciones ## y agregar cada sección como entrada L2
+        fragmentos = _fragmentar_markdown(agents_md)
+        for fragmento in fragmentos:
+            entrada = EntradaMemoria(
+                texto=fragmento,
+                tipo="entorno",
+                nivel=2,
+                importancia=0.8,
+                frecuencia=1,
+            )
+            rag.agregar(entrada)
 
         # Archivos Python del workspace como entradas individuales L1
         for archivo in scan.archivos[:50]:  # Cap a 50 archivos más relevantes

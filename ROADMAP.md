@@ -15,11 +15,11 @@ PAMPAr es un **físico con doctorado** que puede especializarse en cualquier cam
 
 ### Las 3 fases del proyecto
 
-| Fase                             | Qué                                                                   | Estado                                           |
-| -------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
-| **Fase 1** — SFT                 | Entrenar el doctorado: lógica Python, patrones, razonamiento          | **✅ Completa** (16/16 con reparadores, target superado) |
+| Fase                             | Qué                                                                   | Estado                                                     |
+| -------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Fase 1** — SFT                 | Entrenar el doctorado: lógica Python, patrones, razonamiento          | **✅ Completa** (16/16 con reparadores, target superado)   |
 | **Fase 2** — Runtime loop        | El modelo usa herramientas, ejecuta, lee, aprende del loop            | **✅ Completa** (chat.py + ColaFinetune + mini-SFT wiring) |
-| **Fase 3** — Protocolo entrenado | El modelo genera su propio AGENTS.md al aterrizar en un sistema nuevo | Futuro                                           |
+| **Fase 3** — Protocolo entrenado | El modelo genera su propio AGENTS.md al aterrizar en un sistema nuevo | Futuro                                                     |
 
 ---
 
@@ -79,13 +79,13 @@ Implementado en `pampar.runtime.scanner` + `pampar.runtime.boot`.
 
 ## 3. Estado de checkpoints
 
-| Checkpoint      | Datos                                           | Eval open (temp=0.0) |
-| --------------- | ----------------------------------------------- | -------------------- |
-| `v3_sft.pt`     | 43K Magicoder (inglés)                          | 0/16                 |
-| `v3_sft_v5.pt`  | SFT v5 (base post-catastrófico)                 | 6/16                 |
-| `v3_sft_v6.pt`  | clean_sft.jsonl (555 ejemplos)                  | 10/16                |
-| `v3_sft_v7.pt`  | final_sft.jsonl (825 = clean + quirúrgico×3)    | 15/16                |
-| `v3_sft_v8.pt`  | micro-SFT cuadrados (300 steps + reparadores)   | **16/16 ✅ BEST**    |
+| Checkpoint     | Datos                                         | Eval open (temp=0.0) |
+| -------------- | --------------------------------------------- | -------------------- |
+| `v3_sft.pt`    | 43K Magicoder (inglés)                        | 0/16                 |
+| `v3_sft_v5.pt` | SFT v5 (base post-catastrófico)               | 6/16                 |
+| `v3_sft_v6.pt` | clean_sft.jsonl (555 ejemplos)                | 10/16                |
+| `v3_sft_v7.pt` | final_sft.jsonl (825 = clean + quirúrgico×3)  | 15/16                |
+| `v3_sft_v8.pt` | micro-SFT cuadrados (300 steps + reparadores) | **16/16 ✅ BEST**    |
 
 ### Estado actual (v3_sft_v8.pt — 16/16 con reparadores)
 
@@ -104,7 +104,7 @@ Implementado en `pampar.runtime.scanner` + `pampar.runtime.boot`.
 | 11  | busqueda_binaria | ✅     | —                                                              |
 | 12  | merge_sort       | ✅     | Corregido (self-contained)                                     |
 | 13  | Stack            | ✅     | —                                                              |
-| 14  | Punto            | ✅     | Corregido (import math / **0.5)                                |
+| 14  | Punto            | ✅     | Corregido (import math / \*\*0.5)                              |
 | 15  | memoize          | ✅     | Corregido (usa `fn`, no `func`)                                |
 | 16  | primos_hasta     | ✅     | Reparador `_reparar_bloques_huerfanos` + stop `endswith(\n\n)` |
 
@@ -183,12 +183,15 @@ Clean+surgical×3   gen→exec→retry       auto-reload           AGENTS.md
 - [x] Si falla, agrega el par (prompt, error) a ColaFinetune
 - [x] Mini-SFT automático cuando la cola supera umbral (wiring con sft_v5.py + reload en proceso)
 
-### Milestone 3 — Protocolo entrenado (largo plazo)
+### Milestone 3 — Protocolo entrenado ✅ Implementado (generador determinista)
 
-- [ ] Entrenar el modelo para generar AGENTS.md al aterrizar en un sistema nuevo
-- [ ] El modelo "sabe" escanear: genera `scan_sistema()` como código, no como regla
-- [ ] CONCIENCIA se refuerza con RLHF/DPO sobre interacciones reales
-- [ ] El protocolo de 3 archivos es algo que el modelo produce, no solo consume
+- [x] `pampar/runtime/generar_agents.py` — genera AGENTS.md contextual desde el scan (determinista)
+- [x] `BootProtocol._inyectar_contexto()` actualizado: genera AGENTS.md → fragmenta por secciones → RAG L2
+- [x] 23 tests en `tests/test_generar_agents.py` (132/132 en suite completa)
+- [x] Quick Reference, Sistema detectado, Paquetes clave, Servicios, Boot protocol generados dinámicamente
+- [ ] El modelo "sabe" escanear: genera `scan_sistema()` como código (largo plazo — necesita mucho más SFT)
+- [ ] CONCIENCIA se refuerza con RLHF/DPO sobre interacciones reales (largo plazo)
+- [ ] Nota: entrenar 108M params para generar markdown desde cero requiere 10K+ pasos — protocolo funcionando vía boot determinista es la aproximación correcta para este tamaño de modelo
 
 ### Milestone 4 — VS Code extension
 

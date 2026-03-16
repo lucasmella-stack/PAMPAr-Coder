@@ -45,8 +45,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("sft_v5")
 
-# Token string que marca el inicio de la respuesta — solo se entrena a partir de aqui
-_SOLUTION_MARKER = "### Solution:"
+# Marcadores válidos para la sección de respuesta
+_MARCADORES = ["### Solution:", "### Protocolo:"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ def _cargar_targeted(ruta: Path) -> list[str]:
         try:
             obj = json.loads(linea)
             texto = obj.get("text", "")
-            if texto and "### Solution:" in texto:
+            if texto and any(m in texto for m in _MARCADORES):
                 ejemplos.append(texto)
         except json.JSONDecodeError:
             continue
@@ -91,8 +91,14 @@ def _tokenizar_con_mascara(
         if len(texto) > max_chars:
             texto = texto[:max_chars]
 
-        # Encontrar posicion del marcador para saber desde donde calcular loss
-        marker_pos = texto.find(_SOLUTION_MARKER)
+        # Encontrar posicion del marcador (cualquier marcador válido)
+        marker_pos = -1
+        matched_marker = _MARCADORES[0]
+        for _m in _MARCADORES:
+            pos = texto.find(_m)
+            if pos >= 0 and (marker_pos < 0 or pos < marker_pos):
+                marker_pos = pos
+                matched_marker = _m
         if marker_pos < 0:
             # Sin marcador: entrenar sobre todo (fallback)
             ids = tok.Encode(texto)
@@ -102,7 +108,7 @@ def _tokenizar_con_mascara(
             continue
 
         # Tokenizar el prefijo hasta el marcador para saber la longitud en tokens
-        prefijo = texto[:marker_pos + len(_SOLUTION_MARKER)]
+        prefijo = texto[:marker_pos + len(matched_marker)]
         ids_prefijo = tok.Encode(prefijo)
         ids_full = tok.Encode(texto)
 
