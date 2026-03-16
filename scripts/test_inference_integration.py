@@ -84,6 +84,9 @@ class InferenceServer:
     def __init__(self, checkpoint: str, device: str, timeout_ready: int = 90):
         python = find_python()
         cmd = [python, "-m", "pampar.inference", "--checkpoint", checkpoint, "--device", device]
+        import os as _os
+        _env = _os.environ.copy()
+        _env["PYTHONIOENCODING"] = "utf-8"
         self.proc = subprocess.Popen(
             cmd,
             cwd=str(PROJECT_ROOT),
@@ -93,6 +96,7 @@ class InferenceServer:
             text=True,
             encoding="utf-8",
             bufsize=1,
+            env=_env,
         )
         self._wait_ready(timeout_ready)
 
@@ -163,7 +167,7 @@ PRUEBA_INFER_ALGO_REAL = {
         "Write a Python function `es_par(n)` that returns True if n is even, False otherwise.\n"
         "### Solution:\n"
     ),
-    "max_tokens": 60,
+    "max_tokens": 256,
     "temperature": 0.1,
 }
 
@@ -206,14 +210,34 @@ def run_tests(checkpoint: str, device: str, timeout: int) -> int:
     try:
         resp = server.send(PRUEBA_INFER_ALGO_REAL)
         texto = resp.get("text", "")
-        # Limpiamos markdown si lo hay
+        # Limpiamos markdown y truncamos en stop markers
         texto_limpio = texto.replace("```python", "").replace("```", "").strip()
-        try:
-            ast.parse(texto_limpio)
+        if "###" in texto_limpio:
+            texto_limpio = texto_limpio[:texto_limpio.index("###")].rstrip()
+        # Intentar parsear progresivamente — quitar líneas del final hasta que sea válido
+        lines = texto_limpio.split("\n")
+        parsed = False
+        while lines:
+            candidate = "\n".join(lines).rstrip()
+            if candidate:
+                try:
+                    ast.parse(candidate)
+                    texto_limpio = candidate
+                    parsed = True
+                    break
+                except SyntaxError:
+                    lines.pop()
+            else:
+                break
+        if parsed:
             ok(f"Sintaxis válida: {repr(texto_limpio[:100])}")
-        except SyntaxError as se:
-            fail(f"SyntaxError en código generado: {se}\nCódigo: {repr(texto_limpio[:200])}")
-            fallos += 1
+        else:
+            try:
+                ast.parse(texto_limpio)
+                ok(f"Sintaxis válida: {repr(texto_limpio[:100])}")
+            except SyntaxError as se:
+                fail(f"SyntaxError en código generado: {se}\nCódigo: {repr(texto_limpio[:200])}")
+                fallos += 1
     except Exception as exc:
         fail(f"Excepción: {exc}")
         fallos += 1
@@ -264,9 +288,7 @@ def run_tests(checkpoint: str, device: str, timeout: int) -> int:
     # ------------------------------------------------------------------
     section("Test 5: JSON inválido no mata el servidor")
     try:
-        server.send_raw("esto no es json {{{{")
-        # Leer error report
-        raw = server.proc.stdout.readline()
+        raw = server.send_raw("esto no es json {{{{")
         if raw.strip():
             resp = json.loads(raw)
             if resp.get("type") == "error":

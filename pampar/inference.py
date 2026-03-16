@@ -23,6 +23,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 import traceback
@@ -91,7 +92,7 @@ def load_model(checkpoint_path: Path, device: torch.device):
     model = PamparV3(PRESET_V3).to(device)
 
     ckpt = torch.load(str(checkpoint_path), map_location=device, weights_only=False)
-    state_dict = ckpt.get("model", ckpt)
+    state_dict = ckpt.get("modelo", ckpt.get("model", ckpt))
     model.load_state_dict(state_dict, strict=False)
     model.registrar_tokenizer(tokenizer)
     model.eval()
@@ -127,7 +128,7 @@ def handle_infer(model, tokenizer, device: torch.device, msg: dict) -> None:
 
     # Decodificar solo los tokens nuevos
     new_ids = output[0, len(ids):].tolist()
-    text = tokenizer.Decode(new_ids)
+    text = tokenizer.Decode(new_ids).replace("\u2047", "\n")
     _respond({"type": "infer_ok", "text": text})
 
 
@@ -151,6 +152,12 @@ def handle_boot(msg: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    # Forzar UTF-8 en stdin/stdout — necesario en Windows (charmap por defecto)
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+    if hasattr(sys.stdin, "buffer"):
+        sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(description="PAMPAr inference server (JSON-lines)")
     parser.add_argument("--checkpoint", required=True, help="Ruta al .pt del checkpoint")
     parser.add_argument(
@@ -178,7 +185,12 @@ def main() -> None:
     _stderr("READY")
     _respond({"type": "ready"})
 
-    for raw_line in sys.stdin:
+    # Loop interactivo — readline() en vez de `for line in stdin`
+    # para evitar buffering ahead del iterador en Windows.
+    while True:
+        raw_line = sys.stdin.readline()
+        if not raw_line:
+            break
         raw_line = raw_line.strip()
         if not raw_line:
             continue

@@ -220,7 +220,7 @@ class PamparV3(nn.Module):
         for _ in range(max_tokens):
             # Truncar al max_seq_len para no exceder la ventana
             ctx = generated[:, -self.config.max_seq_len:]
-            logits, _, _ = self.forward(ctx, use_early_exit=True)
+            logits, _, _ = self.forward(ctx, use_early_exit=False)
             logits = logits[:, -1, :] / temperature  # Solo último token
 
             # Top-K filtering
