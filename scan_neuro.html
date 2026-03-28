@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>PAMPAr Brain Scanner</title>
+<style>
+body { font-family: 'Cascadia Code', 'Fira Code', monospace; background: #1e1e2e; color: #cdd6f4; margin: 2em; }
+h1 { color: #89b4fa; border-bottom: 2px solid #89b4fa; padding-bottom: 8px; }
+h2 { color: #a6e3a1; margin-top: 2em; }
+.code { background: #313244; padding: 1em; border-radius: 8px; font-size: 14px; white-space: pre; }
+table { border-collapse: collapse; margin: 1em 0; }
+td, th { padding: 4px 8px; border: 1px solid #45475a; font-size: 13px; }
+th { background: #313244; }
+.tok { background: #313244; font-weight: bold; white-space: pre; }
+.dom { font-weight: bold; }
+.conf-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.conf-bar .bar { height: 20px; border-radius: 4px; transition: width 0.3s; }
+.conf-bar span { min-width: 60px; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin: 1em 0; }
+.metric { background: #313244; padding: 1em; border-radius: 8px; text-align: center; }
+.metric .value { font-size: 2em; font-weight: bold; }
+.metric .label { font-size: 0.85em; color: #a6adc8; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>🧠 PAMPAr Brain Scanner</h1>
+<div class="code">def fibonacci(n):</div>
+
+<h2>Métricas de Salud</h2>
+<div class="metrics">
+  <div class="metric"><div class="value" style="color:#a6e3a1">75/100</div><div class="label">Score Global</div></div>
+  <div class="metric"><div class="value" style="color:#a6e3a1">100.0%</div><div class="label">Accuracy Routing</div></div>
+  <div class="metric"><div class="value" style="color:#a6e3a1">0.0672</div><div class="label">Margen Promedio</div></div>
+  <div class="metric"><div class="value" style="color:#f38ba8">48.9%</div><div class="label">Early Exit Max</div></div>
+  <div class="metric"><div class="value">0.0749</div><div class="label">Diferenciación</div></div>
+</div>
+
+<h2>Tálamo: Routing Inicial</h2>
+<table>
+<tr><th>Token</th><th>SINTAXIS</th><th>SEMANTICA</th><th>LOGICO</th><th>ESTRUCTURAL</th><th>Actual</th><th>Esperado</th><th>OK</th></tr>
+<tr><td class="tok">▁def</td><td style="background:rgba(137,180,250,0.61)">0.607</td><td style="background:rgba(166,227,161,0.60)">0.603</td><td style="background:rgba(249,226,175,0.54)">0.539</td><td style="background:rgba(203,166,247,0.54)">0.537</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">▁f</td><td style="background:rgba(137,180,250,0.70)">0.699</td><td style="background:rgba(166,227,161,0.69)">0.693</td><td style="background:rgba(249,226,175,0.58)">0.575</td><td style="background:rgba(203,166,247,0.57)">0.571</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">ib</td><td style="background:rgba(137,180,250,0.73)">0.730</td><td style="background:rgba(166,227,161,0.72)">0.723</td><td style="background:rgba(249,226,175,0.59)">0.589</td><td style="background:rgba(203,166,247,0.58)">0.583</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">on</td><td style="background:rgba(137,180,250,0.76)">0.763</td><td style="background:rgba(166,227,161,0.76)">0.756</td><td style="background:rgba(249,226,175,0.60)">0.604</td><td style="background:rgba(203,166,247,0.60)">0.597</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">ac</td><td style="background:rgba(137,180,250,0.82)">0.815</td><td style="background:rgba(166,227,161,0.81)">0.808</td><td style="background:rgba(249,226,175,0.63)">0.631</td><td style="background:rgba(203,166,247,0.62)">0.622</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">ci</td><td style="background:rgba(137,180,250,0.84)">0.839</td><td style="background:rgba(166,227,161,0.83)">0.832</td><td style="background:rgba(249,226,175,0.65)">0.645</td><td style="background:rgba(203,166,247,0.64)">0.636</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">(</td><td style="background:rgba(137,180,250,0.87)">0.873</td><td style="background:rgba(166,227,161,0.87)">0.865</td><td style="background:rgba(249,226,175,0.67)">0.667</td><td style="background:rgba(203,166,247,0.66)">0.657</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">n</td><td style="background:rgba(137,180,250,0.90)">0.900</td><td style="background:rgba(166,227,161,0.89)">0.893</td><td style="background:rgba(249,226,175,0.69)">0.688</td><td style="background:rgba(203,166,247,0.68)">0.677</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr><tr><td class="tok">):</td><td style="background:rgba(137,180,250,0.92)">0.921</td><td style="background:rgba(166,227,161,0.91)">0.914</td><td style="background:rgba(249,226,175,0.71)">0.708</td><td style="background:rgba(203,166,247,0.70)">0.695</td><td class="dom" style="color:#89b4fa">SINTAXIS</td><td style="color:#a6e3a1">SEMANTICA</td><td style="color:#a6e3a1;font-weight:bold">✓</td></tr>
+</table>
+
+<h2>Evolución por Nivel</h2>
+<table>
+<tr><th>Token</th><th>N0</th><th>N1</th><th>N2</th><th>N3</th><th>N4</th><th>N5</th></tr>
+<tr><td class="tok">▁def</td><td style="background:#89b4fa;opacity:0.61">0.61</td><td style="background:#89b4fa;opacity:0.64">0.64</td><td style="background:#89b4fa;opacity:0.67">0.67</td><td style="background:#89b4fa;opacity:0.66">0.66</td><td style="background:#89b4fa;opacity:0.67">0.67</td><td style="background:#89b4fa;opacity:0.68">0.68</td></tr><tr><td class="tok">▁f</td><td style="background:#89b4fa;opacity:0.70">0.70</td><td style="background:#a6e3a1;opacity:0.70">0.70</td><td style="background:#a6e3a1;opacity:0.69">0.69</td><td style="background:#a6e3a1;opacity:0.70">0.70</td><td style="background:#a6e3a1;opacity:0.70">0.70</td><td style="background:#a6e3a1;opacity:0.71">0.71</td></tr><tr><td class="tok">ib</td><td style="background:#89b4fa;opacity:0.73">0.73</td><td style="background:#a6e3a1;opacity:0.72">0.72</td><td style="background:#a6e3a1;opacity:0.70">0.70</td><td style="background:#a6e3a1;opacity:0.71">0.71</td><td style="background:#a6e3a1;opacity:0.71">0.71</td><td style="background:#a6e3a1;opacity:0.71">0.71</td></tr><tr><td class="tok">on</td><td style="background:#89b4fa;opacity:0.76">0.76</td><td style="background:#a6e3a1;opacity:0.75">0.75</td><td style="background:#a6e3a1;opacity:0.73">0.73</td><td style="background:#a6e3a1;opacity:0.73">0.73</td><td style="background:#a6e3a1;opacity:0.73">0.73</td><td style="background:#a6e3a1;opacity:0.72">0.72</td></tr><tr><td class="tok">ac</td><td style="background:#89b4fa;opacity:0.82">0.82</td><td style="background:#a6e3a1;opacity:0.78">0.78</td><td style="background:#a6e3a1;opacity:0.76">0.76</td><td style="background:#a6e3a1;opacity:0.75">0.75</td><td style="background:#a6e3a1;opacity:0.75">0.75</td><td style="background:#a6e3a1;opacity:0.74">0.74</td></tr><tr><td class="tok">ci</td><td style="background:#89b4fa;opacity:0.84">0.84</td><td style="background:#a6e3a1;opacity:0.80">0.80</td><td style="background:#a6e3a1;opacity:0.78">0.78</td><td style="background:#a6e3a1;opacity:0.76">0.76</td><td style="background:#a6e3a1;opacity:0.75">0.75</td><td style="background:#a6e3a1;opacity:0.74">0.74</td></tr><tr><td class="tok">(</td><td style="background:#89b4fa;opacity:0.87">0.87</td><td style="background:#89b4fa;opacity:0.83">0.83</td><td style="background:#89b4fa;opacity:0.73">0.73</td><td style="background:#89b4fa;opacity:0.68">0.68</td><td style="background:#89b4fa;opacity:0.68">0.68</td><td style="background:#89b4fa;opacity:0.68">0.68</td></tr><tr><td class="tok">n</td><td style="background:#89b4fa;opacity:0.90">0.90</td><td style="background:#a6e3a1;opacity:0.84">0.84</td><td style="background:#a6e3a1;opacity:0.80">0.80</td><td style="background:#a6e3a1;opacity:0.78">0.78</td><td style="background:#a6e3a1;opacity:0.76">0.76</td><td style="background:#a6e3a1;opacity:0.75">0.75</td></tr><tr><td class="tok">):</td><td style="background:#89b4fa;opacity:0.92">0.92</td><td style="background:#89b4fa;opacity:0.86">0.86</td><td style="background:#a6e3a1;opacity:0.81">0.81</td><td style="background:#a6e3a1;opacity:0.79">0.79</td><td style="background:#a6e3a1;opacity:0.77">0.77</td><td style="background:#a6e3a1;opacity:0.76">0.76</td></tr>
+</table>
+
+<h2>Early Exit</h2>
+<div class="conf-bar"><span>Nivel 0</span><div class="bar" style="width:47.5%;background:#f44336"></div><span>47.5%</span></div><div class="conf-bar"><span>Nivel 1</span><div class="bar" style="width:43.8%;background:#f44336"></div><span>43.8%</span></div><div class="conf-bar"><span>Nivel 2</span><div class="bar" style="width:48.9%;background:#f44336"></div><span>48.9%</span></div><div class="conf-bar"><span>Nivel 3</span><div class="bar" style="width:39.0%;background:#f44336"></div><span>39.0%</span></div><div class="conf-bar"><span>Nivel 4</span><div class="bar" style="width:20.8%;background:#f44336"></div><span>20.8%</span></div>
+<p>Umbral: 90% — Mín 2 niveles</p>
+
+</body>
+</html>
