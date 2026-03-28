@@ -126,6 +126,19 @@ ZONA_TERRITORIO: Dict[Zona, Territorio] = {
     z: _zona_a_territorio(z) for z in Zona
 }
 
+# Override: B35_OP_ASSIGN (=, +=, -=, etc.) → SINTAXIS
+# Justificación lingüística: la asignación es un constructo sintáctico
+# de nivel sentencia, NO una operación lógica/computacional como + o and.
+# El modelo ya routea `=` a SINTAXIS de forma natural.
+ZONA_TERRITORIO[Zona.B35_OP_ASSIGN] = Territorio.SINTAXIS
+
+# Override: B07_KW_EXCEPT (try, except, finally, raise) → SEMANTICA
+# Justificación: los keywords de excepción definen semántica de errores —
+# QUÉ errores pueden ocurrir y CÓMO manejarlos. A diferencia de if/for
+# (control flow puro), el manejo de excepciones es un concern semántico.
+# El modelo los routea a SEMANTICA de forma consistente.
+ZONA_TERRITORIO[Zona.B07_KW_EXCEPT] = Territorio.SEMANTICA
+
 # Zonas por territorio
 ZONAS_POR_TERRITORIO: Dict[Territorio, Tuple[Zona, ...]] = {
     t: tuple(z for z in Zona if ZONA_TERRITORIO[z] == t)
@@ -149,15 +162,23 @@ ZONAS: Dict[Zona, Set[str]] = {
     # =========================================================================
     Zona.B01_KW_DEF: {"def", "lambda"},
     Zona.B02_KW_CLASS: {"class"},
-    Zona.B03_KW_IMPORT: {"import", "from"},
+    Zona.B03_KW_IMPORT: {"import"},  # "from" → B52 (structural framing)
     Zona.B04_KW_RETURN: {"return", "yield"},
     Zona.B05_KW_CONTROL: {"if", "else", "elif", "match", "case"},
     Zona.B06_KW_LOOP: {"for", "while"},
     Zona.B07_KW_EXCEPT: {"try", "except", "finally", "raise"},
     Zona.B08_KW_ASYNC: {"async", "await"},
-    Zona.B09_KW_MOD: {"global", "nonlocal", "del", "with", "as"},
+    Zona.B09_KW_MOD: {
+        "global", "nonlocal", "del", "with", "as",
+        # Decoradores-modificador: equivalentes a static/abstract en otros lenguajes.
+        # No son builtins (como print/len), sino modificadores de métodos.
+        "staticmethod", "classmethod", "property",
+    },
     Zona.B10_KW_VAR: {"assert", "pass", "break", "continue"},
-    Zona.B11_DELIM_PAREN: {"(", ")"},
+    # Incluye tokens combinados paren+quote del tokenizer (SentencePiece).
+    # El paréntesis es el delimitador primario: abre/cierra llamada o grupo,
+    # el quote que le sigue es el inicio del argumento string.
+    Zona.B11_DELIM_PAREN: {"(", ")", "('", '("', "')", '")'},
     Zona.B12_DELIM_BRACK: {"[", "]"},
     Zona.B13_DELIM_BRACE: {"{", "}"},
     Zona.B14_PUNCT: {",", ";", ":", "..."},
@@ -190,7 +211,8 @@ ZONAS: Dict[Zona, Set[str]] = {
         "zip", "map", "filter", "any", "all", "round", "pow",
         # int/str/float/bool -> B26, list/dict/set/tuple -> B27 (no duplicar)
         "repr", "hash", "id", "iter", "next", "callable", "super",
-        "property", "staticmethod", "classmethod", "object",
+        # staticmethod, classmethod, property → movidos a B09_KW_MOD
+        "object",
         "format", "chr", "ord", "hex", "bin", "oct",
         "ValueError", "TypeError", "KeyError", "IndexError", "AttributeError",
         "RuntimeError", "StopIteration", "FileNotFoundError", "IOError",
@@ -239,5 +261,5 @@ ZONAS: Dict[Zona, Set[str]] = {
     Zona.B49_SPACE: {" ", "  "},
     Zona.B50_PATTERN_LIST: {},     # Detectado por contexto: "[" + "for" + "in"
     Zona.B51_PATTERN_DICT: {},     # Detectado por contexto: "{" + ":" + "}"
-    Zona.B52_PATTERN_CALL: {},     # Detectado por contexto: id + "(" + args + ")"
+    Zona.B52_PATTERN_CALL: {"from"},  # Structural framing: establece origen (from X import Y)
 }

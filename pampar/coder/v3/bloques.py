@@ -354,9 +354,10 @@ class NivelProfundo(nn.Module):
 
         # Norm clamping adaptativo por nivel (previene explosión de activaciones)
         # max_norm crece con el nivel para permitir acumulación controlada
-        # En eval: clampea; en train: no interfiere (el modelo ya aprendió así)
+        # Activo en eval siempre; en train: puede activarse con train_clamp=True
         self._stream_max_norm = 50.0 * (2.0 ** nivel_idx)  # N0=50, N1=100, N2=200, N3=400, N4=800
-        self._use_norm_clamp = True  # Activar en inference
+        self._use_norm_clamp = True  # Clamp en inference
+        self._train_norm_clamp = False  # Clamp tambi\u00e9n en training (activar con set_train_clamp)
 
         # Pre-norms
         self.norm_attn = RMSNorm(config.dim)
@@ -426,9 +427,9 @@ class NivelProfundo(nn.Module):
                     self.nivel_idx, terr_dom, zona_dom, x_attn.device
                 )
             if eng_mask.any():
-                # Filtrar por similitud coseno: solo inyectar si el engrama
-                # apunta en una dirección similar al x_attn actual
-                alpha = 0.1
+                # Alpha adaptativo por nivel: niveles profundos reciben menos
+                # N0=0.03, N1=0.02, N2=0.015, N3=0.012, N4=0.01
+                alpha = 0.03 / (1.0 + 0.5 * self.nivel_idx)
                 eng_residual = eng_vecs.unsqueeze(0)  # [1, L, D]
                 mask_f = eng_mask.float().unsqueeze(0).unsqueeze(-1)  # [1, L, 1]
 
@@ -437,8 +438,9 @@ class NivelProfundo(nn.Module):
                 eng_norm = F.normalize(eng_residual, dim=-1)
                 cosine = (attn_norm * eng_norm).sum(dim=-1, keepdim=True)  # [B, L, 1]
 
-                # Solo inyectar donde coseno > 0 (dirección compatible)
-                cosine_gate = torch.clamp(cosine, min=0.0)  # [B, L, 1]
+                # Solo inyectar donde coseno > 0.3 (dirección claramente compatible)
+                # Suavizado: la fuerza escala con cuánto supera el umbral
+                cosine_gate = torch.clamp(cosine - 0.3, min=0.0)  # [B, L, 1]
 
                 # Normalizar engrama a escala de x_attn
                 attn_scale = x_attn.norm(dim=-1, keepdim=True).clamp(min=1e-8)
@@ -465,8 +467,12 @@ class NivelProfundo(nn.Module):
         # 5. Lateral gates — los streams se comunican
         streams = self.lateral(new_streams, terr_acts)
 
-        # 5.5 Norm clamping — previene explosión de activaciones en inference
-        if self._use_norm_clamp and not self.training:
+        # 5.5 Norm clamping — previene explosión de activaciones
+        #     En eval: siempre activo. En train: solo si _train_norm_clamp=True
+        clamp_active = self._use_norm_clamp and (
+            not self.training or self._train_norm_clamp
+        )
+        if clamp_active:
             max_norm = self._stream_max_norm
             for t in range(self.config.n_streams):
                 norms = streams[t].norm(dim=-1, keepdim=True)  # [B, L, 1]

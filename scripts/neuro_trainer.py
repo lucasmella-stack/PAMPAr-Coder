@@ -348,6 +348,24 @@ def calcular_loss_balance(all_stream_norms: list[torch.Tensor]) -> torch.Tensor:
     return total / len(all_stream_norms)
 
 
+def calcular_loss_norm(
+    all_stream_norms: list[torch.Tensor],
+    max_norms: list[float],
+) -> torch.Tensor:
+    """
+    Soft norm penalty: penaliza streams cuya norma supera el max_norm por nivel.
+
+    Enseña al modelo a mantener normas controladas SIN hard clamp.
+    max_norms[i] = límite suave del nivel i (50, 100, 200, 400, 800).
+    """
+    total = torch.tensor(0.0, device=all_stream_norms[0].device)
+    for i, norms in enumerate(all_stream_norms):
+        limit = max_norms[i] if i < len(max_norms) else max_norms[-1]
+        excess = F.relu(norms - limit)  # [n_streams]
+        total = total + (excess ** 2).mean()
+    return total / len(all_stream_norms)
+
+
 # ─────────────────────────────────────────────────────────────────
 # Training Step
 # ─────────────────────────────────────────────────────────────────
@@ -361,10 +379,11 @@ def paso_neuro(
     alpha_diff: float,
     alpha_exit: float,
     alpha_balance: float,
+    alpha_norm: float,
     territory_table: torch.Tensor,
     warmup_factor: float = 1.0,
 ) -> dict[str, float]:
-    """Un paso de entrenamiento con CE + 3 losses auxiliares."""
+    """Un paso de entrenamiento con CE + 4 losses auxiliares."""
     modelo.train()
     optimizer.zero_grad(set_to_none=True)
 
@@ -404,17 +423,22 @@ def paso_neuro(
     )
     loss_balance = calcular_loss_balance(neuro_info["all_stream_norms"])
 
+    # Norm penalty: enseña al modelo a mantener normas controladas
+    max_norms = [50.0 * (2.0 ** i) for i in range(len(neuro_info["all_stream_norms"]))]
+    loss_norm = calcular_loss_norm(neuro_info["all_stream_norms"], max_norms)
+
     wf = warmup_factor
     loss = (
         loss_ce
         + wf * alpha_diff * loss_diff
         + wf * alpha_exit * loss_exit
         + wf * alpha_balance * loss_balance
+        + wf * alpha_norm * loss_norm
     )
 
     if loss.isnan() or loss.isinf():
         logger.warning("Loss inestable — skipping step")
-        return {"ce": 0.0, "diff": 0.0, "exit": 0.0, "balance": 0.0, "total": 0.0}
+        return {"ce": 0.0, "diff": 0.0, "exit": 0.0, "balance": 0.0, "norm": 0.0, "total": 0.0}
 
     loss.backward()
     nn_utils.clip_grad_norm_(modelo.parameters(), max_grad_norm)
@@ -425,6 +449,7 @@ def paso_neuro(
         "diff": float(loss_diff.detach()),
         "exit": float(loss_exit.detach()),
         "balance": float(loss_balance.detach()),
+        "norm": float(loss_norm.detach()),
         "total": float(loss.detach()),
     }
 
@@ -572,7 +597,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--alpha-exit", type=float, default=0.0,
                    help="Peso loss_exit (desactivado hasta resolver routing)")
     p.add_argument("--alpha-balance", type=float, default=0.05,
-                   help="Peso loss_balance (utilización streams)")
+                   help="Peso loss_balance (utilizaci\u00f3n streams)")
+    p.add_argument("--alpha-norm", type=float, default=0.01,
+                   help="Peso loss_norm (penaliza normas excesivas por nivel)")
     p.add_argument("--aux-warmup", type=int, default=50,
                    help="Pasos para rampear aux losses de 0→1")
 
@@ -581,6 +608,10 @@ def _parse_args() -> argparse.Namespace:
                    help="Solo entrena TalamoInicial (attn_proj, conv, gate)")
     p.add_argument("--lr-talamo", type=float, default=5e-3,
                    help="LR para TalamoInicial en modo focus-talamo")
+
+    # Norm clamping en training
+    p.add_argument("--train-norm-clamp", action="store_true",
+                   help="Activa norm clamping durante training (regulariza normas)")
 
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--seed", type=int, default=42)
@@ -635,6 +666,11 @@ def main() -> None:
 
     n_params = sum(p.numel() for p in modelo.parameters() if p.requires_grad)
     logger.info("PamparV3 %.1fM params", n_params / 1e6)
+
+    # Norm clamping durante training (regulariza normas por nivel)
+    if args.train_norm_clamp:
+        modelo.set_train_norm_clamp(True)
+        logger.info("Norm clamping ACTIVADO durante training")
 
     # Datos
     if not args.data.exists():
@@ -789,12 +825,13 @@ def main() -> None:
     pasos_por_epoch = max(1, len(chunks) // args.batch_size)
     total_pasos = min(args.max_pasos, args.epochs * pasos_por_epoch)
     logger.info(
-        "Neuro-Training: %d pasos | %d chunks | alphas: diff=%.3f exit=%.3f balance=%.3f",
+        "Neuro-Training: %d pasos | %d chunks | alphas: diff=%.3f exit=%.3f balance=%.3f norm=%.3f",
         total_pasos,
         len(chunks),
         args.alpha_diff,
         args.alpha_exit,
         args.alpha_balance,
+        args.alpha_norm,
     )
 
     paso = 0
@@ -830,6 +867,7 @@ def main() -> None:
                     args.alpha_diff,
                     args.alpha_exit,
                     args.alpha_balance,
+                    args.alpha_norm,
                     territory_table,
                     warmup_factor=wf,
                 )
@@ -846,13 +884,14 @@ def main() -> None:
                     elapsed = time.time() - t0
                     logger.info(
                         "paso %4d/%d | CE=%.3f  diff=%.3f  exit=%.3f  bal=%.3f  "
-                        "total=%.3f  lr_r=%.1e  (%.1f p/s)",
+                        "norm=%.3f  total=%.3f  lr_r=%.1e  (%.1f p/s)",
                         paso,
                         total_pasos,
                         loss_dict["ce"],
                         loss_dict["diff"],
                         loss_dict["exit"],
                         loss_dict["balance"],
+                        loss_dict["norm"],
                         avg_total,
                         lr_rout,
                         paso / elapsed,

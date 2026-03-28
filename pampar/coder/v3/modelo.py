@@ -88,7 +88,10 @@ class PamparV3(nn.Module):
     def registrar_tokenizer(self, tokenizer: object) -> None:
         """Registra el tokenizer en el Tálamo para que LLAVES funcione."""
         self.talamo.registrar_tokenizer(tokenizer)
-
+    def set_train_norm_clamp(self, enabled: bool) -> None:
+        """Activa/desactiva norm clamping durante training en todos los niveles."""
+        for nivel in self.niveles:
+            nivel._train_norm_clamp = enabled
     def _combinar_streams(
         self,
         streams: List[torch.Tensor],
