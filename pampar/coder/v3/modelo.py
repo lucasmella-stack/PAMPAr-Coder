@@ -21,14 +21,19 @@ Arquitectura:
   - El re-routing adapta qué área lidera según el contexto acumulado
 """
 
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
 from .config import ConfigV3, PRESET_V3
 from .bloques import NivelProfundo, RMSNorm
 from .talamo import TalamoInicial
+
+if TYPE_CHECKING:
+    from .engrama_stream import BancoEngrama
 
 
 class PamparV3(nn.Module):
@@ -113,6 +118,7 @@ class PamparV3(nn.Module):
         input_ids: torch.Tensor,
         targets: Optional[torch.Tensor] = None,
         use_early_exit: bool = False,
+        banco_engrama: Optional[BancoEngrama] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Dict]:
         """
         Forward pass de PamparV3.
@@ -121,6 +127,7 @@ class PamparV3(nn.Module):
             input_ids:      [B, L] token IDs
             targets:        [B, L] labels (-100 = ignorar)
             use_early_exit: salir antes si confianza suficiente
+            banco_engrama:  banco de engramas para inyección (None = sin inyección)
 
         Returns:
             logits: [B, L, vocab_size]
@@ -165,7 +172,9 @@ class PamparV3(nn.Module):
                 conf = 0.0  # No calculada durante checkpointing
             else:
                 streams, terr_acts, conf = nivel(
-                    streams, terr_acts, TalamoInicial.agregar_fn
+                    streams, terr_acts, TalamoInicial.agregar_fn,
+                    banco_engrama=banco_engrama,
+                    zona_acts=zona_acts,
                 )
 
             # Early Exit: si el nivel más difícil del 10% ya tiene confianza
@@ -200,16 +209,18 @@ class PamparV3(nn.Module):
         temperature: float = 0.8,
         top_k: int = 50,
         top_p: float = 0.95,
+        banco_engrama: Optional[BancoEngrama] = None,
     ) -> torch.Tensor:
         """
         Generación autoregresiva con Early Exit y nucleus sampling.
 
         Args:
-            prompt_ids:  [1, L] prompt tokenizado
-            max_tokens:  máximo tokens a generar
-            temperature: diversidad (menor = más determinista)
-            top_k:       Top-K sampling (0 = desactivado)
-            top_p:       Nucleus sampling (1.0 = desactivado)
+            prompt_ids:    [1, L] prompt tokenizado
+            max_tokens:    máximo tokens a generar
+            temperature:   diversidad (menor = más determinista)
+            top_k:         Top-K sampling (0 = desactivado)
+            top_p:         Nucleus sampling (1.0 = desactivado)
+            banco_engrama: banco de engramas para inyección adaptativa
 
         Returns:
             [1, L+N] tokens generados
@@ -220,7 +231,7 @@ class PamparV3(nn.Module):
         for _ in range(max_tokens):
             # Truncar al max_seq_len para no exceder la ventana
             ctx = generated[:, -self.config.max_seq_len:]
-            logits, _, _ = self.forward(ctx, use_early_exit=False)
+            logits, _, _ = self.forward(ctx, use_early_exit=False, banco_engrama=banco_engrama)
             logits = logits[:, -1, :] / temperature  # Solo último token
 
             # Top-K filtering

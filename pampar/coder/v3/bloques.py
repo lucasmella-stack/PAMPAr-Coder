@@ -13,12 +13,17 @@ Componentes:
   NivelProfundo— Un nivel completo: atención + re-route + 4 FFN + lateral
 """
 
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import List, Tuple
+from typing import List, Optional, TYPE_CHECKING, Tuple
 
 from .config import ConfigV3
+
+if TYPE_CHECKING:
+    from .engrama_stream import BancoEngrama
 
 
 # =============================================================================
@@ -347,6 +352,12 @@ class NivelProfundo(nn.Module):
         self.config = config
         self.nivel_idx = nivel_idx
 
+        # Norm clamping adaptativo por nivel (previene explosión de activaciones)
+        # max_norm crece con el nivel para permitir acumulación controlada
+        # En eval: clampea; en train: no interfiere (el modelo ya aprendió así)
+        self._stream_max_norm = 50.0 * (2.0 ** nivel_idx)  # N0=50, N1=100, N2=200, N3=400, N4=800
+        self._use_norm_clamp = True  # Activar en inference
+
         # Pre-norms
         self.norm_attn = RMSNorm(config.dim)
         self.norm_streams = nn.ModuleList([
@@ -378,9 +389,18 @@ class NivelProfundo(nn.Module):
         streams: List[torch.Tensor],   # [n_streams × [B, L, D]]
         terr_acts: torch.Tensor,        # [B, L, n_territorios]
         agregar_fn,                     # función del Tálamo para agregar zonas
+        banco_engrama: Optional[BancoEngrama] = None,
+        zona_acts: Optional[torch.Tensor] = None,  # [B, L, 52] para clave de búsqueda
     ) -> Tuple[List[torch.Tensor], torch.Tensor, float]:
         """
         Forward de un nivel de profundidad.
+
+        Args:
+            streams:        representaciones por stream [n_streams × [B, L, D]]
+            terr_acts:      activaciones territoriales [B, L, 4]
+            agregar_fn:     función del Tálamo para agregar zonas
+            banco_engrama:  banco de engramas para inyección (None = sin inyección)
+            zona_acts:      activaciones por zona para clave de búsqueda
 
         Returns:
             streams:   representaciones actualizadas [n_streams × [B, L, D]]
@@ -396,6 +416,36 @@ class NivelProfundo(nn.Module):
 
         # 2. Atención compartida en el espacio combinado
         x_attn = self.drop(self.attn(self.norm_attn(x_combined)))
+
+        # 2.5 Inyección de EngramaStream (si hay banco disponible)
+        if banco_engrama is not None and zona_acts is not None:
+            with torch.no_grad():
+                terr_dom = terr_acts[0].argmax(dim=-1)  # [L]
+                zona_dom = zona_acts[0].argmax(dim=-1)   # [L]
+                eng_vecs, eng_mask = banco_engrama.buscar_batch(
+                    self.nivel_idx, terr_dom, zona_dom, x_attn.device
+                )
+            if eng_mask.any():
+                # Filtrar por similitud coseno: solo inyectar si el engrama
+                # apunta en una dirección similar al x_attn actual
+                alpha = 0.1
+                eng_residual = eng_vecs.unsqueeze(0)  # [1, L, D]
+                mask_f = eng_mask.float().unsqueeze(0).unsqueeze(-1)  # [1, L, 1]
+
+                # Normalizar ambos para calcular coseno per-token
+                attn_norm = F.normalize(x_attn, dim=-1)
+                eng_norm = F.normalize(eng_residual, dim=-1)
+                cosine = (attn_norm * eng_norm).sum(dim=-1, keepdim=True)  # [B, L, 1]
+
+                # Solo inyectar donde coseno > 0 (dirección compatible)
+                cosine_gate = torch.clamp(cosine, min=0.0)  # [B, L, 1]
+
+                # Normalizar engrama a escala de x_attn
+                attn_scale = x_attn.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                eng_scale = eng_residual.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                eng_normalized = eng_residual * (attn_scale / eng_scale)
+
+                x_attn = x_attn + alpha * cosine_gate * mask_f * eng_normalized
 
         # 3. Re-routing del Tálamo con estado actual
         terr_acts = self.talamo_nivel(
@@ -414,6 +464,14 @@ class NivelProfundo(nn.Module):
 
         # 5. Lateral gates — los streams se comunican
         streams = self.lateral(new_streams, terr_acts)
+
+        # 5.5 Norm clamping — previene explosión de activaciones en inference
+        if self._use_norm_clamp and not self.training:
+            max_norm = self._stream_max_norm
+            for t in range(self.config.n_streams):
+                norms = streams[t].norm(dim=-1, keepdim=True)  # [B, L, 1]
+                scale = torch.clamp(max_norm / norms.clamp(min=1e-8), max=1.0)
+                streams[t] = streams[t] * scale
 
         # 6. Confianza para Early Exit (percentil 10 de tokens más difíciles)
         x_out = sum(
