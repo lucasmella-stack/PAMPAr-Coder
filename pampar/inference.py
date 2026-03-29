@@ -31,6 +31,8 @@ from pathlib import Path
 
 import torch
 
+from pampar.constants import TOKENIZER_PATH
+
 
 def _resolve_device(device_arg: str) -> torch.device:
     if device_arg == "cuda":
@@ -61,7 +63,7 @@ def _resolve_tokenizer_path(checkpoint_path: Path, tokenizer_arg: str | None) ->
     project_root = checkpoint_path.parent.parent
     candidates += [
         project_root / "data" / "tokenizer" / "pampar_48k.model",
-        Path("data/tokenizer/pampar_48k.model"),
+        Path(TOKENIZER_PATH),
         Path("pampar_48k.model"),
     ]
     for c in candidates:
@@ -76,9 +78,11 @@ def _resolve_tokenizer_path(checkpoint_path: Path, tokenizer_arg: str | None) ->
 # Carga del modelo
 # ---------------------------------------------------------------------------
 
+
 def load_model(checkpoint_path: Path, device: torch.device):
     """Carga PamparV3 desde un checkpoint .pt."""
     import sentencepiece as spm
+
     from pampar.coder.v3.config import PRESET_V3
     from pampar.coder.v3.modelo import PamparV3
 
@@ -107,6 +111,7 @@ def load_model(checkpoint_path: Path, device: torch.device):
 # Handlers
 # ---------------------------------------------------------------------------
 
+
 def handle_infer(model, tokenizer, device: torch.device, msg: dict) -> None:
     prompt: str = msg.get("prompt", "")
     max_tokens: int = int(msg.get("max_tokens", 256))
@@ -127,7 +132,7 @@ def handle_infer(model, tokenizer, device: torch.device, msg: dict) -> None:
         )
 
     # Decodificar solo los tokens nuevos
-    new_ids = output[0, len(ids):].tolist()
+    new_ids = output[0, len(ids) :].tolist()
     text = tokenizer.Decode(new_ids).replace("\u2047", "\n")
     _respond({"type": "infer_ok", "text": text})
 
@@ -135,8 +140,8 @@ def handle_infer(model, tokenizer, device: torch.device, msg: dict) -> None:
 def handle_boot(msg: dict) -> None:
     workspace: str = msg.get("workspace", ".")
 
-    from pampar.runtime.scanner import Scanner
     from pampar.runtime.generar_agents import generar_agents_md
+    from pampar.runtime.scanner import Scanner
 
     try:
         scanner = Scanner(workspace_root=workspace)
@@ -151,18 +156,27 @@ def handle_boot(msg: dict) -> None:
 # Main loop
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     # Forzar UTF-8 en stdin/stdout — necesario en Windows (charmap por defecto)
     if hasattr(sys.stdout, "buffer"):
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True
+        )
     if hasattr(sys.stdin, "buffer"):
-        sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
+        sys.stdin = io.TextIOWrapper(
+            sys.stdin.buffer, encoding="utf-8", errors="replace"
+        )
 
     parser = argparse.ArgumentParser(description="PAMPAr inference server (JSON-lines)")
-    parser.add_argument("--checkpoint", required=True, help="Ruta al .pt del checkpoint")
     parser.add_argument(
-        "--device", default="auto", choices=["auto", "cpu", "cuda"],
-        help="Dispositivo de inferencia"
+        "--checkpoint", required=True, help="Ruta al .pt del checkpoint"
+    )
+    parser.add_argument(
+        "--device",
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Dispositivo de inferencia",
     )
     parser.add_argument("--tokenizer", default=None, help="Ruta al tokenizer .model")
     args = parser.parse_args()

@@ -145,8 +145,7 @@ CASOS = [
             "### Solution:\n"
         ),
         "verificar": lambda ns: (
-            ns["cuadrados_pares"](6) == [4, 16, 36]
-            and ns["cuadrados_pares"](1) == []
+            ns["cuadrados_pares"](6) == [4, 16, 36] and ns["cuadrados_pares"](1) == []
         ),
     },
     {
@@ -237,9 +236,7 @@ CASOS = [
             "`distancia(otro)` that returns the Euclidean distance to another Punto.\n"
             "### Solution:\n"
         ),
-        "verificar": lambda ns: (
-            ns["Punto"](0, 0).distancia(ns["Punto"](3, 4)) == 5.0
-        ),
+        "verificar": lambda ns: ns["Punto"](0, 0).distancia(ns["Punto"](3, 4)) == 5.0,
     },
     # ── Nivel 5: funcional/avanzado ─────────────────────────────────────────
     {
@@ -277,10 +274,12 @@ CASOS = [
 # Carga del modelo v3
 # =============================================================================
 
+
 def cargar_modelo_v3(checkpoint: Path, device: torch.device):
     import dataclasses
+
+    from pampar.coder.v3.config import PRESET_V3, ConfigV3
     from pampar.coder.v3.modelo import PamparV3
-    from pampar.coder.v3.config import ConfigV3, PRESET_V3
 
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
     raw_cfg = ckpt.get("config", {})
@@ -309,6 +308,7 @@ def cargar_modelo_v3(checkpoint: Path, device: torch.device):
 
 def cargar_tokenizer(vocab_size: int = 48000):
     import sentencepiece as spm
+
     candidates = [
         Path("data/tokenizer/pampar_48k.model"),
         Path("data/tokenizer/code_tokenizer.model"),
@@ -325,12 +325,13 @@ def cargar_tokenizer(vocab_size: int = 48000):
 # Extracción de firma para modo guiado
 # =============================================================================
 
+
 def extraer_firma(prompt: str) -> str:
     """Extract function/class signature from prompt for guided generation."""
-    m = re.search(r'class `(\w+)`', prompt)
+    m = re.search(r"class `(\w+)`", prompt)
     if m:
         return f"class {m.group(1)}:"
-    m = re.search(r'function `(\w+\([^)]*\))`', prompt)
+    m = re.search(r"function `(\w+\([^)]*\))`", prompt)
     if m:
         return f"def {m.group(1)}:"
     return ""
@@ -340,10 +341,18 @@ def extraer_firma(prompt: str) -> str:
 # Generación greedy / top-p
 # =============================================================================
 
+
 @torch.no_grad()
-def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
-           temperature: float = 0.1, repetition_penalty: float = 1.2,
-           rep_window: int = 32) -> str:
+def generar(
+    modelo,
+    tokenizer,
+    prompt: str,
+    device,
+    max_tokens: int = 384,
+    temperature: float = 0.1,
+    repetition_penalty: float = 1.2,
+    rep_window: int = 32,
+) -> str:
     ids = tokenizer.Encode(prompt)
     generados = list(ids)
 
@@ -370,35 +379,48 @@ def generar(modelo, tokenizer, prompt: str, device, max_tokens: int = 384,
             next_token = int(torch.multinomial(probs, 1))
 
         generados.append(next_token)
-        decoded = tokenizer.Decode(generados[len(ids):]).replace('\u2047', '\n')
+        decoded = tokenizer.Decode(generados[len(ids) :]).replace("\u2047", "\n")
+
+        # Stop: repetition detector — same line appearing 3+ times
+        dec_lines = decoded.split("\n")
+        if len(dec_lines) > 6:
+            last_line = dec_lines[-1].strip()
+            if last_line and sum(1 for l in dec_lines if l.strip() == last_line) >= 3:
+                # Trim to content before the repeated lines
+                clean = []
+                for l in dec_lines:
+                    if l.strip() == last_line and len(clean) > 2:
+                        break
+                    clean.append(l)
+                return prompt + "\n".join(clean).rstrip()
 
         # Parar si el modelo empieza una nueva sección (formato instrucción)
         if "###" in decoded:
             idx = decoded.index("###")
-            if idx > 10:  # al menos algo de código generado
+            if idx > 10:
                 return prompt + decoded[:idx].rstrip()
 
         # Parar cuando termina la función/clase (línea sin sangría después de contenido)
-        lines = decoded.split("\n")
-        if len(lines) > 3:
-            for i, line in enumerate(lines[2:], 2):
+        if len(dec_lines) > 3:
+            for i, line in enumerate(dec_lines[2:], 2):
                 if line and not line[0].isspace() and line.strip() not in ("", "pass"):
-                    partial = "\n".join(lines[:i])
+                    partial = "\n".join(dec_lines[:i])
                     return prompt + partial
 
         if decoded.endswith("\n\n") and len(decoded) > 20:
             break
 
-    return tokenizer.Decode(generados).replace('\u2047', '\n')
+    return tokenizer.Decode(generados).replace("\u2047", "\n")
 
 
 # =============================================================================
 # Normalización de indentación
 # =============================================================================
 
+
 def _normalizar_indentacion(codigo: str) -> str:
     """Corregir indentación inconsistente (ej. 5 espacios → 4) redondeando a múltiplos de 4."""
-    lines = codigo.split('\n')
+    lines = codigo.split("\n")
     if not lines:
         return codigo
 
@@ -406,16 +428,16 @@ def _normalizar_indentacion(codigo: str) -> str:
     for line in lines[1:]:
         stripped = line.lstrip()
         if not stripped:
-            fixed.append('')
+            fixed.append("")
             continue
         spaces = len(line) - len(stripped)
         # Redondear a múltiplo de 4 más cercano, mínimo 4 si dentro de función/clase
         normalized = round(spaces / 4) * 4
-        if normalized < 4 and lines[0].lstrip().startswith(('def ', 'class ')):
+        if normalized < 4 and lines[0].lstrip().startswith(("def ", "class ")):
             normalized = 4
-        fixed.append(' ' * normalized + stripped)
+        fixed.append(" " * normalized + stripped)
 
-    return '\n'.join(fixed)
+    return "\n".join(fixed)
 
 
 def _reparar_bloques_huerfanos(codigo: str) -> str:
@@ -433,8 +455,17 @@ def _reparar_bloques_huerfanos(codigo: str) -> str:
     Itera hasta que no detecte más bloques huérfanos (max 10 pasadas).
     """
     HEADERS = (
-        'if ', 'elif ', 'else:', 'for ', 'while ', 'try:',
-        'except', 'finally:', 'with ', 'def ', 'class ',
+        "if ",
+        "elif ",
+        "else:",
+        "for ",
+        "while ",
+        "try:",
+        "except",
+        "finally:",
+        "with ",
+        "def ",
+        "class ",
     )
 
     for _ in range(10):
@@ -448,9 +479,8 @@ def _reparar_bloques_huerfanos(codigo: str) -> str:
             ls = line.lstrip()
             li = len(line) - len(ls)
 
-            is_header = (
-                line.rstrip().endswith(':')
-                and any(ls.startswith(h) for h in HEADERS)
+            is_header = line.rstrip().endswith(":") and any(
+                ls.startswith(h) for h in HEADERS
             )
 
             if is_header and i + 1 < len(lines):
@@ -478,7 +508,7 @@ def _reparar_bloques_huerfanos(codigo: str) -> str:
                             break
 
                         if ci == ni:  # still at the wrong indent level → fix
-                            new_lines.append(' ' * expected + cs)
+                            new_lines.append(" " * expected + cs)
                             i += 1
                         else:
                             break  # different indent → let next iteration handle
@@ -489,16 +519,79 @@ def _reparar_bloques_huerfanos(codigo: str) -> str:
             new_lines.append(line)
             i += 1
 
-        codigo = '\n'.join(new_lines)
+        codigo = "\n".join(new_lines)
         if not changed:
             break
 
     return codigo
 
 
+def _extraer_primer_bloque(codigo: str) -> str:
+    """Extraer solo la primera función/clase completa, descartando definiciones duplicadas."""
+    lines = codigo.split("\n")
+    if not lines:
+        return codigo
+
+    result: list[str] = []
+    found_def = False
+
+    for line in lines:
+        stripped = line.lstrip()
+        # Si ya encontramos una definición y aparece otra del mismo tipo → parar
+        if found_def and (stripped.startswith("def ") or stripped.startswith("class ")):
+            indent = len(line) - len(stripped)
+            if indent == 0:
+                break
+        if stripped.startswith("def ") or stripped.startswith("class "):
+            found_def = True
+        result.append(line)
+
+    return "\n".join(result).rstrip()
+
+
 # =============================================================================
 # Ejecución segura
 # =============================================================================
+
+
+def _extraer_bloques_codigo(texto: str) -> list[str]:
+    """Extraer todos los bloques ```python...``` del texto, más el texto crudo como fallback."""
+    import textwrap
+
+    bloques: list[str] = []
+
+    # Extraer todos los bloques ```python ... ```
+    partes = texto.split("```python")
+    for parte in partes[1:]:  # Skip antes del primer ```python
+        if "```" in parte:
+            bloque = parte.split("```", 1)[0]
+        else:
+            bloque = parte
+        bloque = _extraer_primer_bloque(textwrap.dedent(bloque).strip())
+        if bloque.strip():
+            bloques.append(bloque)
+
+    # Fallback: si no había ```python, intentar con ``` genérico
+    if not bloques and "```" in texto:
+        partes = texto.split("```")
+        for i in range(1, len(partes), 2):  # bloques impares son código
+            bloque = _extraer_primer_bloque(textwrap.dedent(partes[i]).strip())
+            if bloque.strip():
+                bloques.append(bloque)
+
+    # Fallback final: el texto crudo (después de ### Solution: si existe)
+    if not bloques:
+        crudo = (
+            texto.split("### Solution:")[-1].lstrip("\n")
+            if "### Solution:" in texto
+            else texto
+        )
+        crudo = _extraer_primer_bloque(textwrap.dedent(crudo).strip())
+        if crudo.strip():
+            bloques.append(crudo)
+
+    return bloques
+
 
 def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
     import textwrap
@@ -507,21 +600,24 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
     if "### Solution:" in codigo:
         codigo = codigo.split("### Solution:")[-1].lstrip("\n")
 
-    # Extraer código dentro de ```python ... ``` si existe
-    if "```python" in codigo:
-        bloque = codigo.split("```python", 1)[1]
-        if "```" in bloque:
-            bloque = bloque.split("```", 1)[0]
-        codigo = bloque
-    elif "```" in codigo:
-        # Bloque sin tag de lenguaje
-        bloque = codigo.split("```", 1)[1]
-        if "```" in bloque:
-            bloque = bloque.split("```", 1)[0]
-        codigo = bloque
+    # Extraer TODOS los bloques de código candidatos
+    bloques = _extraer_bloques_codigo(codigo)
 
-    # Normalizar indentación (dedent elimina espacios líderes comunes)
-    codigo = textwrap.dedent(codigo).strip()
+    # Intentar cada bloque — devolver el primero que PASA
+    ultimo_estado, ultimo_detalle = "SINTAXIS", "no se encontró código"
+    for bloque in bloques:
+        estado, detalle = _intentar_bloque(bloque, verificador)
+        if estado == "PASA":
+            return "PASA", ""
+        # Guardar el error más informativo (FALLA > ERROR_EXEC > SINTAXIS)
+        prioridad = {"FALLA": 3, "ERROR_EXEC": 2, "SINTAXIS": 1}
+        if prioridad.get(estado, 0) >= prioridad.get(ultimo_estado, 0):
+            ultimo_estado, ultimo_detalle = estado, detalle
+
+    return ultimo_estado, ultimo_detalle
+
+
+def _intentar_bloque(codigo: str, verificador) -> tuple[str, str]:
 
     try:
         ast.parse(codigo)
@@ -531,25 +627,8 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
         try:
             ast.parse(codigo)
         except SyntaxError:
-            pass
-        else:
-            # Normalización solucionó el problema → continuar
-            codigo = codigo  # (no-op, se cae al exec de abajo)
-            ns = {}
-            try:
-                exec(compile(codigo, "<generated>", "exec"), ns)
-            except Exception as e:
-                return "ERROR_EXEC", f"{type(e).__name__}: {e}"
-            try:
-                resultado = verificador(ns)
-                return ("PASA", "") if resultado else ("FALLA", "verificador → False")
-            except KeyError as e:
-                return "FALLA", f"función no definida: {e}"
-            except Exception as e:
-                return "FALLA", f"{type(e).__name__}: {e}"
-
-        # Intento 2: reparar bloques huérfanos (if/for sin cuerpo indentado)
-        codigo = _reparar_bloques_huerfanos(codigo)
+            # Intento 2: reparar bloques huérfanos (if/for sin cuerpo indentado)
+            codigo = _reparar_bloques_huerfanos(codigo)
         try:
             ast.parse(codigo)
         except SyntaxError as e:
@@ -563,22 +642,29 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
         # Patrón: el modelo genera [x * i for x in range(...)] donde 'i' no está definido
         # → se reemplaza la variable indefinida por la variable del loop.
         import re as _re
+
         undef_match = _re.search(r"name '(\w+)' is not defined", str(e))
         if undef_match:
             undef = undef_match.group(1)
             # Buscar comprehensions del tipo [EXP for VAR in ...] donde EXP usa undef
-            comp_matches = list(_re.finditer(
-                r'\[.*?\bfor\s+(\w+)\s+in\b', codigo, _re.DOTALL
-            ))
+            comp_matches = list(
+                _re.finditer(r"\[.*?\bfor\s+(\w+)\s+in\b", codigo, _re.DOTALL)
+            )
             for cm in comp_matches:
                 loop_var = cm.group(1)
                 if loop_var != undef:
-                    codigo_fix = _re.sub(r'\b' + _re.escape(undef) + r'\b', loop_var, codigo)
+                    codigo_fix = _re.sub(
+                        r"\b" + _re.escape(undef) + r"\b", loop_var, codigo
+                    )
                     try:
                         ns2: dict = {}
                         exec(compile(codigo_fix, "<generated>", "exec"), ns2)
                         resultado = verificador(ns2)
-                        return ("PASA", "") if resultado else ("FALLA", "verificador → False")
+                        return (
+                            ("PASA", "")
+                            if resultado
+                            else ("FALLA", "verificador → False")
+                        )
                     except Exception:
                         pass
         return "ERROR_EXEC", f"{type(e).__name__}: {e}"
@@ -594,21 +680,28 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
         # NameError dentro del cuerpo de la función (e.g. [x * i for x in range(...)])
         # El handler del exec no lo captura porque la función se define sin error.
         import re as _re
+
         undef_match = _re.search(r"name '(\w+)' is not defined", str(e))
         if undef_match:
             undef = undef_match.group(1)
-            comp_matches = list(_re.finditer(
-                r'\[.*?\bfor\s+(\w+)\s+in\b', codigo, _re.DOTALL
-            ))
+            comp_matches = list(
+                _re.finditer(r"\[.*?\bfor\s+(\w+)\s+in\b", codigo, _re.DOTALL)
+            )
             for cm in comp_matches:
                 loop_var = cm.group(1)
                 if loop_var != undef:
-                    codigo_fix = _re.sub(r'\b' + _re.escape(undef) + r'\b', loop_var, codigo)
+                    codigo_fix = _re.sub(
+                        r"\b" + _re.escape(undef) + r"\b", loop_var, codigo
+                    )
                     try:
                         ns2: dict = {}
                         exec(compile(codigo_fix, "<generated>", "exec"), ns2)
                         resultado = verificador(ns2)
-                        return ("PASA", "") if resultado else ("FALLA", "verificador → False")
+                        return (
+                            ("PASA", "")
+                            if resultado
+                            else ("FALLA", "verificador → False")
+                        )
                     except Exception:
                         pass
         return "FALLA", f"NameError: {e}"
@@ -620,17 +713,22 @@ def ejecutar_y_verificar(codigo: str, verificador) -> tuple[str, str]:
 # Main
 # =============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default="checkpoints/v3_train.pt")
     parser.add_argument("--temp", type=float, default=0.1)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--rep-penalty", type=float, default=1.2)
-    parser.add_argument("--guided", action="store_true",
-                        help="Include function/class signature in prompt (HumanEval style)")
+    parser.add_argument(
+        "--guided",
+        action="store_true",
+        help="Include function/class signature in prompt (HumanEval style)",
+    )
     parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--device", type=str, default="auto",
-                        help="'auto', 'cuda' o 'cpu'")
+    parser.add_argument(
+        "--device", type=str, default="auto", help="'auto', 'cuda' o 'cpu'"
+    )
     args = parser.parse_args()
 
     if args.device == "auto":
@@ -639,27 +737,37 @@ def main():
         device = torch.device(args.device)
     checkpoint = Path(args.checkpoint)
 
-    print(f"\n{'═'*65}")
+    print(f"\n{'═' * 65}")
     print(f"  EVAL HONESTA — PamparV3 Generalización")
-    print(f"  Checkpoint : {checkpoint.name}  ({checkpoint.stat().st_size/1e9:.2f} GB)")
+    print(
+        f"  Checkpoint : {checkpoint.name}  ({checkpoint.stat().st_size / 1e9:.2f} GB)"
+    )
     mode_str = "GUIDED" if args.guided else "OPEN"
-    print(f"  Device     : {device}  |  Temp: {args.temp}  |  RepPen: {args.rep_penalty}")
+    print(
+        f"  Device     : {device}  |  Temp: {args.temp}  |  RepPen: {args.rep_penalty}"
+    )
     print(f"  Mode       : {mode_str}")
     print(f"  Prompts    : {len(CASOS)} (nunca vistos en entrenamiento)")
-    print(f"{'═'*65}\n")
+    print(f"{'═' * 65}\n")
 
     print("  Cargando modelo...", end=" ", flush=True)
     t0 = time.time()
     modelo, config = cargar_modelo_v3(checkpoint, device)
     tokenizer = cargar_tokenizer(config.vocab_size)
     n_params = sum(p.numel() for p in modelo.parameters()) / 1e6
-    print(f"OK ({n_params:.1f}M params, vocab={config.vocab_size:,}, {time.time()-t0:.1f}s)\n")
+    print(
+        f"OK ({n_params:.1f}M params, vocab={config.vocab_size:,}, {time.time() - t0:.1f}s)\n"
+    )
 
     resultados = []
     t_start = time.time()
 
     for i, caso in enumerate(CASOS, 1):
-        print(f"  [{i:02d}/{len(CASOS)}] Nivel {caso['nivel']} — {caso['desc']}", end="  ", flush=True)
+        print(
+            f"  [{i:02d}/{len(CASOS)}] Nivel {caso['nivel']} — {caso['desc']}",
+            end="  ",
+            flush=True,
+        )
 
         t_gen = time.time()
         prompt_gen = caso["prompt"]
@@ -669,8 +777,13 @@ def main():
                 # Incluir hint de indentación (4 espacios) para primar al modelo
                 prompt_gen = caso["prompt"] + "```python\n" + firma + "\n    "
         codigo = generar(
-            modelo, tokenizer, prompt_gen,
-            device, args.max_tokens, args.temp, args.rep_penalty
+            modelo,
+            tokenizer,
+            prompt_gen,
+            device,
+            args.max_tokens,
+            args.temp,
+            args.rep_penalty,
         )
         dt = time.time() - t_gen
 
@@ -686,15 +799,17 @@ def main():
                 print(f"    {line}")
             print()
 
-        resultados.append({"desc": caso["desc"], "nivel": caso["nivel"], "estado": estado})
+        resultados.append(
+            {"desc": caso["desc"], "nivel": caso["nivel"], "estado": estado}
+        )
 
     # ── Resumen ──────────────────────────────────────────────────────────────
     elapsed = time.time() - t_start
-    pasan   = sum(1 for r in resultados if r["estado"] == "PASA")
-    fallan  = sum(1 for r in resultados if r["estado"] == "FALLA")
-    sintax  = sum(1 for r in resultados if r["estado"] == "SINTAXIS")
+    pasan = sum(1 for r in resultados if r["estado"] == "PASA")
+    fallan = sum(1 for r in resultados if r["estado"] == "FALLA")
+    sintax = sum(1 for r in resultados if r["estado"] == "SINTAXIS")
     errores = sum(1 for r in resultados if r["estado"] == "ERROR_EXEC")
-    total   = len(resultados)
+    total = len(resultados)
 
     por_nivel: dict = {}
     for r in resultados:
@@ -704,10 +819,10 @@ def main():
         if r["estado"] == "PASA":
             por_nivel[n]["pasan"] += 1
 
-    print(f"\n{'═'*65}")
+    print(f"\n{'═' * 65}")
     print(f"  RESULTADO FINAL — {elapsed:.0f}s total")
-    print(f"{'═'*65}")
-    print(f"  ✅ Pasan      : {pasan}/{total}  ({pasan/total*100:.0f}%)")
+    print(f"{'═' * 65}")
+    print(f"  ✅ Pasan      : {pasan}/{total}  ({pasan / total * 100:.0f}%)")
     print(f"  ❌ Fallan     : {fallan}/{total}")
     print(f"  ⚠️  Sintaxis   : {sintax}/{total}")
     print(f"  💥 Error exec : {errores}/{total}")
@@ -730,7 +845,7 @@ def main():
         veredicto = "🔴 NO GENERALIZA — 134k pasos no fueron suficientes"
 
     print(f"  {veredicto}")
-    print(f"{'═'*65}\n")
+    print(f"{'═' * 65}\n")
 
 
 if __name__ == "__main__":

@@ -21,38 +21,40 @@ PRESET_V3 (~110M params):
 
 from dataclasses import dataclass, field
 
+from pampar.constants import TOKENIZER_PATH
+
 
 @dataclass
 class ConfigV3:
     """Configuración completa de PamparV3."""
 
     # ── Tokenizer ────────────────────────────────────────────────────────────
-    vocab_size: int = 48_000          # pampar_48k.model
-    tokenizer_path: str = "data/tokenizer/pampar_48k.model"
+    vocab_size: int = 48_000  # pampar_48k.model
+    tokenizer_path: str = TOKENIZER_PATH
 
     # ── Dimensiones ──────────────────────────────────────────────────────────
-    dim: int = 640                    # Dimensión compartida de todos los streams
-    n_streams: int = 4                # Streams: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL
-    n_levels: int = 5                 # Niveles de profundidad por stream
+    dim: int = 640  # Dimensión compartida de todos los streams
+    n_streams: int = 4  # Streams: SINTAXIS, SEMANTICA, LOGICO, ESTRUCTURAL
+    n_levels: int = 5  # Niveles de profundidad por stream
 
     # ── Atención (GQA) ───────────────────────────────────────────────────────
-    n_heads: int = 8                  # Query heads
-    n_kv_heads: int = 2              # KV heads (GQA ratio 4:1)
+    n_heads: int = 8  # Query heads
+    n_kv_heads: int = 2  # KV heads (GQA ratio 4:1)
     # head_dim derivado: dim // n_heads = 80
 
     # ── Feed-forward (SwiGLU) ────────────────────────────────────────────────
-    ffn_mult: float = 4.0            # Multiplicador hidden FFN
+    ffn_mult: float = 4.0  # Multiplicador hidden FFN
 
     # ── Tálamo ───────────────────────────────────────────────────────────────
-    n_zonas: int = 52                # Zonas de Brodmann para código
-    n_territorios: int = 4           # = n_streams (1:1)
-    peso_llaves: float = 0.8         # 80% reglas, 20% aprendido
-    ventana_contexto: int = 32       # Kernel conv causal para contextualizar
+    n_zonas: int = 52  # Zonas de Brodmann para código
+    n_territorios: int = 4  # = n_streams (1:1)
+    peso_llaves: float = 0.8  # 80% reglas, 20% aprendido
+    ventana_contexto: int = 32  # Kernel conv causal para contextualizar
 
     # ── Lateral gates (fibras blancas) ───────────────────────────────────────
     # Cada stream recibe aporte de los demás, ponderado por su activación.
     # sym_factor controla el tamaño del bottleneck lateral.
-    lateral_bottleneck: int = 128    # dim → 128 → dim para el gate lateral
+    lateral_bottleneck: int = 128  # dim → 128 → dim para el gate lateral
 
     # ── Secuencia ────────────────────────────────────────────────────────────
     max_seq_len: int = 4096
@@ -61,12 +63,12 @@ class ConfigV3:
     dropout: float = 0.1
 
     # ── Early Exit ───────────────────────────────────────────────────────────
-    umbral_exit: float = 0.90        # Confianza mínima para salir antes
-    capas_min: int = 2               # Niveles mínimos antes de early exit
-    exit_percentile: float = 0.10    # Foco en el 10% de tokens más difíciles
+    umbral_exit: float = 0.90  # Confianza mínima para salir antes
+    capas_min: int = 2  # Niveles mínimos antes de early exit
+    exit_percentile: float = 0.10  # Foco en el 10% de tokens más difíciles
 
     # ── Training ─────────────────────────────────────────────────────────────
-    use_checkpoint: bool = True      # Gradient checkpointing para ahorrar VRAM
+    use_checkpoint: bool = True  # Gradient checkpointing para ahorrar VRAM
 
     # ─────────────────────────────────────────────────────────────────────────
     # Propiedades derivadas
@@ -99,17 +101,18 @@ class ConfigV3:
 
         # Tálamo inicial
         talamo = (
-            self.dim * 192 + 192        # attn_proj W + b (Linear → 192)
-            + 192 * self.n_zonas        # → n_zonas
+            self.dim * 192
+            + 192  # attn_proj W + b (Linear → 192)
+            + 192 * self.n_zonas  # → n_zonas
             + self.n_zonas * self.ventana_contexto  # context_conv depthwise
         )
 
         # Por nivel de profundidad
         # Atención GQA (compartida)
         attn = (
-            self.dim * (self.n_heads * self.head_dim)           # q_proj
-            + self.dim * (self.kv_heads * self.head_dim) * 2    # k+v_proj
-            + self.dim * self.dim                               # o_proj
+            self.dim * (self.n_heads * self.head_dim)  # q_proj
+            + self.dim * (self.kv_heads * self.head_dim) * 2  # k+v_proj
+            + self.dim * self.dim  # o_proj
         )
 
         # Re-routing ligero por nivel
@@ -117,16 +120,15 @@ class ConfigV3:
 
         # 4 × StreamFFN SwiGLU por nivel
         ffn_single = (
-            self.dim * self.ffn_hidden      # gate
-            + self.dim * self.ffn_hidden    # up
-            + self.ffn_hidden * self.dim    # down
+            self.dim * self.ffn_hidden  # gate
+            + self.dim * self.ffn_hidden  # up
+            + self.ffn_hidden * self.dim  # down
         )
         ffns = ffn_single * self.n_streams
 
         # Lateral gates (bottleneck): n_streams × (dim→bottleneck→dim)
         lateral = self.n_streams * (
-            self.dim * self.lateral_bottleneck
-            + self.lateral_bottleneck * self.dim
+            self.dim * self.lateral_bottleneck + self.lateral_bottleneck * self.dim
         )
 
         # RMSNorm × (2 attn + n_streams FFN + n_streams lateral) ≈ negligible
@@ -162,8 +164,14 @@ class ConfigV3:
 
         # KV cache inferencia: 2 (K+V) × n_kv_heads × head_dim × seq_len × fp16
         kv_mb = (
-            2 * self.kv_heads * self.head_dim
-            * self.n_levels * seq_len * batch_size * 2 / 1024**2
+            2
+            * self.kv_heads
+            * self.head_dim
+            * self.n_levels
+            * seq_len
+            * batch_size
+            * 2
+            / 1024**2
         )
 
         return {

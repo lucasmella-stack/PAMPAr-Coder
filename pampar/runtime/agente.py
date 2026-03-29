@@ -25,20 +25,21 @@ Loop de razonamiento:
   8. Se verifica si la cola de fine-tune está lista → proponer al usuario
 """
 
-import sentencepiece as spm
-import torch
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from pampar.coder.v3 import PamparV3, PRESET_V3
-from pampar.coder.v3.config import ConfigV3
-from pampar.memoria.clasificador import ClasificadorPareto
-from pampar.memoria.rag import RAGResidual
-from pampar.memoria.cola_finetune import ColaFinetune
-from pampar.skills.lector_archivos import LectorArchivos
-from pampar.skills.ejecutar_codigo import EjecutorCodigo
-from pampar.runtime.boot import BootProtocol
+import sentencepiece as spm
+import torch
 
+from pampar.coder.v3 import PRESET_V3, PamparV3
+from pampar.coder.v3.config import ConfigV3
+from pampar.constants import TOKENIZER_PATH
+from pampar.memoria.clasificador import ClasificadorPareto
+from pampar.memoria.cola_finetune import ColaFinetune
+from pampar.memoria.rag import RAGResidual
+from pampar.runtime.boot import BootProtocol
+from pampar.skills.ejecutar_codigo import EjecutorCodigo
+from pampar.skills.lector_archivos import LectorArchivos
 
 # =============================================================================
 # PROMPT BUILDER
@@ -60,6 +61,7 @@ Respondé siempre en español. El código va siempre en inglés."""
 # AGENTE
 # =============================================================================
 
+
 class Agente:
     """
     Orquestador principal del sistema PAMPAr.
@@ -77,7 +79,7 @@ class Agente:
     def __init__(
         self,
         checkpoint: str = "checkpoints/pampar_v3_best.pt",
-        tokenizer_path: str = "data/tokenizer/pampar_48k.model",
+        tokenizer_path: str = TOKENIZER_PATH,
         config: ConfigV3 = PRESET_V3,
         workspace_root: str = ".",
         memoria_dir: str = "memoria/data",
@@ -109,7 +111,9 @@ class Agente:
             self.modelo.load_state_dict(state_dict, strict=False)
             print(f"[Agente] Modelo cargado desde {checkpoint}")
         else:
-            print(f"[Agente] Checkpoint no encontrado, usando pesos iniciales: {checkpoint}")
+            print(
+                f"[Agente] Checkpoint no encontrado, usando pesos iniciales: {checkpoint}"
+            )
 
         self.modelo = self.modelo.to(self.device)
         self.modelo.eval()
@@ -130,10 +134,13 @@ class Agente:
         self._scan_resultado = self.boot.ejecutar(self.rag)
         self._system_prompt = self.boot.generar_system_prompt()
         # ── Estado ───────────────────────────────────────────────────────────
-        self._historial: List[Dict[str, str]] = []  # [{"role": "user/assistant", "text": "..."}]
+        self._historial: List[
+            Dict[str, str]
+        ] = []  # [{"role": "user/assistant", "text": "..."}]
 
-
-        print(f"[Agente] Listo en {self.device} | RAG: {self.rag.stats()['total_entradas']} entradas")
+        print(
+            f"[Agente] Listo en {self.device} | RAG: {self.rag.stats()['total_entradas']} entradas"
+        )
 
     # ── Inferencia ────────────────────────────────────────────────────────────
 
@@ -175,7 +182,7 @@ class Agente:
         ids = self.tok.Encode(prompt)
         if len(ids) > self.config.max_seq_len - max_tokens - 50:
             # Truncar prompt para dejar espacio a la respuesta
-            ids = ids[-(self.config.max_seq_len - max_tokens - 50):]
+            ids = ids[-(self.config.max_seq_len - max_tokens - 50) :]
 
         input_tensor = torch.tensor([ids], device=self.device)
 
@@ -189,7 +196,7 @@ class Agente:
             )
 
         # 5. Decodificar solo los tokens nuevos
-        nuevos_ids = output[0, len(ids):].tolist()
+        nuevos_ids = output[0, len(ids) :].tolist()
         respuesta = self.tok.Decode(nuevos_ids).strip()
 
         # 6. Procesar acciones si las hay
@@ -199,7 +206,7 @@ class Agente:
         self._historial.append({"role": "user", "text": mensaje})
         self._historial.append({"role": "assistant", "text": respuesta})
         if len(self._historial) > self.max_historial * 2:
-            self._historial = self._historial[-self.max_historial * 2:]
+            self._historial = self._historial[-self.max_historial * 2 :]
 
         # 8. Verificar cola de fine-tune
         propuesta = self._verificar_cola()
@@ -218,7 +225,7 @@ class Agente:
             partes.append(ctx_rag)
 
         # Historial (últimos N turnos)
-        for turno in self._historial[-(self.max_historial * 2):]:
+        for turno in self._historial[-(self.max_historial * 2) :]:
             prefijo = "Usuario" if turno["role"] == "user" else "PAMPAr"
             partes.append(f"{prefijo}: {turno['text']}")
 
@@ -242,21 +249,33 @@ class Agente:
         for match in re.finditer(r"\[LEER:\s*(.+?)\]", respuesta):
             ruta = match.group(1).strip()
             resultado = self.lector.execute(ruta=ruta)
-            reemplazo = resultado.contenido if resultado.exito else f"[ERROR al leer: {resultado.error}]"
+            reemplazo = (
+                resultado.contenido
+                if resultado.exito
+                else f"[ERROR al leer: {resultado.error}]"
+            )
             respuesta = respuesta.replace(match.group(0), reemplazo)
 
         # [EJECUTAR: codigo ]
         for match in re.finditer(r"\[EJECUTAR:\s*\n?(.*?)\n?\]", respuesta, re.DOTALL):
             codigo = match.group(1).strip()
             resultado = self.ejecutor.execute(codigo=codigo)
-            reemplazo = resultado.contenido if resultado.contenido else f"[ERROR al ejecutar: {resultado.error}]"
+            reemplazo = (
+                resultado.contenido
+                if resultado.contenido
+                else f"[ERROR al ejecutar: {resultado.error}]"
+            )
             respuesta = respuesta.replace(match.group(0), reemplazo)
 
         # [TESTS: ruta]
         for match in re.finditer(r"\[TESTS:\s*(.+?)\]", respuesta):
             ruta = match.group(1).strip()
             resultado = self.ejecutor.ejecutar_tests(ruta_test=ruta)
-            reemplazo = resultado.contenido if resultado.contenido else f"[ERROR al correr tests: {resultado.error}]"
+            reemplazo = (
+                resultado.contenido
+                if resultado.contenido
+                else f"[ERROR al correr tests: {resultado.error}]"
+            )
             respuesta = respuesta.replace(match.group(0), reemplazo)
 
         return respuesta
@@ -264,9 +283,17 @@ class Agente:
     def _parece_codigo(self, texto: str) -> bool:
         """Heurística rápida para detectar si el input es código."""
         import re
+
         indicadores = [
-            r"\bdef\b", r"\bclass\b", r"\bimport\b", r"\bfor\b.*\bin\b",
-            r":\s*$", r"^\s{4}", r"```", r"\(\)", r"=\s*\[",
+            r"\bdef\b",
+            r"\bclass\b",
+            r"\bimport\b",
+            r"\bfor\b.*\bin\b",
+            r":\s*$",
+            r"^\s{4}",
+            r"```",
+            r"\(\)",
+            r"=\s*\[",
         ]
         return any(re.search(p, texto, re.MULTILINE) for p in indicadores)
 

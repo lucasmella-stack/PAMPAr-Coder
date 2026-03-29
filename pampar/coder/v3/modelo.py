@@ -23,13 +23,15 @@ Arquitectura:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
+import torch.utils.checkpoint
 
-from .config import ConfigV3, PRESET_V3
 from .bloques import NivelProfundo, RMSNorm
+from .config import PRESET_V3, ConfigV3
 from .talamo import TalamoInicial
 
 if TYPE_CHECKING:
@@ -55,10 +57,9 @@ class PamparV3(nn.Module):
         self.talamo = TalamoInicial(config)
 
         # Grilla 2D: n_levels niveles de profundidad
-        self.niveles = nn.ModuleList([
-            NivelProfundo(config, nivel_idx=i)
-            for i in range(config.n_levels)
-        ])
+        self.niveles = nn.ModuleList(
+            [NivelProfundo(config, nivel_idx=i) for i in range(config.n_levels)]
+        )
 
         # Normalización final (antes de lm_head)
         self.norm_f = RMSNorm(config.dim)
@@ -75,6 +76,7 @@ class PamparV3(nn.Module):
 
     def _init_weights(self) -> None:
         """Inicialización estilo GPT-NeoX / Llama: N(0, 0.02)."""
+
         def _init(module: nn.Module) -> None:
             if isinstance(module, nn.Linear):
                 nn.init.normal_(module.weight, mean=0.0, std=0.02)
@@ -88,10 +90,31 @@ class PamparV3(nn.Module):
     def registrar_tokenizer(self, tokenizer: object) -> None:
         """Registra el tokenizer en el Tálamo para que LLAVES funcione."""
         self.talamo.registrar_tokenizer(tokenizer)
+
+    def _enable_kv_cache(self) -> None:
+        """Enable KV cache mode for generation (inference only)."""
+        for nivel in self.niveles:
+            nivel.attn._use_kv_cache = True
+            nivel.attn._kv_cache = None
+            nivel.attn._start_pos = 0
+
+    def _disable_kv_cache(self) -> None:
+        """Disable KV cache and free cached tensors."""
+        for nivel in self.niveles:
+            nivel.attn._use_kv_cache = False
+            nivel.attn._kv_cache = None
+            nivel.attn._start_pos = 0
+
+    def _set_cache_pos(self, pos: int) -> None:
+        """Set the position offset for RoPE in all attention layers."""
+        for nivel in self.niveles:
+            nivel.attn._start_pos = pos
+
     def set_train_norm_clamp(self, enabled: bool) -> None:
         """Activa/desactiva norm clamping durante training en todos los niveles."""
         for nivel in self.niveles:
             nivel._train_norm_clamp = enabled
+
     def _combinar_streams(
         self,
         streams: List[torch.Tensor],
@@ -112,8 +135,7 @@ class PamparV3(nn.Module):
         # Normalizar pesos territoriales (softmax sobre streams)
         weights = F.softmax(terr_acts, dim=-1)  # [B, L, 4]
         return sum(
-            streams[t] * weights[:, :, t:t+1]
-            for t in range(self.config.n_streams)
+            streams[t] * weights[:, :, t : t + 1] for t in range(self.config.n_streams)
         )
 
     def forward(
@@ -163,19 +185,23 @@ class PamparV3(nn.Module):
                         ta = stream_tensors[-1]
                         new_s, new_ta, _ = n(s_list, ta, TalamoInicial.agregar_fn)
                         return (*new_s, new_ta)
+
                     return fn
 
                 result = torch.utils.checkpoint.checkpoint(
                     create_checkpoint_fn(nivel),
-                    *streams, terr_acts,
+                    *streams,
+                    terr_acts,
                     use_reentrant=False,
                 )
-                streams = list(result[:self.config.n_streams])
+                streams = list(result[: self.config.n_streams])
                 terr_acts = result[self.config.n_streams]
                 conf = 0.0  # No calculada durante checkpointing
             else:
                 streams, terr_acts, conf = nivel(
-                    streams, terr_acts, TalamoInicial.agregar_fn,
+                    streams,
+                    terr_acts,
+                    TalamoInicial.agregar_fn,
                     banco_engrama=banco_engrama,
                     zona_acts=zona_acts,
                 )
@@ -215,7 +241,10 @@ class PamparV3(nn.Module):
         banco_engrama: Optional[BancoEngrama] = None,
     ) -> torch.Tensor:
         """
-        Generación autoregresiva con Early Exit y nucleus sampling.
+        Generación autoregresiva con KV cache y nucleus sampling.
+
+        Usa prefill (procesa todo el prompt de una sola vez) +
+        decode (un token por paso, reutilizando el KV cache).
 
         Args:
             prompt_ids:    [1, L] prompt tokenizado
@@ -230,40 +259,68 @@ class PamparV3(nn.Module):
         """
         self.eval()
         generated = prompt_ids.clone()
+        prompt_len = prompt_ids.shape[1]
 
-        for _ in range(max_tokens):
-            # Truncar al max_seq_len para no exceder la ventana
-            ctx = generated[:, -self.config.max_seq_len:]
-            logits, _, _ = self.forward(ctx, use_early_exit=False, banco_engrama=banco_engrama)
-            logits = logits[:, -1, :] / temperature  # Solo último token
+        try:
+            self._enable_kv_cache()
 
-            # Top-K filtering
-            if top_k > 0:
-                v, _ = logits.topk(top_k)
-                logits[logits < v[:, [-1]]] = float("-inf")
+            # --- Prefill: procesar todo el prompt, poblar KV cache ---
+            self._set_cache_pos(0)
+            logits, _, _ = self.forward(
+                prompt_ids,
+                use_early_exit=False,
+                banco_engrama=banco_engrama,
+            )
+            logits = logits[:, -1, :] / temperature
 
-            # Nucleus (Top-P) filtering
-            if top_p < 1.0:
-                sorted_logits, sorted_idx = logits.sort(descending=True)
-                cumprobs = sorted_logits.softmax(dim=-1).cumsum(dim=-1)
-                remove_mask = cumprobs - sorted_logits.softmax(dim=-1) > top_p
-                sorted_logits[remove_mask] = float("-inf")
-                logits = torch.zeros_like(logits).scatter(1, sorted_idx, sorted_logits)
+            for _ in range(max_tokens):
+                # Top-K filtering
+                if top_k > 0:
+                    v, _ = logits.topk(top_k)
+                    logits[logits < v[:, [-1]]] = float("-inf")
 
-            # Guard contra NaN/Inf (frecuente en early training)
-            if torch.isnan(logits).any() or torch.isinf(logits).any():
-                logits = torch.nan_to_num(logits, nan=0.0, posinf=1e4, neginf=-1e4)
+                # Nucleus (Top-P) filtering
+                if top_p < 1.0:
+                    sorted_logits, sorted_idx = logits.sort(descending=True)
+                    cumprobs = sorted_logits.softmax(dim=-1).cumsum(dim=-1)
+                    remove_mask = cumprobs - sorted_logits.softmax(dim=-1) > top_p
+                    sorted_logits[remove_mask] = float("-inf")
+                    logits = torch.zeros_like(logits).scatter(
+                        1,
+                        sorted_idx,
+                        sorted_logits,
+                    )
 
-            probs = F.softmax(logits, dim=-1)
-            if torch.isnan(probs).any() or (probs < 0).any():
-                probs = torch.ones_like(probs) / probs.shape[-1]
+                # Guard contra NaN/Inf (frecuente en early training)
+                if torch.isnan(logits).any() or torch.isinf(logits).any():
+                    logits = torch.nan_to_num(logits, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            next_tok = torch.multinomial(probs, 1)
-            generated = torch.cat([generated, next_tok], dim=1)
+                probs = F.softmax(logits, dim=-1)
+                if torch.isnan(probs).any() or (probs < 0).any():
+                    probs = torch.ones_like(probs) / probs.shape[-1]
 
-            # Stop en EOS (token 0)
-            if generated.shape[0] == 1 and next_tok.item() == 0:
-                break
+                next_tok = torch.multinomial(probs, 1)
+                generated = torch.cat([generated, next_tok], dim=1)
+
+                # Stop en EOS (token 0)
+                if generated.shape[0] == 1 and next_tok.item() == 0:
+                    break
+
+                # --- Decode: un token a la vez, KV cache se reutiliza ---
+                cur_pos = generated.shape[1] - 1
+                if cur_pos >= self.config.max_seq_len:
+                    break
+
+                self._set_cache_pos(cur_pos)
+                logits, _, _ = self.forward(
+                    next_tok,
+                    use_early_exit=False,
+                    banco_engrama=banco_engrama,
+                )
+                logits = logits[:, -1, :] / temperature
+
+        finally:
+            self._disable_kv_cache()
 
         return generated
 
@@ -276,7 +333,8 @@ class PamparV3(nn.Module):
             "norm_f": sum(p.numel() for p in self.norm_f.parameters()),
             "total": sum(p.numel() for p in self.parameters()),
             "total_sin_embedding": sum(
-                p.numel() for name, p in self.named_parameters()
+                p.numel()
+                for name, p in self.named_parameters()
                 if "tok_emb" not in name
             ),
         }
@@ -304,6 +362,7 @@ class PamparV3(nn.Module):
 # =============================================================================
 # FACTORY
 # =============================================================================
+
 
 def crear_modelo_v3(config: ConfigV3 = PRESET_V3) -> PamparV3:
     """Crea un modelo PamparV3 con la configuración dada."""

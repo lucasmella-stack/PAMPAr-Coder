@@ -15,10 +15,11 @@ Componentes:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import List, Optional, TYPE_CHECKING, Tuple
 
 from .config import ConfigV3
 
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 # =============================================================================
 # RMS NORMALIZATION
 # =============================================================================
+
 
 class RMSNorm(nn.Module):
     """
@@ -52,6 +54,7 @@ class RMSNorm(nn.Module):
 # ROTARY POSITION EMBEDDING (RoPE)
 # =============================================================================
 
+
 class RoPE(nn.Module):
     """
     Rotary Position Embedding (Su et al., 2021).
@@ -71,11 +74,11 @@ class RoPE(nn.Module):
         self.register_buffer("cos_cache", freqs.cos())
         self.register_buffer("sin_cache", freqs.sin())
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Aplica RoPE a tensor [B, H, L, D]."""
+    def forward(self, x: torch.Tensor, start_pos: int = 0) -> torch.Tensor:
+        """Aplica RoPE a tensor [B, H, L, D]. start_pos offsets positions for KV cache."""
         L = x.shape[2]
-        cos = self.cos_cache[:L].unsqueeze(0).unsqueeze(0)
-        sin = self.sin_cache[:L].unsqueeze(0).unsqueeze(0)
+        cos = self.cos_cache[start_pos : start_pos + L].unsqueeze(0).unsqueeze(0)
+        sin = self.sin_cache[start_pos : start_pos + L].unsqueeze(0).unsqueeze(0)
         x1, x2 = x[..., ::2], x[..., 1::2]
         return torch.cat([x1 * cos - x2 * sin, x1 * sin + x2 * cos], dim=-1)
 
@@ -83,6 +86,7 @@ class RoPE(nn.Module):
 # =============================================================================
 # ATENCIÓN GQA
 # =============================================================================
+
 
 class BloqueAttn(nn.Module):
     """
@@ -112,6 +116,11 @@ class BloqueAttn(nn.Module):
         self.o_proj = nn.Linear(config.dim, config.dim, bias=False)
         self.rope = RoPE(config.head_dim, config.max_seq_len)
 
+        # KV cache state (managed by PamparV3._enable_kv_cache)
+        self._use_kv_cache: bool = False
+        self._kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+        self._start_pos: int = 0
+
     def _repeat_kv(self, x: torch.Tensor) -> torch.Tensor:
         """[B, n_kv, L, D] → [B, n_heads, L, D] para GQA."""
         if self.n_rep == 1:
@@ -136,16 +145,35 @@ class BloqueAttn(nn.Module):
         k = self.k_proj(x).view(B, L, self.n_kv_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(x).view(B, L, self.n_kv_heads, self.head_dim).transpose(1, 2)
 
-        q = self.rope(q)
-        k = self.rope(k)
+        q = self.rope(q, self._start_pos)
+        k = self.rope(k, self._start_pos)
+
+        # KV cache: append new K,V to past cache (inference only)
+        if self._use_kv_cache and not self.training:
+            if self._kv_cache is not None:
+                k_past, v_past = self._kv_cache
+                k = torch.cat([k_past, k], dim=2)
+                v = torch.cat([v_past, v], dim=2)
+            self._kv_cache = (k, v)
+
         k = self._repeat_kv(k)
         v = self._repeat_kv(v)
 
-        out = F.scaled_dot_product_attention(
-            q, k, v,
-            dropout_p=self.dropout if self.training else 0.0,
-            is_causal=True,
-        ).transpose(1, 2).reshape(B, L, self.dim)
+        # Causal mask: full causal for prefill/training,
+        # not needed for single-token decode (L_q=1 attends to all)
+        use_causal = not (self._use_kv_cache and L == 1 and not self.training)
+
+        out = (
+            F.scaled_dot_product_attention(
+                q,
+                k,
+                v,
+                dropout_p=self.dropout if self.training else 0.0,
+                is_causal=use_causal,
+            )
+            .transpose(1, 2)
+            .reshape(B, L, self.dim)
+        )
 
         return self.o_proj(out)
 
@@ -153,6 +181,7 @@ class BloqueAttn(nn.Module):
 # =============================================================================
 # STREAM FFN (SWIGLU)
 # =============================================================================
+
 
 class StreamFFN(nn.Module):
     """
@@ -183,6 +212,7 @@ class StreamFFN(nn.Module):
 # TÁLAMO POR NIVEL (RE-ROUTING LIGERO)
 # =============================================================================
 
+
 class TalamoNivel(nn.Module):
     """
     Re-routing ligero del Tálamo aplicado en cada nivel de profundidad.
@@ -210,7 +240,7 @@ class TalamoNivel(nn.Module):
 
     def forward(
         self,
-        x_combined: torch.Tensor,   # [B, L, D] estado combinado de streams
+        x_combined: torch.Tensor,  # [B, L, D] estado combinado de streams
         terr_acts_prev: torch.Tensor,  # [B, L, 4] activaciones territoriales previas
         agregar_fn,  # función agregar_zonas_a_territorios del Tálamo inicial
     ) -> torch.Tensor:
@@ -227,16 +257,16 @@ class TalamoNivel(nn.Module):
         terr_nuevo = agregar_fn(zonas_nuevas)  # [B, L, 4]
 
         # Mezclar con el routing previo: suavidad para evitar oscilaciones
-        terr_acts = (
-            self.peso_previo * terr_acts_prev
-            + (1 - self.peso_previo) * torch.sigmoid(terr_nuevo)
-        )
+        terr_acts = self.peso_previo * terr_acts_prev + (
+            1 - self.peso_previo
+        ) * torch.sigmoid(terr_nuevo)
         return terr_acts
 
 
 # =============================================================================
 # LATERAL GATE (FIBRAS BLANCAS)
 # =============================================================================
+
 
 class LateralGate(nn.Module):
     """
@@ -264,14 +294,16 @@ class LateralGate(nn.Module):
 
         # Un gate por stream (recibe de los otros n_streams-1)
         others = config.n_streams - 1
-        self.gates = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(config.dim * others, bn, bias=False),
-                nn.SiLU(),
-                nn.Linear(bn, config.dim, bias=False),
-            )
-            for _ in range(config.n_streams)
-        ])
+        self.gates = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(config.dim * others, bn, bias=False),
+                    nn.SiLU(),
+                    nn.Linear(bn, config.dim, bias=False),
+                )
+                for _ in range(config.n_streams)
+            ]
+        )
 
         # Escala de contribución lateral (learnable, inicia pequeño)
         self.scale = nn.Parameter(torch.full((config.n_streams,), 0.1))
@@ -279,7 +311,7 @@ class LateralGate(nn.Module):
     def forward(
         self,
         streams: List[torch.Tensor],  # [n_streams × [B, L, D]]
-        terr_acts: torch.Tensor,       # [B, L, n_streams] peso de cada stream
+        terr_acts: torch.Tensor,  # [B, L, n_streams] peso de cada stream
     ) -> List[torch.Tensor]:
         """
         Permite que cada stream reciba aporte de sus peers.
@@ -300,13 +332,13 @@ class LateralGate(nn.Module):
                 if k == t:
                     continue
                 # terr_acts[:, :, k] = activación del stream k [B, L]
-                w = terr_acts[:, :, k:k+1]  # [B, L, 1]
+                w = terr_acts[:, :, k : k + 1]  # [B, L, 1]
                 weighted_others.append(others[other_idx] * w)
                 other_idx += 1
 
             # Concatenar y proyectar
             lateral_input = torch.cat(weighted_others, dim=-1)  # [B, L, D*(n-1)]
-            lateral_out = self.gates[t](lateral_input)           # [B, L, D]
+            lateral_out = self.gates[t](lateral_input)  # [B, L, D]
 
             # Aporte lateral escalado (inicia en 0.1, el modelo aprende cuánto)
             streams_t_updated = streams[t] + self.scale[t] * lateral_out
@@ -318,6 +350,7 @@ class LateralGate(nn.Module):
 # =============================================================================
 # NIVEL PROFUNDO (UN NIVEL DE LA GRILLA 2D)
 # =============================================================================
+
 
 class NivelProfundo(nn.Module):
     """
@@ -355,15 +388,19 @@ class NivelProfundo(nn.Module):
         # Norm clamping adaptativo por nivel (previene explosión de activaciones)
         # max_norm crece con el nivel para permitir acumulación controlada
         # Activo en eval siempre; en train: puede activarse con train_clamp=True
-        self._stream_max_norm = 50.0 * (2.0 ** nivel_idx)  # N0=50, N1=100, N2=200, N3=400, N4=800
+        self._stream_max_norm = 50.0 * (
+            2.0**nivel_idx
+        )  # N0=50, N1=100, N2=200, N3=400, N4=800
         self._use_norm_clamp = True  # Clamp en inference
-        self._train_norm_clamp = False  # Clamp tambi\u00e9n en training (activar con set_train_clamp)
+        self._train_norm_clamp = (
+            False  # Clamp tambi\u00e9n en training (activar con set_train_clamp)
+        )
 
         # Pre-norms
         self.norm_attn = RMSNorm(config.dim)
-        self.norm_streams = nn.ModuleList([
-            RMSNorm(config.dim) for _ in range(config.n_streams)
-        ])
+        self.norm_streams = nn.ModuleList(
+            [RMSNorm(config.dim) for _ in range(config.n_streams)]
+        )
 
         # Atención compartida (una por nivel)
         self.attn = BloqueAttn(config)
@@ -372,9 +409,7 @@ class NivelProfundo(nn.Module):
         self.talamo_nivel = TalamoNivel(config)
 
         # FFN especializados por stream
-        self.ffns = nn.ModuleList([
-            StreamFFN(config) for _ in range(config.n_streams)
-        ])
+        self.ffns = nn.ModuleList([StreamFFN(config) for _ in range(config.n_streams)])
 
         # Lateral gates
         self.lateral = LateralGate(config)
@@ -387,9 +422,9 @@ class NivelProfundo(nn.Module):
 
     def forward(
         self,
-        streams: List[torch.Tensor],   # [n_streams × [B, L, D]]
-        terr_acts: torch.Tensor,        # [B, L, n_territorios]
-        agregar_fn,                     # función del Tálamo para agregar zonas
+        streams: List[torch.Tensor],  # [n_streams × [B, L, D]]
+        terr_acts: torch.Tensor,  # [B, L, n_territorios]
+        agregar_fn,  # función del Tálamo para agregar zonas
         banco_engrama: Optional[BancoEngrama] = None,
         zona_acts: Optional[torch.Tensor] = None,  # [B, L, 52] para clave de búsqueda
     ) -> Tuple[List[torch.Tensor], torch.Tensor, float]:
@@ -411,7 +446,7 @@ class NivelProfundo(nn.Module):
         # 1. Representación combinada ponderada por activación territorial
         #    → el stream más activo domina el contexto que ve la atención
         x_combined = sum(
-            streams[t] * terr_acts[:, :, t:t+1]
+            streams[t] * terr_acts[:, :, t : t + 1]
             for t in range(self.config.n_streams)
         )  # [B, L, D]
 
@@ -422,7 +457,7 @@ class NivelProfundo(nn.Module):
         if banco_engrama is not None and zona_acts is not None:
             with torch.no_grad():
                 terr_dom = terr_acts[0].argmax(dim=-1)  # [L]
-                zona_dom = zona_acts[0].argmax(dim=-1)   # [L]
+                zona_dom = zona_acts[0].argmax(dim=-1)  # [L]
                 eng_vecs, eng_mask = banco_engrama.buscar_batch(
                     self.nivel_idx, terr_dom, zona_dom, x_attn.device
                 )
@@ -450,9 +485,7 @@ class NivelProfundo(nn.Module):
                 x_attn = x_attn + alpha * cosine_gate * mask_f * eng_normalized
 
         # 3. Re-routing del Tálamo con estado actual
-        terr_acts = self.talamo_nivel(
-            x_combined + x_attn, terr_acts, agregar_fn
-        )
+        terr_acts = self.talamo_nivel(x_combined + x_attn, terr_acts, agregar_fn)
 
         # 4. Cada stream procesa: su estado + aporte de atención → FFN
         new_streams = []
@@ -460,7 +493,7 @@ class NivelProfundo(nn.Module):
             # RMSNorm sobre el estado del stream enriquecido con atención
             h_normed = self.norm_streams[t](streams[t] + x_attn)
             # FFN especializado modulado por su activación territorial
-            h = self.ffns[t](h_normed) * terr_acts[:, :, t:t+1]
+            h = self.ffns[t](h_normed) * terr_acts[:, :, t : t + 1]
             # Residual
             new_streams.append(streams[t] + self.drop(h))
 
@@ -481,7 +514,7 @@ class NivelProfundo(nn.Module):
 
         # 6. Confianza para Early Exit (percentil 10 de tokens más difíciles)
         x_out = sum(
-            streams[t] * terr_acts[:, :, t:t+1]
+            streams[t] * terr_acts[:, :, t : t + 1]
             for t in range(self.config.n_streams)
         )
         per_token_conf = torch.sigmoid(self.exit_head(x_out)).squeeze(-1)  # [B, L]
