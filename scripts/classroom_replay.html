@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PAMPAr Classroom — Replay</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text2: #8b949e;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --red: #f85149;
+        --orange: #d29922;
+        --purple: #bc8cff;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* ── Header ── */
+      header {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      header h1 {
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      header h1 .icon {
+        font-size: 20px;
+      }
+      .meta-badge {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2px 10px;
+        font-size: 12px;
+        color: var(--text2);
+      }
+      .meta-badge b {
+        color: var(--text);
+      }
+
+      /* ── Main layout ── */
+      .main {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* ── Chat area ── */
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .chat-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+      }
+      .chat-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .chat-scroll::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      /* ── Messages ── */
+      .msg {
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        max-width: 85%;
+        font-size: 14px;
+        line-height: 1.5;
+        animation: fadeSlide 0.3s ease;
+        position: relative;
+      }
+      @keyframes fadeSlide {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .msg .ts {
+        font-size: 10px;
+        color: var(--text2);
+        position: absolute;
+        top: 4px;
+        right: 8px;
+      }
+      .msg-system {
+        background: rgba(88, 166, 255, 0.08);
+        border-left: 3px solid var(--accent);
+        color: var(--accent);
+        max-width: 100%;
+        font-size: 13px;
+      }
+      .msg-lesson-start {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        max-width: 100%;
+        margin-top: 20px;
+      }
+      .msg-lesson-start .badge {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--bg);
+        border-radius: 4px;
+        padding: 1px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-right: 8px;
+      }
+      .msg-student {
+        background: rgba(63, 185, 80, 0.08);
+        border-left: 3px solid var(--green);
+        margin-left: 20px;
+      }
+      .msg-student::before {
+        content: "🧑‍🎓 Alumno";
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--green);
+        margin-bottom: 4px;
+      }
+      .msg-teacher {
+        border-left: 3px solid var(--purple);
+        margin-left: 20px;
+      }
+      .msg-teacher.correct {
+        background: rgba(63, 185, 80, 0.06);
+      }
+      .msg-teacher.incorrect {
+        background: rgba(248, 81, 73, 0.06);
+      }
+      .msg-teacher::before {
+        content: "👨‍🏫 Profesor";
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--purple);
+        margin-bottom: 4px;
+      }
+      .msg-solution {
+        background: rgba(188, 140, 255, 0.06);
+        border-left: 3px solid var(--purple);
+        margin-left: 40px;
+        font-size: 13px;
+      }
+      .msg-solution::before {
+        content: "💡 Solución correcta";
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--purple);
+        margin-bottom: 4px;
+      }
+      .msg-stats {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        max-width: 100%;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+      }
+      .msg-stats .stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .msg-stats .stat-label {
+        font-size: 10px;
+        color: var(--text2);
+      }
+      .msg-stats .stat-val {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .msg-stats .stat-val.good {
+        color: var(--green);
+      }
+      .msg-stats .stat-val.bad {
+        color: var(--red);
+      }
+      .msg-stats .stat-val.neutral {
+        color: var(--accent);
+      }
+
+      .msg-level-up {
+        background: rgba(210, 153, 34, 0.1);
+        border: 1px solid var(--orange);
+        max-width: 100%;
+        text-align: center;
+        font-weight: 700;
+        color: var(--orange);
+        font-size: 16px;
+      }
+
+      pre.code {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-top: 6px;
+        font-family: "Cascadia Code", "Fira Code", monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-x: auto;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        width: 280px;
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        padding: 16px;
+        overflow-y: auto;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .sidebar h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--text2);
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+      .chart-box {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .chart-box canvas {
+        width: 100%;
+        height: 80px;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .summary-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+      }
+      .summary-card .val {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .summary-card .label {
+        font-size: 11px;
+        color: var(--text2);
+      }
+
+      /* ── Controls (bottom bar) ── */
+      .controls {
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .controls button {
+        background: var(--accent);
+        color: var(--bg);
+        border: none;
+        border-radius: 6px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .controls button:hover {
+        filter: brightness(1.15);
+      }
+      .controls button.secondary {
+        background: var(--border);
+        color: var(--text);
+      }
+      .controls button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Timeline */
+      .timeline-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .timeline-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--bg);
+        border-radius: 3px;
+        cursor: pointer;
+        position: relative;
+      }
+      .timeline-progress {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+        transition: width 0.2s;
+      }
+      .timeline-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--text2);
+      }
+
+      /* Speed selector */
+      .speed-select {
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      /* ── No data screen ── */
+      .no-data {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 16px;
+        color: var(--text2);
+      }
+      .no-data .icon {
+        font-size: 48px;
+      }
+      .no-data p {
+        font-size: 14px;
+        max-width: 400px;
+        text-align: center;
+      }
+      .no-data input[type="file"] {
+        display: none;
+      }
+      .no-data label {
+        background: var(--accent);
+        color: var(--bg);
+        padding: 8px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      /* ── Lesson markers on timeline ── */
+      .timeline-markers {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+      }
+      .timeline-marker {
+        position: absolute;
+        top: -2px;
+        width: 2px;
+        height: 10px;
+        border-radius: 1px;
+      }
+      .timeline-marker.correct {
+        background: var(--green);
+      }
+      .timeline-marker.incorrect {
+        background: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><span class="icon">🎬</span> PAMPAr Classroom — Replay</h1>
+      <span class="meta-badge" id="metaModel"><b>—</b></span>
+      <span class="meta-badge" id="metaDate"><b>—</b></span>
+      <span class="meta-badge" id="metaLessons"><b>—</b></span>
+      <span class="meta-badge" id="metaAcc"><b>—</b></span>
+    </header>
+
+    <div class="main">
+      <div class="chat-area">
+        <div class="chat-scroll" id="chatScroll">
+          <div class="no-data" id="noData">
+            <div class="icon">🎬</div>
+            <p>
+              Carga una grabación de sesión (.html autocontenido) o este archivo
+              ya tiene datos incorporados.
+            </p>
+            <input type="file" id="fileInput" accept=".json,.html" />
+            <label for="fileInput">📂 Cargar grabación</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div>
+          <h3>Resumen</h3>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="val" id="sumLessons">0</div>
+              <div class="label">Lecciones</div>
+            </div>
+            <div class="summary-card">
+              <div class="val" id="sumAccuracy" style="color: var(--green)">
+                0%
+              </div>
+              <div class="label">Accuracy</div>
+            </div>
+            <div class="summary-card">
+              <div class="val" id="sumLevel" style="color: var(--accent)">
+                1
+              </div>
+              <div class="label">Nivel final</div>
+            </div>
+            <div class="summary-card">
+              <div class="val" id="sumDuration" style="color: var(--text2)">
+                0s
+              </div>
+              <div class="label">Duración</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <h3>Brain Score</h3>
+          <canvas id="chartBrain"></canvas>
+        </div>
+
+        <div class="chart-box">
+          <h3>Loss</h3>
+          <canvas id="chartLoss"></canvas>
+        </div>
+
+        <div class="chart-box">
+          <h3>Accuracy acumulada</h3>
+          <canvas id="chartAcc"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btnPlay" disabled>▶ Play</button>
+      <button id="btnPause" class="secondary" disabled>⏸ Pausa</button>
+      <button id="btnRestart" class="secondary" disabled>⏮ Inicio</button>
+
+      <div class="timeline-wrapper">
+        <div class="timeline-bar" id="timelineBar">
+          <div
+            class="timeline-progress"
+            id="timelineProgress"
+            style="width: 0%"
+          ></div>
+          <div class="timeline-markers" id="timelineMarkers"></div>
+        </div>
+        <div class="timeline-labels">
+          <span id="timeCurrent">0:00</span>
+          <span id="timeTotal">0:00</span>
+        </div>
+      </div>
+
+      <select class="speed-select" id="speedSelect">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="5">5x</option>
+        <option value="10">10x</option>
+        <option value="50">50x (rápido)</option>
+      </select>
+
+      <span class="meta-badge" id="eventCounter">0 / 0</span>
+    </div>
+
+    <script>
+      /*__RECORDING_DATA__*/
+
+      // ── State ──────────────────────────────────────────────
+      let recording = null; // {meta, events}
+      let eventIdx = 0;
+      let playing = false;
+      let playTimer = null;
+      let speed = 1;
+
+      // Chart data collected during playback
+      const chartData = { brain: [], loss: [], acc: [] };
+
+      // ── Init ───────────────────────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check for embedded data
+        if (window.__RECORDING__) {
+          loadRecording(window.__RECORDING__);
+        }
+
+        document
+          .getElementById("fileInput")
+          .addEventListener("change", handleFile);
+        document.getElementById("btnPlay").addEventListener("click", play);
+        document.getElementById("btnPause").addEventListener("click", pause);
+        document
+          .getElementById("btnRestart")
+          .addEventListener("click", restart);
+        document
+          .getElementById("speedSelect")
+          .addEventListener("change", (e) => {
+            speed = parseFloat(e.target.value);
+          });
+        document
+          .getElementById("timelineBar")
+          .addEventListener("click", seekTimeline);
+      });
+
+      function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          let text = ev.target.result;
+          // If HTML file, extract the recording data
+          if (file.name.endsWith(".html")) {
+            const match = text.match(
+              /window\.__RECORDING__\s*=\s*(\{[\s\S]*?\});/,
+            );
+            if (match) {
+              try {
+                loadRecording(JSON.parse(match[1]));
+                return;
+              } catch {}
+            }
+          }
+          // Try direct JSON
+          try {
+            loadRecording(JSON.parse(text));
+          } catch (er) {
+            alert("Formato no reconocido");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function loadRecording(data) {
+        recording = data;
+        eventIdx = 0;
+        chartData.brain.length = 0;
+        chartData.loss.length = 0;
+        chartData.acc.length = 0;
+
+        // Update meta
+        const m = data.meta || {};
+        document.getElementById("metaModel").innerHTML =
+          `<b>${m.teacher_model || "?"}</b>`;
+        document.getElementById("metaDate").innerHTML =
+          `<b>${m.start_time || "?"}</b>`;
+        document.getElementById("metaLessons").innerHTML =
+          `<b>${m.total_lessons || 0}</b> lecciones`;
+        document.getElementById("metaAcc").innerHTML =
+          `Acc: <b>${((m.accuracy || 0) * 100).toFixed(1)}%</b>`;
+
+        // Summary
+        document.getElementById("sumLessons").textContent =
+          m.total_lessons || 0;
+        document.getElementById("sumAccuracy").textContent =
+          ((m.accuracy || 0) * 100).toFixed(1) + "%";
+        document.getElementById("sumLevel").textContent = m.final_level || 1;
+        document.getElementById("sumDuration").textContent = formatDuration(
+          m.duration_s || 0,
+        );
+
+        // Timeline total
+        const totalT =
+          data.events.length > 0 ? data.events[data.events.length - 1].t : 0;
+        document.getElementById("timeTotal").textContent = formatTime(totalT);
+
+        // Build lesson markers on timeline
+        buildTimelineMarkers(data.events, totalT);
+
+        // Enable controls
+        document.getElementById("btnPlay").disabled = false;
+        document.getElementById("btnRestart").disabled = false;
+
+        // Hide no-data
+        document.getElementById("noData").style.display = "none";
+
+        // Clear chat
+        clearChat();
+        updateCounter();
+      }
+
+      function buildTimelineMarkers(events, totalT) {
+        const container = document.getElementById("timelineMarkers");
+        container.innerHTML = "";
+        if (totalT <= 0) return;
+        for (const ev of events) {
+          if (ev.event === "lesson_complete") {
+            const d = typeof ev.data === "object" ? ev.data : {};
+            const pct = (ev.t / totalT) * 100;
+            const marker = document.createElement("div");
+            marker.className =
+              "timeline-marker " + (d.correct ? "correct" : "incorrect");
+            marker.style.left = pct + "%";
+            container.appendChild(marker);
+          }
+        }
+      }
+
+      // ── Playback ───────────────────────────────────────────
+      function play() {
+        if (!recording || eventIdx >= recording.events.length) return;
+        playing = true;
+        document.getElementById("btnPlay").disabled = true;
+        document.getElementById("btnPause").disabled = false;
+        scheduleNext();
+      }
+
+      function pause() {
+        playing = false;
+        clearTimeout(playTimer);
+        document.getElementById("btnPlay").disabled = false;
+        document.getElementById("btnPause").disabled = true;
+      }
+
+      function restart() {
+        pause();
+        eventIdx = 0;
+        chartData.brain.length = 0;
+        chartData.loss.length = 0;
+        chartData.acc.length = 0;
+        clearChat();
+        updateTimeline();
+        updateCounter();
+        drawCharts();
+      }
+
+      function scheduleNext() {
+        if (!playing || !recording || eventIdx >= recording.events.length) {
+          pause();
+          return;
+        }
+
+        const ev = recording.events[eventIdx];
+        renderEvent(ev);
+        eventIdx++;
+        updateTimeline();
+        updateCounter();
+
+        if (eventIdx >= recording.events.length) {
+          pause();
+          return;
+        }
+
+        // Delay until next event
+        const nextEv = recording.events[eventIdx];
+        let delay = ((nextEv.t - ev.t) * 1000) / speed;
+        delay = Math.max(delay, 20); // min 20ms
+        delay = Math.min(delay, 5000 / speed); // cap at 5s real-time
+
+        playTimer = setTimeout(scheduleNext, delay);
+      }
+
+      function seekTimeline(e) {
+        if (!recording) return;
+        const bar = document.getElementById("timelineBar");
+        const rect = bar.getBoundingClientRect();
+        const pct = (e.clientX - rect.left) / rect.width;
+        const totalT = recording.events[recording.events.length - 1].t;
+        const targetT = pct * totalT;
+
+        // Reset and replay up to targetT instantly
+        pause();
+        eventIdx = 0;
+        chartData.brain.length = 0;
+        chartData.loss.length = 0;
+        chartData.acc.length = 0;
+        clearChat();
+
+        while (
+          eventIdx < recording.events.length &&
+          recording.events[eventIdx].t <= targetT
+        ) {
+          renderEvent(recording.events[eventIdx]);
+          eventIdx++;
+        }
+        updateTimeline();
+        updateCounter();
+      }
+
+      // ── Rendering ──────────────────────────────────────────
+      function renderEvent(ev) {
+        const container = document.getElementById("chatScroll");
+        const d = typeof ev.data === "object" ? ev.data : {};
+        const ts = formatTime(ev.t);
+        let el = null;
+
+        switch (ev.event) {
+          case "system":
+            el = makeMsg(
+              "msg-system",
+              typeof ev.data === "string"
+                ? ev.data
+                : d.message || JSON.stringify(d),
+            );
+            break;
+
+          case "lesson_start":
+            el = makeMsg(
+              "msg-lesson-start",
+              `<span class="badge">Lección ${d.lesson_id || "?"}</span> ` +
+                `Nivel ${d.level || "?"} — ${d.level_name || ""}<br>` +
+                `<span style="color:var(--text2)">${escapeHtml(d.problem || "")}</span>`,
+            );
+            break;
+
+          case "student_answer":
+            el = makeMsg(
+              "msg-student",
+              `<pre class="code">${escapeHtml(d.answer || "")}</pre>`,
+            );
+            break;
+
+          case "student_thinking":
+            el = makeMsg("msg-system", "🤔 Alumno pensando...");
+            el.style.opacity = "0.6";
+            break;
+
+          case "teacher_evaluating":
+            el = makeMsg("msg-system", "📝 Profesor evaluando...");
+            el.style.opacity = "0.6";
+            break;
+
+          case "teacher_feedback": {
+            const cls = d.correct ? "correct" : "incorrect";
+            const icon = d.correct ? "✅" : "❌";
+            el = makeMsg(
+              "msg-teacher " + cls,
+              `${icon} ${escapeHtml(d.feedback || "")}`,
+            );
+            break;
+          }
+
+          case "teacher_solution":
+            el = makeMsg(
+              "msg-solution",
+              `<pre class="code">${escapeHtml(d.solution || "")}</pre>`,
+            );
+            break;
+
+          case "training":
+            // Skip — too noisy
+            break;
+
+          case "lesson_complete":
+            el = document.createElement("div");
+            el.className = "msg msg-stats";
+            el.innerHTML = `
+        <div class="stat"><span class="stat-label">Loss</span><span class="stat-val neutral">${(d.loss || 0).toFixed(4)}</span></div>
+        <div class="stat"><span class="stat-label">EWC</span><span class="stat-val neutral">${(d.ewc_penalty || 0).toFixed(6)}</span></div>
+        <div class="stat"><span class="stat-label">Brain</span><span class="stat-val ${(d.brain_score || 0) > 0.8 ? "good" : "bad"}">${((d.brain_score || 0) * 100).toFixed(1)}%</span></div>
+        <div class="stat"><span class="stat-label">Accuracy</span><span class="stat-val ${(d.accuracy || 0) > 0.5 ? "good" : "bad"}">${((d.accuracy || 0) * 100).toFixed(1)}%</span></div>
+        <div class="stat"><span class="stat-label">Nivel</span><span class="stat-val neutral">${d.level || "?"}</span></div>
+        <div class="stat"><span class="stat-label">Replay</span><span class="stat-val neutral">${d.replay_size || 0}</span></div>
+      `;
+            // Collect chart data
+            chartData.brain.push(d.brain_score || 0);
+            chartData.loss.push(d.loss || 0);
+            chartData.acc.push(d.accuracy || 0);
+            drawCharts();
+            break;
+
+          case "level_up":
+            el = makeMsg(
+              "msg-level-up",
+              `🎉 ¡NIVEL UP! → Nivel ${d.new_level}: ${d.nombre || ""}`,
+            );
+            break;
+
+          case "checkpoint":
+            el = makeMsg(
+              "msg-system",
+              `💾 Checkpoint guardado — lección ${d.lesson || "?"}`,
+            );
+            break;
+
+          case "error":
+            el = makeMsg(
+              "msg-system",
+              `❗ ${typeof ev.data === "string" ? ev.data : JSON.stringify(d)}`,
+            );
+            el.style.borderColor = "var(--red)";
+            el.style.color = "var(--red)";
+            break;
+
+          default:
+            // Unknown event — show raw
+            el = makeMsg(
+              "msg-system",
+              `[${ev.event}] ${JSON.stringify(ev.data).substring(0, 200)}`,
+            );
+            el.style.opacity = "0.5";
+        }
+
+        if (el) {
+          // Add timestamp badge
+          const tsBadge = document.createElement("span");
+          tsBadge.className = "ts";
+          tsBadge.textContent = ts;
+          el.appendChild(tsBadge);
+
+          container.appendChild(el);
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+
+      function makeMsg(className, html) {
+        const div = document.createElement("div");
+        div.className = "msg " + className;
+        div.innerHTML = html;
+        return div;
+      }
+
+      function clearChat() {
+        const container = document.getElementById("chatScroll");
+        container.innerHTML = "";
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // ── Timeline / Counter ─────────────────────────────────
+      function updateTimeline() {
+        if (!recording || recording.events.length === 0) return;
+        const totalT = recording.events[recording.events.length - 1].t;
+        const currentT = eventIdx > 0 ? recording.events[eventIdx - 1].t : 0;
+        const pct = totalT > 0 ? (currentT / totalT) * 100 : 0;
+
+        document.getElementById("timelineProgress").style.width = pct + "%";
+        document.getElementById("timeCurrent").textContent =
+          formatTime(currentT);
+      }
+
+      function updateCounter() {
+        const total = recording ? recording.events.length : 0;
+        document.getElementById("eventCounter").textContent =
+          `${eventIdx} / ${total}`;
+      }
+
+      // ── Charts ─────────────────────────────────────────────
+      function drawCharts() {
+        drawMiniChart(
+          "chartBrain",
+          chartData.brain,
+          "rgba(63,185,80,0.8)",
+          0,
+          1,
+        );
+        drawMiniChart("chartLoss", chartData.loss, "rgba(248,81,73,0.8)");
+        drawMiniChart("chartAcc", chartData.acc, "rgba(88,166,255,0.8)", 0, 1);
+      }
+
+      function drawMiniChart(canvasId, data, color, forcedMin, forcedMax) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const W = (canvas.width = canvas.offsetWidth * 2);
+        const H = (canvas.height = canvas.offsetHeight * 2);
+        ctx.clearRect(0, 0, W, H);
+
+        if (data.length < 2) return;
+
+        let minV = forcedMin !== undefined ? forcedMin : Math.min(...data);
+        let maxV = forcedMax !== undefined ? forcedMax : Math.max(...data);
+        if (maxV === minV) maxV = minV + 1;
+
+        const pad = 4;
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+
+        for (let i = 0; i < data.length; i++) {
+          const x = pad + (i / (data.length - 1)) * (W - 2 * pad);
+          const y =
+            H - pad - ((data[i] - minV) / (maxV - minV)) * (H - 2 * pad);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Fill area
+        ctx.lineTo(
+          pad + ((data.length - 1) / (data.length - 1)) * (W - 2 * pad),
+          H - pad,
+        );
+        ctx.lineTo(pad, H - pad);
+        ctx.closePath();
+        ctx.fillStyle = color.replace(/[\d.]+\)$/, "0.1)");
+        ctx.fill();
+
+        // Last value label
+        const last = data[data.length - 1];
+        ctx.fillStyle = color;
+        ctx.font = `bold ${Math.round(H * 0.18)}px system-ui`;
+        ctx.textAlign = "right";
+        ctx.fillText(
+          forcedMax === 1 ? (last * 100).toFixed(1) + "%" : last.toFixed(4),
+          W - pad,
+          pad + H * 0.18,
+        );
+      }
+
+      // ── Helpers ────────────────────────────────────────────
+      function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${String(s).padStart(2, "0")}`;
+      }
+
+      function formatDuration(seconds) {
+        if (seconds < 60) return Math.round(seconds) + "s";
+        if (seconds < 3600) return Math.round(seconds / 60) + "min";
+        const h = Math.floor(seconds / 3600);
+        const m = Math.round((seconds % 3600) / 60);
+        return `${h}h ${m}min`;
+      }
+    </script>
+  </body>
+</html>

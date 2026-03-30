@@ -25,7 +25,10 @@ La analogía: un físico que entiende termodinámica puede resolver problemas de
 - **Mejor checkpoint**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%)
 - **Tokenizer**: `data/tokenizer/pampar_48k.model` (48K, bilingüe ES+código)
 - **Runtime**: Agente + RAGResidual + Scanner + BootProtocol — funcional
-- **Training data**: `master_sft.jsonl` — 1,253 ejemplos (insuficiente, en expansión)
+- **Classroom**: Sistema bio-inspirado operativo (EWC + replay buffer + curriculum + LR diferencial + 5 bio-mechanisms)
+- **Bio-Mechanisms**: Neuromodulación, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning — `bio_mechanisms.py`
+- **Teacher API**: GitHub Models — `gpt-4o-mini` (20K req/min)
+- **Training data**: `master_sft.jsonl` — 1,253 ejemplos (en expansión vía Classroom)
 
 ---
 
@@ -35,11 +38,11 @@ La analogía: un físico que entiende termodinámica puede resolver problemas de
 | ---------- | ------------------------------------------------------ |
 | Language   | Python 3.13+                                           |
 | Framework  | PyTorch 2.6+                                           |
-| Tokenizer  | SentencePiece BPE — **48K** (`pampar_48k.model`)     |
+| Tokenizer  | SentencePiece BPE — **48K** (`pampar_48k.model`)       |
 | Type hints | Always required                                        |
 | Docstrings | Google style                                           |
 | Training   | Local GTX 1650 (4 GB) + RunPod A100 para fases pesadas |
-| Budget     | $300-500 USD total                                    |
+| Budget     | $300-500 USD total                                     |
 
 ---
 
@@ -74,13 +77,13 @@ Cada NivelProfundo (×5):
 
 | Parámetro        | Valor       |
 | ---------------- | ----------- |
-| `dim`          | 640         |
-| `n_streams`    | 4           |
-| `n_levels`     | 5           |
-| `n_heads`      | 8           |
-| `n_kv_heads`   | 2 (GQA 4:1) |
-| `vocab_size`   | 48 000      |
-| `max_seq_len`  | 4096        |
+| `dim`            | 640         |
+| `n_streams`      | 4           |
+| `n_levels`       | 5           |
+| `n_heads`        | 8           |
+| `n_kv_heads`     | 2 (GQA 4:1) |
+| `vocab_size`     | 48 000      |
+| `max_seq_len`    | 4096        |
 | **Total params** | **108.3M**  |
 
 ---
@@ -89,44 +92,80 @@ Cada NivelProfundo (×5):
 
 ### 1. Modelo (`pampar/coder/v3/`)
 
-| Archivo | Líneas | Propósito |
-|---------|--------|-----------|
-| `modelo.py` | 310 | PamparV3: forward, generate (nucleus sampling) |
-| `config.py` | 226 | ConfigV3, 3 presets (V3/SMALL/LARGE) |
-| `bloques.py` | 395 | RMSNorm, RoPE, BloqueAttn (GQA), StreamFFN (SwiGLU), LateralGate, NivelProfundo |
-| `talamo.py` | 133 | TalamoInicial: LLAVES 80% + attn_proj 20% + context_conv |
-| `llaves.py` | 266 | LlavesV2: clasificar_token(), tabla INT8, agregar_zonas_a_territorios |
-| `zonas.py` | 265 | Territorio(IntEnum), Zona(IntEnum), ZONAS dict, ZONA_TERRITORIO |
-| `ghidra_probe.py` | 343 | GhidraProbe: 36 forward hooks, diagnosis/debugging |
-| `engrama_stream.py` | 359 | BancoEngrama: O(1) activation memory, cosine-gated injection |
+| Archivo             | Líneas | Propósito                                                                       |
+| ------------------- | ------ | ------------------------------------------------------------------------------- |
+| `modelo.py`         | 310    | PamparV3: forward, generate (nucleus sampling)                                  |
+| `config.py`         | 226    | ConfigV3, 3 presets (V3/SMALL/LARGE)                                            |
+| `bloques.py`        | 395    | RMSNorm, RoPE, BloqueAttn (GQA), StreamFFN (SwiGLU), LateralGate, NivelProfundo |
+| `talamo.py`         | 133    | TalamoInicial: LLAVES 80% + attn_proj 20% + context_conv                        |
+| `llaves.py`         | 266    | LlavesV2: clasificar_token(), tabla INT8, agregar_zonas_a_territorios           |
+| `zonas.py`          | 265    | Territorio(IntEnum), Zona(IntEnum), ZONAS dict, ZONA_TERRITORIO                 |
+| `ghidra_probe.py`   | 343    | GhidraProbe: 36 forward hooks, diagnosis/debugging                              |
+| `engrama_stream.py` | 359    | BancoEngrama: O(1) activation memory, cosine-gated injection                    |
 
 ### 2. Memoria (`pampar/memoria/`)
 
-| Archivo | Propósito |
-|---------|-----------|
-| `clasificador.py` | ClasificadorPareto: scoring L0-L3 por densidad, novedad, loss, frecuencia |
-| `rag.py` | RAGResidual: FAISS + sentence-transformers (fallback TF-IDF), 5K entradas max |
-| `cola_finetune.py` | ColaFinetune: acumula L3, exporta JSONL, propone mini-SFT |
+| Archivo            | Propósito                                                                     |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `clasificador.py`  | ClasificadorPareto: scoring L0-L3 por densidad, novedad, loss, frecuencia     |
+| `rag.py`           | RAGResidual: FAISS + sentence-transformers (fallback TF-IDF), 5K entradas max |
+| `cola_finetune.py` | ColaFinetune: acumula L3, exporta JSONL, propone mini-SFT                     |
 
 ### 3. Runtime (`pampar/runtime/`)
 
-| Archivo | Propósito |
-|---------|-----------|
-| `agente.py` | Orquestador: prompt→RAG→generar→skills→retry→auto-SFT |
-| `scanner.py` | Inspección del dispositivo: OS, GPU, paquetes, servicios, archivos |
-| `boot.py` | BootProtocol: CONCIENCIA.md (L3) → Scanner (L2) → Workspace (L1) |
-| `generar_agents.py` | Genera AGENTS.md contextual desde ResultadoScan |
+| Archivo             | Propósito                                                          |
+| ------------------- | ------------------------------------------------------------------ |
+| `agente.py`         | Orquestador: prompt→RAG→generar→skills→retry→auto-SFT              |
+| `scanner.py`        | Inspección del dispositivo: OS, GPU, paquetes, servicios, archivos |
+| `boot.py`           | BootProtocol: CONCIENCIA.md (L3) → Scanner (L2) → Workspace (L1)   |
+| `generar_agents.py` | Genera AGENTS.md contextual desde ResultadoScan                    |
 
 ### 4. Skills (`pampar/skills/`)
 
-| Archivo | Propósito |
-|---------|-----------|
+| Archivo              | Propósito                                                 |
+| -------------------- | --------------------------------------------------------- |
 | `lector_archivos.py` | Lee archivos del dispositivo (30+ extensiones, sandboxed) |
-| `ejecutar_codigo.py` | Ejecuta código en subprocess con timeout y blocklist |
+| `ejecutar_codigo.py` | Ejecuta código en subprocess con timeout y blocklist      |
 
 ### 5. Inference (`pampar/inference.py`)
 
 Servidor JSON-lines stdin/stdout para extensión VS Code. Commands: `infer`, `boot`.
+
+### 6. Classroom (5 módulos `scripts/classroom*.py`) + Bio-Mechanisms (`scripts/bio_mechanisms.py`)
+
+Aula bio-inspirada modular donde un modelo profesor (gpt-4o-mini vía GitHub Models API) enseña a PamparV3.
+
+| Módulo                    | Líneas | Responsabilidad                                    |
+| ------------------------- | ------ | -------------------------------------------------- |
+| `classroom.py`            | ~683   | ClassroomEngine — motor principal                  |
+| `classroom_curriculum.py` | ~125   | ClassroomConfig dataclass + CURRICULUM (5 niveles) |
+| `classroom_teacher.py`    | ~119   | Teacher — API calls (GitHub Models / OpenRouter)   |
+| `classroom_memory.py`     | ~108   | EWC + ReplayBuffer + LessonResult                  |
+| `classroom_server.py`     | ~225   | HTTP SSE server + CLI entry point                  |
+
+| Mecanismo          | Propósito                                                         |
+| ------------------ | ----------------------------------------------------------------- |
+| **EWC**            | Elastic Weight Consolidation — penaliza cambios en pesos críticos |
+| **Replay Buffer**  | Mezcla ejemplos nuevos con anteriores (consolidación tipo sueño)  |
+| **LR Diferencial** | LLAVES 0.01x, atención 0.1x, embed 0.1x, FFN 1.0x                 |
+| **Curriculum**     | 5 niveles progresivos: básico → avanzado                          |
+| **Grabación**      | Genera HTML con replay interactivo de cada sesión                 |
+
+**Bio-Mechanisms** (5 mecanismos de neurociencia en `bio_mechanisms.py`):
+
+| Mecanismo               | Implementación                                                       |
+| ----------------------- | -------------------------------------------------------------------- |
+| **Neuromodulación**     | Dopamina/Norepinefrina modulan LR dinámicamente (×0.3 a ×3.0)        |
+| **LTP**                 | Fortalece `LateralGate.scale` de streams activos (Hebb rule, cada 5) |
+| **Sleep Consolidation** | REM (aleatorio) + SWS (ordenado por dificultad), cada 15 lecciones   |
+| **Neurogenesis**        | LoRA adapters (rank=8) en StreamFFN cuando loss > 4.0, max 8         |
+| **Synaptic Pruning**    | Poda `LateralGate.scale < 0.03` cada 30 lecciones (decay ×0.5)       |
+
+Coordinados por `BioOrchestrator.after_lesson()`. Desactivables con `--no-bio`.
+
+**Resultados piloto (12 lecciones)**: Loss 4.13→2.86, LTP diferenció scales, 1 LoRA creado, pruning activo.
+
+**APIs soportadas**: `github` (GitHub Models, gpt-4o-mini) y `openrouter` (requiere créditos).
 
 ---
 
@@ -162,6 +201,15 @@ PAMPAr-Coder/
 │   │   ├── boot.py              # Secuencia de arranque
 │   │   └── generar_agents.py    # Generador de AGENTS.md
 │   └── inference.py             # Servidor JSON-lines para VS Code
+├── scripts/
+│   ├── classroom.py             # ClassroomEngine — motor principal (~683 líneas)
+│   ├── classroom_curriculum.py  # ClassroomConfig + CURRICULUM (5 niveles, 51 ejercicios)
+│   ├── classroom_teacher.py     # Teacher — API calls con retry
+│   ├── classroom_memory.py      # EWC + ReplayBuffer + LessonResult
+│   ├── classroom_server.py      # HTTP SSE server + CLI entry point
+│   ├── bio_mechanisms.py        # 5 bio-mechanisms (Neuromod, LTP, Sleep, Neurogenesis, Pruning)
+│   └── classroom_replay.html    # Player HTML para replays
+├── sessions/                    # Grabaciones de sesiones classroom
 ├── data/
 │   ├── tokenizer/
 │   │   └── pampar_48k.model     # Vocab 48K bilingüe

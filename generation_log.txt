@@ -1,0 +1,2 @@
+Error: GITHUB_TOKEN no configurado
+  $env:GITHUB_TOKEN = 'ghp_xxx'  (PowerShell)

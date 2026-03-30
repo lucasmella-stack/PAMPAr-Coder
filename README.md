@@ -10,7 +10,7 @@ PAMPAr-Coder es un modelo de lenguaje de 108M parámetros que **razona sobre inf
 - **Dispositivo**: conocimiento vía RAG local (docs de Python, MDN, man pages, archivos del usuario)
 - **Hardware**: diseñado para correr en consumer hardware (GTX 1650, 4 GB VRAM)
 
-**Estado actual**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%), en fase de expansión de datos.
+**Estado actual**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%). Sistema Classroom bio-inspirado operativo con 5 mecanismos de neurociencia real (Neuromodulación, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning).
 
 ---
 
@@ -33,24 +33,24 @@ tok_emb [48K x 640]
 
 ### Los 4 Streams
 
-| Stream        | Zonas Brodmann | Procesa                                |
-| ------------- | -------------- | -------------------------------------- |
-| **SINTAXIS**  | B01-B15        | Keywords, operadores, puntuacion       |
-| **SEMANTICA** | B16-B30        | Tipos, variables, literales            |
-| **LOGICO**    | B31-B42        | Control flow, condicionales, bucles    |
-| **ESTRUCTURAL** | B43-B52      | Bloques, indentacion, scope            |
+| Stream          | Zonas Brodmann | Procesa                             |
+| --------------- | -------------- | ----------------------------------- |
+| **SINTAXIS**    | B01-B15        | Keywords, operadores, puntuacion    |
+| **SEMANTICA**   | B16-B30        | Tipos, variables, literales         |
+| **LOGICO**      | B31-B42        | Control flow, condicionales, bucles |
+| **ESTRUCTURAL** | B43-B52        | Bloques, indentacion, scope         |
 
 ### Parametros
 
 | Parametro        | Valor       |
 | ---------------- | ----------- |
-| `dim`          | 640         |
-| `n_streams`    | 4           |
-| `n_levels`     | 5           |
-| `n_heads`      | 8           |
-| `n_kv_heads`   | 2 (GQA 4:1) |
-| `vocab_size`   | 48 000      |
-| `max_seq_len`  | 4096        |
+| `dim`            | 640         |
+| `n_streams`      | 4           |
+| `n_levels`       | 5           |
+| `n_heads`        | 8           |
+| `n_kv_heads`     | 2 (GQA 4:1) |
+| `vocab_size`     | 48 000      |
+| `max_seq_len`    | 4096        |
 | **Total params** | **108.3M**  |
 
 ---
@@ -73,21 +73,81 @@ tok_emb [48K x 640]
 ### RAG desde el dispositivo
 
 El modelo usa la maquina donde esta instalado como fuente de conocimiento:
+
 - Scanner detecta OS, paquetes, archivos disponibles
 - RAGResidual indexa documentacion local (FAISS + sentence-transformers)
 - El modelo razona sobre la referencia, no memoriza contenido
 
 ---
 
+## Classroom — Entrenamiento Bio-Inspirado
+
+Sistema de aprendizaje interactivo donde un modelo profesor (gpt-4o-mini) enseña a PamparV3 mediante lecciones progresivas, protegiendo el conocimiento previo.
+
+### Mecanismos base
+
+| Mecanismo                              | Proposito                                                                  |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| **EWC** (Elastic Weight Consolidation) | Protege pesos importantes — penaliza cambios en params criticos            |
+| **Replay Buffer**                      | Mezcla ejemplos nuevos con anteriores (simula consolidacion durante sueño) |
+| **LR Diferencial**                     | LLAVES/Talamo 0.01x, atencion 0.1x, embedding 0.1x, FFN 1.0x               |
+| **Curriculum progresivo**              | 5 niveles: basico → avanzado, el profesor adapta la dificultad             |
+
+### Bio-Mechanisms (`bio_mechanisms.py`)
+
+5 mecanismos basados en neurociencia real, integrados como hook post-leccion:
+
+| Mecanismo               | Inspiracion biologica      | Implementacion                                                                        |
+| ----------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| **Neuromodulacion**     | Dopamina + Norepinefrina   | Modula LR dinamicamente segun exito/error (×0.3 a ×3.0)                               |
+| **LTP**                 | Potenciacion a largo plazo | Fortalece `LateralGate.scale` de streams con alta activacion consistente (Hebb rule)  |
+| **Sleep Consolidation** | Fases REM + SWS            | Replay periodico (cada 15 lecciones): aleatorio (REM) + ordenado por dificultad (SWS) |
+| **Neurogenesis**        | Neuronas nuevas hipocampo  | Inyecta LoRA adapters (rank=8, ~10K params) en StreamFFN cuando loss > 4.0            |
+| **Synaptic Pruning**    | Poda sinaptica (~50%)      | Reduce `LateralGate.scale < 0.03` cada 30 lecciones (decay ×0.5)                      |
+
+Todos coordinados por `BioOrchestrator.after_lesson()`. Desactivables con `--no-bio`.
+
+### Resultados del piloto (12 lecciones con bio-mechanisms)
+
+- Loss bajando: 4.13 → 2.86 (aprendizaje activo)
+- Neuromodulacion: LR factor oscila entre ×1.05 y ×1.16 segun performance
+- LTP aplicada en L05 y L10 — `LateralGate.scale` diferenciados por nivel
+- Sleep en L05 y L10 — consolidacion con loss ~2.8
+- 1 LoRA adapter creado en L01 (loss > 4.0)
+- Pruning en L10 — stream 3 nivel 0 reducido a scale=0.0114
+- Modelo sigue generando correctamente post-bio
+
+### Uso
+
+```bash
+# Con GitHub Models API (gpt-4o-mini, 20K req/min)
+python scripts/classroom_server.py \
+  --checkpoint checkpoints/v3_ghidra_v9.pt \
+  --teacher github --model gpt-4o-mini \
+  --max-lessons 10 --level 1
+
+# Con interfaz web (SSE + dashboard)
+python scripts/classroom_server.py \
+  --checkpoint checkpoints/v3_ghidra_v9.pt \
+  --teacher github --port 8787
+
+# Replay de sesion grabada
+# Abrir sessions/classroom_*.html en el navegador
+```
+
+---
+
 ## Subsistemas
 
-| Modulo | Componentes | Proposito |
-|--------|-------------|-----------|
-| **Modelo** | `pampar/coder/v3/` | PamparV3: forward, generate, routing, bloques |
-| **Memoria** | `pampar/memoria/` | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune |
-| **Runtime** | `pampar/runtime/` | Agente (orquestador), Scanner (device), BootProtocol |
-| **Skills** | `pampar/skills/` | LectorArchivos (30+ ext), EjecutorCodigo (subprocess) |
-| **Inference** | `pampar/inference.py` | Servidor JSON-lines stdin/stdout para VS Code |
+| Modulo        | Componentes                 | Proposito                                                                 |
+| ------------- | --------------------------- | ------------------------------------------------------------------------- |
+| **Modelo**    | `pampar/coder/v3/`          | PamparV3: forward, generate, routing, bloques                             |
+| **Memoria**   | `pampar/memoria/`           | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune             |
+| **Runtime**   | `pampar/runtime/`           | Agente (orquestador), Scanner (device), BootProtocol                      |
+| **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                     |
+| **Inference** | `pampar/inference.py`       | Servidor JSON-lines stdin/stdout para VS Code                             |
+| **Classroom** | `scripts/classroom*.py`     | Aula bio-inspirada modular (5 archivos ≤300 lineas + engine)              |
+| **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 mecanismos de neurociencia: Neuromod, LTP, Sleep, Neurogenesis, Pruning |
 
 ---
 
@@ -162,6 +222,15 @@ PAMPAr-Coder/
 |   |   +-- boot.py         # Secuencia de arranque
 |   |   +-- generar_agents.py # Generador de AGENTS.md
 |   +-- inference.py        # Servidor JSON-lines para VS Code
++-- scripts/
+|   +-- classroom.py              # ClassroomEngine (motor principal)
+|   +-- classroom_curriculum.py   # Config + currículo 5 niveles
+|   +-- classroom_teacher.py      # Teacher API (GitHub/OpenRouter)
+|   +-- classroom_memory.py       # EWC + ReplayBuffer + LessonResult
+|   +-- classroom_server.py       # HTTP SSE server + CLI (entry point)
+|   +-- bio_mechanisms.py         # 5 mecanismos bio (Neuromod, LTP, Sleep, Neurogenesis, Pruning)
+|   +-- classroom_replay.html     # Player HTML para replays de sesiones
++-- sessions/               # Grabaciones de sesiones classroom
 +-- data/
 |   +-- tokenizer/
 |   |   +-- pampar_48k.model # Vocab 48K bilingue (activo)
@@ -177,15 +246,15 @@ PAMPAr-Coder/
 
 ## Interpretar el Loss
 
-| Loss  | Significado                    |
-| ----- | ------------------------------ |
-| ~10.7 | Sin entrenar (log 48000)       |
-| 7-8   | Pesos aleatorios               |
-| 5-7   | Comenzando a aprender          |
-| 2-4   | Aprendizaje activo             |
-| 1.5-2 | Zona optima                    |
-| < 1.5 | Tema bien aprendido            |
-| < 0.7 | Tema dominado                  |
+| Loss  | Significado              |
+| ----- | ------------------------ |
+| ~10.7 | Sin entrenar (log 48000) |
+| 7-8   | Pesos aleatorios         |
+| 5-7   | Comenzando a aprender    |
+| 2-4   | Aprendizaje activo       |
+| 1.5-2 | Zona optima              |
+| < 1.5 | Tema bien aprendido      |
+| < 0.7 | Tema dominado            |
 
 ---
 
@@ -219,6 +288,10 @@ python -m pytest tests/ -v
 - [x] Runtime.Agente (loop con herramientas)
 - [x] GhidraProbe (diagnostico read-only)
 - [x] EngramaStream (memoria de activaciones)
+- [x] Classroom bio-inspirado (EWC, replay buffer, LR diferencial, curriculum)
+- [x] Grabacion y replay HTML de sesiones classroom
+- [x] Integracion GitHub Models API (gpt-4o-mini como profesor)
+- [x] Bio-mechanisms: Neuromodulacion, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning
 - [ ] Expansion de training data (textbook + SFT multi-language)
 - [ ] KV cache en generate()
 - [ ] Multi-language execution (JS, Rust, Bash)

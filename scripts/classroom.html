@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PAMPAr Classroom</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg2: #161b22;
+        --bg3: #21262d;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --text2: #8b949e;
+        --green: #3fb950;
+        --red: #f85149;
+        --blue: #58a6ff;
+        --yellow: #d29922;
+        --purple: #bc8cff;
+        --orange: #f0883e;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Layout */
+      .app {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        grid-template-rows: 48px 1fr 40px;
+        height: 100vh;
+        gap: 1px;
+        background: var(--border);
+      }
+
+      /* Header */
+      .header {
+        grid-column: 1 / -1;
+        background: var(--bg2);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 16px;
+      }
+
+      .header h1 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--blue);
+      }
+
+      .header .controls {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .header .rec-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--red);
+      }
+
+      .header .rec-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--red);
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .btn {
+        padding: 4px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg3);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn:hover {
+        background: var(--border);
+      }
+      .btn.primary {
+        background: #238636;
+        border-color: #2ea043;
+      }
+      .btn.primary:hover {
+        background: #2ea043;
+      }
+      .btn.danger {
+        background: #da3633;
+        border-color: #f85149;
+      }
+      .btn.danger:hover {
+        background: #f85149;
+      }
+
+      /* Chat area */
+      .chat {
+        background: var(--bg);
+        overflow-y: auto;
+        padding: 12px;
+        scroll-behavior: smooth;
+      }
+
+      .chat::-webkit-scrollbar {
+        width: 6px;
+      }
+      .chat::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      .chat::-webkit-scrollbar-thumb {
+        background: var(--bg3);
+        border-radius: 3px;
+      }
+
+      .msg {
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+        animation: fadeIn 0.3s;
+        max-width: 90%;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .msg.system {
+        background: var(--bg2);
+        border-left: 3px solid var(--blue);
+        color: var(--text2);
+        max-width: 100%;
+        font-size: 11px;
+      }
+
+      .msg.problem {
+        background: var(--bg2);
+        border-left: 3px solid var(--yellow);
+      }
+
+      .msg.problem .level-badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .msg.problem .level-badge.l1 {
+        background: #1a7f37;
+        color: #aff5b4;
+      }
+      .msg.problem .level-badge.l2 {
+        background: #0550ae;
+        color: #a5d6ff;
+      }
+      .msg.problem .level-badge.l3 {
+        background: #6e40c9;
+        color: #d2a8ff;
+      }
+      .msg.problem .level-badge.l4 {
+        background: #bf4b8a;
+        color: #ffadda;
+      }
+      .msg.problem .level-badge.l5 {
+        background: #b35900;
+        color: #ffd8b5;
+      }
+
+      .msg.student {
+        background: #1a1f2e;
+        border-left: 3px solid var(--purple);
+        margin-left: 20px;
+      }
+
+      .msg.teacher {
+        background: #1a2e1a;
+        border-left: 3px solid var(--green);
+        margin-left: 20px;
+      }
+
+      .msg.teacher.wrong {
+        background: #2e1a1a;
+        border-left: 3px solid var(--red);
+      }
+
+      .msg.solution {
+        background: #1a2e2e;
+        border-left: 3px solid var(--blue);
+        margin-left: 40px;
+      }
+
+      .msg.metrics {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
+        padding: 8px 12px;
+      }
+
+      .metric {
+        text-align: center;
+      }
+
+      .metric .value {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .metric .label {
+        font-size: 10px;
+        color: var(--text2);
+        text-transform: uppercase;
+      }
+
+      .msg .role {
+        font-weight: 600;
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .msg .role.student-role {
+        color: var(--purple);
+      }
+      .msg .role.teacher-role {
+        color: var(--green);
+      }
+
+      .msg pre {
+        background: var(--bg);
+        padding: 6px 8px;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin-top: 6px;
+        font-size: 11px;
+        white-space: pre-wrap;
+      }
+
+      .msg.levelup {
+        background: linear-gradient(135deg, #1a2e1a 0%, #1a1f2e 100%);
+        border: 1px solid var(--green);
+        text-align: center;
+        max-width: 100%;
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: var(--bg2);
+        padding: 12px;
+        overflow-y: auto;
+        font-size: 11px;
+      }
+
+      .sidebar h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text2);
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+      }
+
+      .sidebar .section {
+        margin-bottom: 16px;
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+        border-bottom: 1px solid var(--bg);
+      }
+
+      .stat-row .stat-label {
+        color: var(--text2);
+      }
+      .stat-row .stat-value {
+        font-weight: 600;
+      }
+
+      /* Progress bar */
+      .progress-bar {
+        height: 4px;
+        background: var(--bg);
+        border-radius: 2px;
+        margin: 6px 0;
+        overflow: hidden;
+      }
+
+      .progress-bar .fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s;
+      }
+
+      .fill.green {
+        background: var(--green);
+      }
+      .fill.blue {
+        background: var(--blue);
+      }
+      .fill.yellow {
+        background: var(--yellow);
+      }
+      .fill.red {
+        background: var(--red);
+      }
+      .fill.purple {
+        background: var(--purple);
+      }
+
+      /* Level indicators */
+      .level-display {
+        display: flex;
+        gap: 4px;
+        margin: 8px 0;
+      }
+
+      .level-pip {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bg);
+        transition: background 0.3s;
+      }
+
+      .level-pip.active {
+        background: var(--green);
+      }
+      .level-pip.current {
+        background: var(--yellow);
+        box-shadow: 0 0 4px var(--yellow);
+      }
+
+      /* Charts area */
+      .chart-canvas {
+        width: 100%;
+        height: 60px;
+        margin: 4px 0;
+      }
+
+      /* Footer */
+      .footer {
+        grid-column: 1 / -1;
+        background: var(--bg2);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        font-size: 11px;
+        color: var(--text2);
+        gap: 16px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text2);
+      }
+
+      .status-dot.connected {
+        background: var(--green);
+      }
+      .status-dot.running {
+        background: var(--green);
+        animation: blink 1s infinite;
+      }
+      .status-dot.stopped {
+        background: var(--red);
+      }
+
+      /* Thinking animation */
+      .thinking {
+        display: inline-flex;
+        gap: 3px;
+        margin-left: 8px;
+      }
+
+      .thinking span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--text2);
+        animation: bounce 1.2s infinite;
+      }
+
+      .thinking span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .thinking span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-6px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Header -->
+      <div class="header">
+        <h1>🏫 PAMPAr Classroom</h1>
+        <span id="sessionInfo" style="font-size: 11px; color: var(--text2)"
+          >Conectando...</span
+        >
+        <div id="recIndicator" class="rec-indicator" style="display: none">
+          <div class="rec-dot"></div>
+          REC
+        </div>
+        <div class="controls">
+          <button class="btn primary" id="btnStart" onclick="startLessons()">
+            ▶ Iniciar
+          </button>
+          <button
+            class="btn danger"
+            id="btnStop"
+            onclick="stopLessons()"
+            style="display: none"
+          >
+            ⏹ Detener
+          </button>
+          <button class="btn" id="btnSave" onclick="saveSesion()">
+            💾 Guardar
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat" id="chat"></div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="section">
+          <h2>Nivel actual</h2>
+          <div
+            style="font-size: 20px; font-weight: 700; color: var(--yellow)"
+            id="levelNum"
+          >
+            1
+          </div>
+          <div id="levelName" style="color: var(--text2)">Fundamentos</div>
+          <div class="level-display" id="levelPips">
+            <div class="level-pip current"></div>
+            <div class="level-pip"></div>
+            <div class="level-pip"></div>
+            <div class="level-pip"></div>
+            <div class="level-pip"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Métricas</h2>
+          <div class="stat-row">
+            <span class="stat-label">Lecciones</span>
+            <span class="stat-value" id="statLessons">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Accuracy</span>
+            <span
+              class="stat-value"
+              id="statAccuracy"
+              style="color: var(--green)"
+              >0%</span
+            >
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Loss</span>
+            <span class="stat-value" id="statLoss">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">EWC Penalty</span>
+            <span class="stat-value" id="statEwc">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Brain Score</span>
+            <span class="stat-value" id="statBrain" style="color: var(--blue)"
+              >—</span
+            >
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Replay Buffer</span>
+            <span class="stat-value" id="statReplay">0</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Accuracy</h2>
+          <div class="progress-bar">
+            <div class="fill green" id="accBar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Brain Score</h2>
+          <div class="progress-bar">
+            <div class="fill blue" id="brainBar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Loss (últimas 20)</h2>
+          <canvas class="chart-canvas" id="lossChart"></canvas>
+        </div>
+
+        <div class="section">
+          <h2>Brain (últimos 20)</h2>
+          <canvas class="chart-canvas" id="brainChart"></canvas>
+        </div>
+
+        <div class="section">
+          <h2>Correctas/Incorrectas</h2>
+          <canvas
+            class="chart-canvas"
+            id="correctChart"
+            style="height: 30px"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Desconectado</span>
+        <span style="margin-left: auto" id="elapsedTime">00:00:00</span>
+      </div>
+    </div>
+
+    <script>
+      // ── State ────────────────────────────────────────────────────────
+      const state = {
+        running: false,
+        connected: false,
+        startTime: null,
+        lessons: 0,
+        correct: 0,
+        level: 1,
+        lossHistory: [],
+        brainHistory: [],
+        correctHistory: [], // true/false per lesson
+        recording: true,
+      };
+
+      const chat = document.getElementById("chat");
+      let eventSource = null;
+      let timerInterval = null;
+
+      // ── SSE Connection ───────────────────────────────────────────────
+      function connectSSE() {
+        if (eventSource) eventSource.close();
+        eventSource = new EventSource("/events");
+
+        eventSource.onopen = () => {
+          state.connected = true;
+          updateStatus("connected", "Conectado");
+          document.getElementById("sessionInfo").textContent = "Listo";
+        };
+
+        eventSource.onerror = () => {
+          state.connected = false;
+          updateStatus("stopped", "Desconectado");
+        };
+
+        // Event handlers
+        const handlers = {
+          system: (d) => addMsg("system", d),
+          lesson_start: (d) => {
+            const data = JSON.parse(d);
+            addMsg(
+              "problem",
+              `<span class="level-badge l${data.level}">Nivel ${data.level} — ${data.level_name}</span>` +
+                `<div style="margin-top:4px">Lección ${data.lesson_id}</div>` +
+                `<div style="margin-top:6px;color:var(--text)">${escHtml(data.problem)}</div>`,
+            );
+          },
+          student_thinking: () => {
+            addMsg(
+              "student",
+              '<div class="role student-role">🧑‍🎓 Alumno pensando<span class="thinking"><span></span><span></span><span></span></span></div>',
+              "thinking-msg",
+            );
+          },
+          student_answer: (d) => {
+            removeMsg("thinking-msg");
+            const data = JSON.parse(d);
+            addMsg(
+              "student",
+              '<div class="role student-role">🧑‍🎓 Alumno</div>' +
+                `<pre>${escHtml(data.answer)}</pre>`,
+            );
+          },
+          teacher_evaluating: () => {
+            addMsg(
+              "teacher",
+              '<div class="role teacher-role">👨‍🏫 Profesor evaluando<span class="thinking"><span></span><span></span><span></span></span></div>',
+              "eval-msg",
+            );
+          },
+          teacher_feedback: (d) => {
+            removeMsg("eval-msg");
+            const data = JSON.parse(d);
+            const cls = data.correct ? "teacher" : "teacher wrong";
+            const icon = data.correct ? "✅" : "❌";
+            addMsg(
+              cls,
+              `<div class="role teacher-role">👨‍🏫 Profesor ${icon}</div>` +
+                `<div style="margin-top:4px">${escHtml(data.feedback)}</div>`,
+            );
+          },
+          teacher_solution: (d) => {
+            const data = JSON.parse(d);
+            addMsg(
+              "solution",
+              '<div style="font-size:10px;color:var(--blue);margin-bottom:4px">📖 Solución correcta:</div>' +
+                `<pre>${escHtml(data.solution)}</pre>`,
+            );
+          },
+          training: (d) => {
+            const data = JSON.parse(d);
+            addMsg(
+              "system",
+              `⚡ Entrenando con ${data.batch_size} ejemplo(s)...`,
+            );
+          },
+          lesson_complete: (d) => {
+            const data = JSON.parse(d);
+            state.lessons = data.lesson_id;
+            state.level = data.level;
+            state.lossHistory.push(data.loss);
+            state.brainHistory.push(data.brain_score);
+            state.correctHistory.push(data.correct);
+            if (data.correct) state.correct++;
+
+            if (state.lossHistory.length > 50) state.lossHistory.shift();
+            if (state.brainHistory.length > 50) state.brainHistory.shift();
+
+            updateSidebar(data);
+            drawCharts();
+
+            addMsg(
+              "metrics",
+              `<div class="metric"><div class="value" style="color:${data.correct ? "var(--green)" : "var(--red)"}">${data.correct ? "✅" : "❌"}</div><div class="label">Resultado</div></div>` +
+                `<div class="metric"><div class="value">${(data.accuracy * 100).toFixed(0)}%</div><div class="label">Accuracy</div></div>` +
+                `<div class="metric"><div class="value">${data.loss.toFixed(3)}</div><div class="label">Loss</div></div>` +
+                `<div class="metric"><div class="value">${(data.brain_score * 100).toFixed(0)}%</div><div class="label">Brain</div></div>`,
+            );
+          },
+          level_up: (d) => {
+            const data = JSON.parse(d);
+            addMsg(
+              "levelup",
+              `🎉 ¡NIVEL UP!<br>Nivel ${data.new_level}: ${data.nombre}<br>` +
+                `<span style="font-size:11px;color:var(--text2)">Accuracy: ${(data.accuracy * 100).toFixed(0)}%</span>`,
+            );
+            updateLevel(data.new_level);
+          },
+          checkpoint: (d) => {
+            const data = JSON.parse(d);
+            addMsg("system", `💾 Checkpoint guardado — lección ${data.lesson}`);
+          },
+          session_saved: (d) => {
+            const data = JSON.parse(d);
+            addMsg("system", `📁 Sesión guardada: ${data.lessons} lecciones`);
+          },
+          error: (d) => addMsg("system", `❗ ${d}`),
+        };
+
+        for (const [event, handler] of Object.entries(handlers)) {
+          eventSource.addEventListener(event, (e) => handler(e.data));
+        }
+      }
+
+      // ── Chat helpers ─────────────────────────────────────────────────
+      function addMsg(cls, html, id) {
+        const div = document.createElement("div");
+        div.className = `msg ${cls}`;
+        div.innerHTML = html;
+        if (id) div.id = id;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function removeMsg(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      }
+
+      function escHtml(s) {
+        if (!s) return "";
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // ── Controls ─────────────────────────────────────────────────────
+      async function startLessons() {
+        try {
+          await fetch("/start", { method: "POST" });
+          state.running = true;
+          state.startTime = Date.now();
+          document.getElementById("btnStart").style.display = "none";
+          document.getElementById("btnStop").style.display = "";
+          document.getElementById("recIndicator").style.display = "flex";
+          updateStatus("running", "Entrenando");
+          startTimer();
+        } catch (e) {
+          addMsg("system", `Error: ${e.message}`);
+        }
+      }
+
+      async function stopLessons() {
+        try {
+          await fetch("/stop", { method: "POST" });
+          state.running = false;
+          document.getElementById("btnStart").style.display = "";
+          document.getElementById("btnStop").style.display = "none";
+          document.getElementById("recIndicator").style.display = "none";
+          updateStatus("connected", "Detenido");
+          stopTimer();
+        } catch (e) {
+          addMsg("system", `Error: ${e.message}`);
+        }
+      }
+
+      async function saveSesion() {
+        try {
+          const resp = await fetch("/save", { method: "POST" });
+          const data = await resp.json();
+          addMsg("system", `💾 Guardado: ${data.path}`);
+        } catch (e) {
+          addMsg("system", `Error: ${e.message}`);
+        }
+      }
+
+      // ── Timer ────────────────────────────────────────────────────────
+      function startTimer() {
+        timerInterval = setInterval(() => {
+          if (!state.startTime) return;
+          const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+          const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+          const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+          const s = String(elapsed % 60).padStart(2, "0");
+          document.getElementById("elapsedTime").textContent = `${h}:${m}:${s}`;
+        }, 1000);
+      }
+
+      function stopTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+      }
+
+      // ── Status ───────────────────────────────────────────────────────
+      function updateStatus(cls, text) {
+        const dot = document.getElementById("statusDot");
+        dot.className = `status-dot ${cls}`;
+        document.getElementById("statusText").textContent = text;
+      }
+
+      // ── Sidebar updates ──────────────────────────────────────────────
+      function updateSidebar(data) {
+        document.getElementById("statLessons").textContent = data.lesson_id;
+        document.getElementById("statAccuracy").textContent =
+          (data.accuracy * 100).toFixed(1) + "%";
+        document.getElementById("statLoss").textContent = data.loss.toFixed(4);
+        document.getElementById("statEwc").textContent =
+          data.ewc_penalty.toFixed(6);
+        document.getElementById("statBrain").textContent =
+          (data.brain_score * 100).toFixed(1) + "%";
+        document.getElementById("statReplay").textContent = data.replay_size;
+
+        document.getElementById("accBar").style.width =
+          data.accuracy * 100 + "%";
+        document.getElementById("brainBar").style.width =
+          data.brain_score * 100 + "%";
+
+        updateLevel(data.level);
+      }
+
+      function updateLevel(level) {
+        document.getElementById("levelNum").textContent = level;
+        const names = {
+          1: "Fundamentos",
+          2: "Estructuras de control",
+          3: "Funciones avanzadas",
+          4: "Clases y OOP",
+          5: "Patrones avanzados",
+        };
+        document.getElementById("levelName").textContent = names[level] || "";
+
+        const pips = document.getElementById("levelPips").children;
+        for (let i = 0; i < 5; i++) {
+          pips[i].className = "level-pip";
+          if (i < level - 1) pips[i].classList.add("active");
+          if (i === level - 1) pips[i].classList.add("current");
+        }
+      }
+
+      // ── Mini charts ──────────────────────────────────────────────────
+      function drawCharts() {
+        drawLineChart(
+          "lossChart",
+          state.lossHistory.slice(-20),
+          "var(--yellow)",
+        );
+        drawLineChart(
+          "brainChart",
+          state.brainHistory.slice(-20),
+          "var(--blue)",
+        );
+        drawCorrectChart();
+      }
+
+      function drawLineChart(canvasId, data, color) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || data.length < 2) return;
+
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.scale(dpr, dpr);
+
+        ctx.clearRect(0, 0, w, h);
+
+        const min = Math.min(...data) * 0.9;
+        const max = Math.max(...data) * 1.1 || 1;
+        const range = max - min || 1;
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+
+        for (let i = 0; i < data.length; i++) {
+          const x = (i / (data.length - 1)) * w;
+          const y = h - ((data[i] - min) / range) * h;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Fill under
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fillStyle = color
+          .replace(")", ", 0.1)")
+          .replace("var(", "rgba(88, 166, 255");
+        // Fallback: use a semi-transparent version
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = color === "var(--yellow)" ? "#d29922" : "#58a6ff";
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawCorrectChart() {
+        const canvas = document.getElementById("correctChart");
+        if (!canvas || state.correctHistory.length === 0) return;
+
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.scale(dpr, dpr);
+
+        ctx.clearRect(0, 0, w, h);
+
+        const last = state.correctHistory.slice(-40);
+        const barW = w / 40;
+
+        for (let i = 0; i < last.length; i++) {
+          ctx.fillStyle = last[i] ? "#3fb950" : "#f85149";
+          ctx.fillRect(i * barW + 1, 2, barW - 2, h - 4);
+        }
+      }
+
+      // ── Init ─────────────────────────────────────────────────────────
+      window.addEventListener("load", () => {
+        connectSSE();
+        addMsg(
+          "system",
+          "Conectado al servidor. Presiona ▶ Iniciar para comenzar la clase.",
+        );
+      });
+    </script>
+  </body>
+</html>

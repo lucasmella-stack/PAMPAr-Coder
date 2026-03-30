@@ -15,7 +15,7 @@ Pilares:
   5. Debugging (stack traces, bisección, logging)
   6. Sintaxis multi-language (equivalencias entre lenguajes)
 
-Usa GitHub Models API (gratis): GPT-4.1, DeepSeek-R1, Llama-405B.
+Usa GitHub Models API (gratis): GPT-4.1, GPT-4.1-mini, Llama-405B.
 
 Uso:
   $env:GITHUB_TOKEN = "ghp_xxx"
@@ -51,10 +51,6 @@ MODELS = {
     "gpt41mini": {
         "id": "gpt-4.1-mini",
         "temperature": 0.8,
-    },
-    "deepseek": {
-        "id": "DeepSeek-R1",
-        "temperature": 0.6,
     },
     "llama": {
         "id": "Meta-Llama-3.1-405B-Instruct",
@@ -339,7 +335,7 @@ class GitHubModelsClient:
         """Genera texto con un modelo de GitHub Models."""
         import urllib.request
 
-        timeout = 180 if "DeepSeek" in model_id else 120
+        timeout = 120
 
         now = time.time()
         elapsed = now - self._last_request_time
