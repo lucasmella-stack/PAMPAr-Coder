@@ -91,6 +91,12 @@ scripts/destilar_log.txt
 scripts/generation_log.txt
 tensorboard/
 
+# Sessions (generated HTML/JSONL replays)
+sessions/
+
+# Archive (temporary refactoring backups)
+_archive/
+
 # Large dataset files (>100MB — no caben en GitHub)
 biblioteca/python_real/magicoder_oss_75k.jsonl
 biblioteca/python_real/starcoder2_self_oss_50k.jsonl

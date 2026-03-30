@@ -154,20 +154,18 @@ def main() -> None:
     )
     parser.add_argument(
         "--teacher",
-        choices=["github", "openrouter"],
-        default="github",
+        choices=["github", "openrouter", "qwen"],
+        default="qwen",
         help="Backend del profesor",
     )
-    parser.add_argument(
-        "--model", default="openai/gpt-4o-mini", help="Modelo del profesor"
-    )
+    parser.add_argument("--model", default="qwen-plus", help="Modelo del profesor")
     parser.add_argument(
         "--api-key",
         default="",
-        help="API key (o usa GITHUB_TOKEN / OPENROUTER_API_KEY)",
+        help="API key (o usa GITHUB_TOKEN / OPENROUTER_API_KEY / QWEN_API_KEY)",
     )
-    parser.add_argument("--lr", type=float, default=5e-6, help="Learning rate base")
-    parser.add_argument("--ewc-lambda", type=float, default=500.0, help="Fuerza EWC")
+    parser.add_argument("--lr", type=float, default=1e-5, help="Learning rate base")
+    parser.add_argument("--ewc-lambda", type=float, default=50.0, help="Fuerza EWC")
     parser.add_argument(
         "--max-lessons", type=int, default=200, help="Máximo de lecciones"
     )

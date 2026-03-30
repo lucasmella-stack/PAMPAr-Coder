@@ -25,9 +25,9 @@ La analogía: un físico que entiende termodinámica puede resolver problemas de
 - **Mejor checkpoint**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%)
 - **Tokenizer**: `data/tokenizer/pampar_48k.model` (48K, bilingüe ES+código)
 - **Runtime**: Agente + RAGResidual + Scanner + BootProtocol — funcional
-- **Classroom**: Sistema bio-inspirado operativo (EWC + replay buffer + curriculum + LR diferencial + 5 bio-mechanisms)
+- **Classroom**: Mentor conversacional con Qwen-plus — lecciones dinámicas, 21 conceptos adaptativos, absorción + práctica + corrección
 - **Bio-Mechanisms**: Neuromodulación, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning — `bio_mechanisms.py`
-- **Teacher API**: GitHub Models — `gpt-4o-mini` (20K req/min)
+- **Teacher API**: Qwen-plus via DashScope (principal), GitHub Models gpt-4o-mini (alternativa)
 - **Training data**: `master_sft.jsonl` — 1,253 ejemplos (en expansión vía Classroom)
 
 ---
@@ -131,17 +131,26 @@ Cada NivelProfundo (×5):
 
 Servidor JSON-lines stdin/stdout para extensión VS Code. Commands: `infer`, `boot`.
 
-### 6. Classroom (5 módulos `scripts/classroom*.py`) + Bio-Mechanisms (`scripts/bio_mechanisms.py`)
+### 6. Classroom — Mentor Conversacional + Bio-Mechanisms
 
-Aula bio-inspirada modular donde un modelo profesor (gpt-4o-mini vía GitHub Models API) enseña a PamparV3.
+Sistema donde Qwen-plus actúa como mentor conversacional — genera explicaciones, ejemplos y ejercicios dinámicos. PamparV3 absorbe el conocimiento via gradient descent en 3 phases por lección.
 
-| Módulo                    | Líneas | Responsabilidad                                    |
-| ------------------------- | ------ | -------------------------------------------------- |
-| `classroom.py`            | ~683   | ClassroomEngine — motor principal                  |
-| `classroom_curriculum.py` | ~125   | ClassroomConfig dataclass + CURRICULUM (5 niveles) |
-| `classroom_teacher.py`    | ~119   | Teacher — API calls (GitHub Models / OpenRouter)   |
-| `classroom_memory.py`     | ~108   | EWC + ReplayBuffer + LessonResult                  |
-| `classroom_server.py`     | ~225   | HTTP SSE server + CLI entry point                  |
+**Flujo**: StudentProfile → Mentor genera lección → Phase A (absorber explicación+ejemplo) → Phase B (alumno intenta ejercicio) → Phase C (mentor corrige, entrenar en solución+replay) → actualizar perfil.
+
+| Módulo                    | Líneas | Responsabilidad                                          |
+| ------------------------- | ------ | -------------------------------------------------------- |
+| `classroom.py`            | ~608   | ClassroomEngine — motor conversacional (orquestador)     |
+| `classroom_curriculum.py` | ~433   | ClassroomConfig + CONCEPT_TREE (21 conceptos) + StudentProfile + concept_level |
+| `classroom_teacher.py`    | ~252   | Mentor API (Qwen/GitHub/OpenRouter) + parse de lecciones |
+| `classroom_training.py`   | ~211   | Tokenización + LR diferencial + train_step               |
+| `classroom_memory.py`     | ~187   | EWC + ReplayBuffer + LessonResult + compute_ewc_baseline |
+| `classroom_events.py`     | ~104   | Formateo dict-based de eventos para consola              |
+| `classroom_persistence.py`| ~123   | Guardado de checkpoints, sesiones JSONL, grabaciones HTML|
+| `classroom_server.py`     | ~255   | HTTP SSE server + CLI entry point                        |
+| `bio_mechanisms.py`       | ~497   | 5 bio-mechanisms coordinados por BioOrchestrator         |
+
+**CONCEPT_TREE**: 21 conceptos en 5 niveles con prerequisitos (arithmetic → algorithms).
+**StudentProfile**: mastery tracking adaptativo — prioriza refuerzo, luego nuevos, luego repaso.
 
 | Mecanismo          | Propósito                                                         |
 | ------------------ | ----------------------------------------------------------------- |
@@ -163,9 +172,9 @@ Aula bio-inspirada modular donde un modelo profesor (gpt-4o-mini vía GitHub Mod
 
 Coordinados por `BioOrchestrator.after_lesson()`. Desactivables con `--no-bio`.
 
-**Resultados piloto (12 lecciones)**: Loss 4.13→2.86, LTP diferenció scales, 1 LoRA creado, pruning activo.
+**Resultados piloto mentor conversacional (5 lecciones)**: Loss absorción ~7-8, loss ejercicios 5.89→3.94 (mejora), brain score 88.24% estable.
 
-**APIs soportadas**: `github` (GitHub Models, gpt-4o-mini) y `openrouter` (requiere créditos).
+**APIs soportadas**: `qwen` (Qwen-plus via DashScope, principal), `github` (gpt-4o-mini), `openrouter` (requiere créditos).
 
 ---
 
@@ -202,10 +211,13 @@ PAMPAr-Coder/
 │   │   └── generar_agents.py    # Generador de AGENTS.md
 │   └── inference.py             # Servidor JSON-lines para VS Code
 ├── scripts/
-│   ├── classroom.py             # ClassroomEngine — motor principal (~683 líneas)
-│   ├── classroom_curriculum.py  # ClassroomConfig + CURRICULUM (5 niveles, 51 ejercicios)
-│   ├── classroom_teacher.py     # Teacher — API calls con retry
-│   ├── classroom_memory.py      # EWC + ReplayBuffer + LessonResult
+│   ├── classroom.py             # ClassroomEngine — motor conversacional (~608 líneas)
+│   ├── classroom_curriculum.py  # ClassroomConfig + CONCEPT_TREE + StudentProfile + concept_level
+│   ├── classroom_teacher.py     # Mentor API — Qwen/GitHub/OpenRouter + parse de lecciones
+│   ├── classroom_training.py    # Tokenización + LR diferencial + train_step
+│   ├── classroom_events.py      # Formateo dict-based de eventos para consola
+│   ├── classroom_memory.py      # EWC + ReplayBuffer + LessonResult + compute_ewc_baseline
+│   ├── classroom_persistence.py # Guardado de checkpoints, sesiones, grabaciones HTML
 │   ├── classroom_server.py      # HTTP SSE server + CLI entry point
 │   ├── bio_mechanisms.py        # 5 bio-mechanisms (Neuromod, LTP, Sleep, Neurogenesis, Pruning)
 │   └── classroom_replay.html    # Player HTML para replays
@@ -216,7 +228,6 @@ PAMPAr-Coder/
 │   └── *.jsonl                  # Datasets de training
 ├── checkpoints/
 │   └── v3_ghidra_v9.pt          # Mejor checkpoint actual
-├── scripts/                     # Training, eval, data generation
 ├── _archive/                    # Backups de archivos antes de refactorizar
 └── tests/
 ```

@@ -12,6 +12,51 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def compute_ewc_baseline(
+    model: nn.Module,
+    tokenizer: object,
+    ewc_lambda: float,
+    ewc_samples: int,
+    seq_len: int,
+    device: torch.device,
+) -> "EWC":
+    """Calcula Fisher Information sobre datos que el modelo ya maneja bien.
+
+    Returns:
+        Instancia de EWC con Fisher calculada.
+    """
+    baseline_prompts = [
+        "def suma(a, b):",
+        "for i in range(10):",
+        "class Punto:",
+        "if x > 0:",
+        "import os\n",
+        "def fibonacci(n):",
+        "return sorted(",
+        "try:\n    ",
+        "with open('",
+        "result = [x for x in",
+    ]
+
+    baseline_tokens: list[torch.Tensor] = []
+    model.eval()
+    for prompt in baseline_prompts:
+        ids = tokenizer.Encode(prompt)
+        if len(ids) < 4:
+            continue
+        for _ in range(20):
+            if len(ids) > 2:
+                start = random.randint(0, max(0, len(ids) - 3))
+                chunk = ids[start : start + min(seq_len, len(ids) - start)]
+                baseline_tokens.append(torch.tensor(chunk, dtype=torch.long))
+
+    ewc = EWC(model, ewc_lambda)
+    if baseline_tokens:
+        ewc.compute_fisher(model, baseline_tokens, device, ewc_samples)
+
+    return ewc
+
+
 class EWC:
     """
     Elastic Weight Consolidation (Kirkpatrick et al., 2017).
@@ -58,12 +103,12 @@ class EWC:
 
             input_ids = tokens[:, :-1]
             targets = tokens[:, 1:]
-            logits, _, _ = model(input_ids, targets=targets)
+            logits, _, _ = model(input_ids)
 
             loss = F.cross_entropy(
                 logits.reshape(-1, logits.size(-1)),
                 targets.reshape(-1),
-                ignore_index=0,
+                ignore_index=-100,
             )
             loss.backward()
 
@@ -97,13 +142,19 @@ class ReplayBuffer:
         self.buffer: deque[dict] = deque(maxlen=maxsize)
 
     def add(
-        self, problem: str, solution: str, tokens: torch.Tensor, level: int
+        self,
+        problem: str,
+        solution: str,
+        input_ids: torch.Tensor,
+        labels: torch.Tensor,
+        level: int,
     ) -> None:
         self.buffer.append(
             {
                 "problem": problem,
                 "solution": solution,
-                "tokens": tokens.cpu(),
+                "input_ids": input_ids.cpu(),
+                "labels": labels.cpu(),
                 "level": level,
                 "timestamp": time.time(),
             }

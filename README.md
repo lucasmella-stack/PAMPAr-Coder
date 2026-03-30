@@ -10,7 +10,7 @@ PAMPAr-Coder es un modelo de lenguaje de 108M parámetros que **razona sobre inf
 - **Dispositivo**: conocimiento vía RAG local (docs de Python, MDN, man pages, archivos del usuario)
 - **Hardware**: diseñado para correr en consumer hardware (GTX 1650, 4 GB VRAM)
 
-**Estado actual**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%). Sistema Classroom bio-inspirado operativo con 5 mecanismos de neurociencia real (Neuromodulación, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning).
+**Estado actual**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%). Sistema Classroom con mentor conversacional (Qwen-plus) + 5 mecanismos bio-inspirados. Árbol de 21 conceptos con prerequisitos adaptativos.
 
 ---
 
@@ -80,9 +80,37 @@ El modelo usa la maquina donde esta instalado como fuente de conocimiento:
 
 ---
 
-## Classroom — Entrenamiento Bio-Inspirado
+## Classroom — Mentor Conversacional + Bio-Mechanisms
 
-Sistema de aprendizaje interactivo donde un modelo profesor (gpt-4o-mini) enseña a PamparV3 mediante lecciones progresivas, protegiendo el conocimiento previo.
+Sistema de aprendizaje donde un modelo mentor (Qwen-plus via DashScope) enseña a PamparV3 mediante conversaciones dinámicas, como un tutor en un chat. El mentor genera explicaciones, ejemplos y ejercicios únicos en cada lección — el alumno absorbe el conocimiento via gradient descent.
+
+### Flujo de una lección
+
+```
+1. StudentProfile selecciona concepto adaptativo (21 conceptos con prerequisitos)
+2. Mentor genera lección: explicación + ejemplo + ejercicio + solución
+3. Phase A — Absorber: entrenar en explicación + ejemplo (todos los tokens)
+4. Phase B — Practicar: alumno intenta el ejercicio
+5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
+6. Actualizar perfil del alumno (mastery por concepto)
+```
+
+### Árbol de conceptos (CONCEPT_TREE)
+
+21 conceptos organizados en 5 niveles con prerequisitos:
+
+| Nivel | Conceptos |
+| ----- | --------- |
+| 1 | arithmetic → variables_types → conditionals, strings, functions_basic |
+| 2 | loops_for → loops_while, lists → tuples_sets, dicts |
+| 3 | recursion, higher_order, generators, error_handling |
+| 4 | classes_basic → inheritance, dunder_methods |
+| 5 | decorators, context_managers, algorithms, file_io |
+
+El `StudentProfile` trackea mastery por concepto y selecciona adaptativamente:
+- Prioriza conceptos con intentos pero no dominados (refuerzo)
+- Luego conceptos nuevos cuyos prereqs están cumplidos
+- Finalmente repaso espaciado de conceptos dominados
 
 ### Mecanismos base
 
@@ -90,8 +118,8 @@ Sistema de aprendizaje interactivo donde un modelo profesor (gpt-4o-mini) enseñ
 | -------------------------------------- | -------------------------------------------------------------------------- |
 | **EWC** (Elastic Weight Consolidation) | Protege pesos importantes — penaliza cambios en params criticos            |
 | **Replay Buffer**                      | Mezcla ejemplos nuevos con anteriores (simula consolidacion durante sueño) |
-| **LR Diferencial**                     | LLAVES/Talamo 0.01x, atencion 0.1x, embedding 0.1x, FFN 1.0x               |
-| **Curriculum progresivo**              | 5 niveles: basico → avanzado, el profesor adapta la dificultad             |
+| **LR Diferencial**                     | LLAVES/Talamo 0.01x, atencion 0.1x, embedding 0.1x, FFN 1.0x             |
+| **Absorción conversacional**           | Entrena en explicaciones + ejemplos del mentor (distilación de conocimiento) |
 
 ### Bio-Mechanisms (`bio_mechanisms.py`)
 
@@ -107,29 +135,39 @@ Sistema de aprendizaje interactivo donde un modelo profesor (gpt-4o-mini) enseñ
 
 Todos coordinados por `BioOrchestrator.after_lesson()`. Desactivables con `--no-bio`.
 
-### Resultados del piloto (12 lecciones con bio-mechanisms)
+### Resultados del piloto mentor conversacional (5 lecciones)
 
-- Loss bajando: 4.13 → 2.86 (aprendizaje activo)
-- Neuromodulacion: LR factor oscila entre ×1.05 y ×1.16 segun performance
-- LTP aplicada en L05 y L10 — `LateralGate.scale` diferenciados por nivel
-- Sleep en L05 y L10 — consolidacion con loss ~2.8
-- 1 LoRA adapter creado en L01 (loss > 4.0)
-- Pruning en L10 — stream 3 nivel 0 reducido a scale=0.0114
-- Modelo sigue generando correctamente post-bio
+- Loss de absorción: ~7-8 (contenido nuevo del mentor)
+- Loss de ejercicios bajando: 5.89 → 5.44 → 4.40 → 3.94 → 4.38
+- Brain score estable: 88.24% (preservación de conocimiento previo)
+- EWC penalty creciente: 0.000002 → 0.000044 (regulación activa)
+- Cada lección es ÚNICA — mentor genera dinámicamente, sin repetición
 
 ### Uso
 
 ```bash
-# Con GitHub Models API (gpt-4o-mini, 20K req/min)
+# Mentor conversacional con Qwen-plus (recomendado)
 python scripts/classroom_server.py \
   --checkpoint checkpoints/v3_ghidra_v9.pt \
-  --teacher github --model gpt-4o-mini \
-  --max-lessons 10 --level 1
+  --checkpoint-out checkpoints/v3_classroom_mentor.pt \
+  --teacher qwen --model qwen-plus \
+  --max-lessons 200 --lr 1e-5 --ewc-lambda 50 --no-bio --no-ui
+
+# Con mecanismos bio-inspirados activados
+python scripts/classroom_server.py \
+  --checkpoint checkpoints/v3_ghidra_v9.pt \
+  --teacher qwen --model qwen-plus \
+  --max-lessons 200 --lr 1e-5
 
 # Con interfaz web (SSE + dashboard)
 python scripts/classroom_server.py \
   --checkpoint checkpoints/v3_ghidra_v9.pt \
-  --teacher github --port 8787
+  --teacher qwen --port 8787
+
+# Con GitHub Models API (alternativa)
+python scripts/classroom_server.py \
+  --checkpoint checkpoints/v3_ghidra_v9.pt \
+  --teacher github --model gpt-4o-mini
 
 # Replay de sesion grabada
 # Abrir sessions/classroom_*.html en el navegador
@@ -146,7 +184,7 @@ python scripts/classroom_server.py \
 | **Runtime**   | `pampar/runtime/`           | Agente (orquestador), Scanner (device), BootProtocol                      |
 | **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                     |
 | **Inference** | `pampar/inference.py`       | Servidor JSON-lines stdin/stdout para VS Code                             |
-| **Classroom** | `scripts/classroom*.py`     | Aula bio-inspirada modular (5 archivos ≤300 lineas + engine)              |
+| **Classroom** | `scripts/classroom*.py`     | Mentor conversacional: engine + teacher + curriculum + training + events + memory + persistence |
 | **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 mecanismos de neurociencia: Neuromod, LTP, Sleep, Neurogenesis, Pruning |
 
 ---
@@ -223,10 +261,13 @@ PAMPAr-Coder/
 |   |   +-- generar_agents.py # Generador de AGENTS.md
 |   +-- inference.py        # Servidor JSON-lines para VS Code
 +-- scripts/
-|   +-- classroom.py              # ClassroomEngine (motor principal)
-|   +-- classroom_curriculum.py   # Config + currículo 5 niveles
-|   +-- classroom_teacher.py      # Teacher API (GitHub/OpenRouter)
-|   +-- classroom_memory.py       # EWC + ReplayBuffer + LessonResult
+|   +-- classroom.py              # ClassroomEngine (motor conversacional, ~600 líneas)
+|   +-- classroom_curriculum.py   # Config + CONCEPT_TREE (21 conceptos) + StudentProfile
+|   +-- classroom_teacher.py      # Mentor API (GitHub/OpenRouter/Qwen DashScope)
+|   +-- classroom_training.py     # Tokenización + LR diferencial + train_step
+|   +-- classroom_events.py       # Formateo de eventos para consola (dict-based)
+|   +-- classroom_memory.py       # EWC + ReplayBuffer + LessonResult + compute_ewc_baseline
+|   +-- classroom_persistence.py  # Guardado de checkpoints, sesiones y grabaciones HTML
 |   +-- classroom_server.py       # HTTP SSE server + CLI (entry point)
 |   +-- bio_mechanisms.py         # 5 mecanismos bio (Neuromod, LTP, Sleep, Neurogenesis, Pruning)
 |   +-- classroom_replay.html     # Player HTML para replays de sesiones
@@ -237,7 +278,6 @@ PAMPAr-Coder/
 |   +-- *.jsonl             # Datasets de training
 +-- checkpoints/
 |   +-- v3_ghidra_v9.pt     # Mejor checkpoint actual
-+-- scripts/                # Training, eval, data generation
 +-- _archive/               # Backups pre-refactorizacion
 +-- tests/                  # Tests pytest
 ```
@@ -292,6 +332,12 @@ python -m pytest tests/ -v
 - [x] Grabacion y replay HTML de sesiones classroom
 - [x] Integracion GitHub Models API (gpt-4o-mini como profesor)
 - [x] Bio-mechanisms: Neuromodulacion, LTP, Sleep Consolidation, Neurogenesis, Synaptic Pruning
+- [x] Mentor conversacional: Qwen-plus genera lecciones dinámicas como tutor
+- [x] CONCEPT_TREE: 21 conceptos con prerequisitos adaptativos
+- [x] StudentProfile: tracking de mastery por concepto
+- [x] Loss masking: -100 en prompt tokens (entrena solo respuestas)
+- [x] Absorción conversacional: entrena en explicaciones + ejemplos del mentor
+- [ ] Multimodal: soporte para entrada de imágenes/diagramas
 - [ ] Expansion de training data (textbook + SFT multi-language)
 - [ ] KV cache en generate()
 - [ ] Multi-language execution (JS, Rust, Bash)

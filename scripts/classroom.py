@@ -12,11 +12,9 @@ from __future__ import annotations
 import json
 import os
 import queue
-import random
 import sys
 import time
 from collections import deque
-from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
@@ -27,9 +25,26 @@ import torch.nn.functional as F
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bio_mechanisms import BioOrchestrator, BioState
-from classroom_curriculum import CURRICULUM, ClassroomConfig
-from classroom_memory import EWC, LessonResult, ReplayBuffer
+from classroom_curriculum import (
+    ClassroomConfig,
+    StudentProfile,
+    _CONCEPT_BY_ID,
+    concept_level,
+)
+from classroom_events import format_event_to_console
+from classroom_memory import EWC, LessonResult, ReplayBuffer, compute_ewc_baseline
+from classroom_persistence import (
+    save_checkpoint as _persist_checkpoint,
+    save_recording as _persist_recording,
+    save_session as _persist_session,
+)
 from classroom_teacher import Teacher
+from classroom_training import (
+    setup_optimizer,
+    tokenize_pair,
+    tokenize_teaching,
+    train_step,
+)
 
 # Leer .env
 _env_file = Path(__file__).parent.parent / ".env"
@@ -48,20 +63,15 @@ if _env_file.exists():
 
 class ClassroomEngine:
     """
-    Motor del aula — orquesta profesor, alumno y entrenamiento.
+    Motor del aula — orquesta mentor, alumno y entrenamiento.
 
-    Flujo de una lección:
-      1. Seleccionar problema del curriculum (según nivel)
-      2. Alumno genera respuesta
-      3. Profesor evalúa y da feedback
-      4. Si incorrecto: profesor da la solución correcta
-      5. Paso de entrenamiento con:
-         - Loss CE sobre la solución correcta
-         - Penalización EWC (proteger pesos importantes)
-         - Replay de 50% ejemplos viejos
-         - LR diferencial (LLAVES congelado, FFN aprende)
-      6. Si correcto: guardar en replay buffer
-      7. Actualizar curriculum (avanzar si accuracy > threshold)
+    Flujo conversacional de una lección:
+      1. Seleccionar concepto via StudentProfile (adaptativo)
+      2. Mentor (Qwen) genera lección: explicación + ejemplo + ejercicio + solución
+      3. Phase A — Absorber: entrenar en explicación+ejemplo (todos los tokens)
+      4. Phase B — Practicar: alumno genera respuesta al ejercicio
+      5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
+      6. Actualizar perfil del alumno (mastery por concepto)
     """
 
     def __init__(self, config: ClassroomConfig):
@@ -80,6 +90,9 @@ class ClassroomEngine:
         self.lesson_count = 0
         self.total_correct = 0
         self.used_exercises: dict[int, set[int]] = {i: set() for i in range(1, 6)}
+
+        # Perfil adaptativo del alumno (árbol de conceptos)
+        self.student_profile = StudentProfile()
 
         # Sesión — log completo
         self.session_log: list[LessonResult] = []
@@ -135,13 +148,15 @@ class ClassroomEngine:
         if not api_key:
             if self.config.teacher_backend == "github":
                 api_key = os.environ.get("GITHUB_TOKEN", "")
+            elif self.config.teacher_backend == "qwen":
+                api_key = os.environ.get("QWEN_API_KEY", "")
             else:
                 api_key = os.environ.get("OPENROUTER_API_KEY", "")
 
         if not api_key:
             self._emit(
                 "error",
-                "No se encontró API key. Configura GITHUB_TOKEN o OPENROUTER_API_KEY en .env",
+                "No se encontró API key. Configura GITHUB_TOKEN, OPENROUTER_API_KEY o QWEN_API_KEY en .env",
             )
             return
 
@@ -182,149 +197,41 @@ class ClassroomEngine:
         self._emit("system", "¡Aula lista! Comienza la clase.")
 
     def _setup_optimizer(self) -> None:
-        """Configura optimizer con Learning Rate diferencial (neuromodulación)."""
-        cfg = self.config
-        param_groups = []
-        assigned = set()
-
-        # Grupo 1: LLAVES / Tálamo — casi congelado (simula sinapsis endurecidas)
-        llaves_params = []
-        for name, param in self.model.named_parameters():
-            if any(k in name for k in ["talamo", "llaves", "attn_proj"]):
-                if param.requires_grad:
-                    llaves_params.append(param)
-                    assigned.add(name)
-        if llaves_params:
-            param_groups.append(
-                {
-                    "params": llaves_params,
-                    "lr": cfg.lr_base * cfg.lr_llaves_mult,
-                    "label": "llaves_talamo",
-                }
-            )
-
-        # Grupo 2: Atención — aprende lento
-        attn_params = []
-        for name, param in self.model.named_parameters():
-            if name not in assigned and any(
-                k in name for k in ["attn", "q_proj", "k_proj", "v_proj", "o_proj"]
-            ):
-                if param.requires_grad:
-                    attn_params.append(param)
-                    assigned.add(name)
-        if attn_params:
-            param_groups.append(
-                {
-                    "params": attn_params,
-                    "lr": cfg.lr_base * cfg.lr_attn_mult,
-                    "label": "attention",
-                }
-            )
-
-        # Grupo 3: Embeddings — aprende lento
-        embed_params = []
-        for name, param in self.model.named_parameters():
-            if name not in assigned and any(k in name for k in ["tok_emb", "emb"]):
-                if param.requires_grad:
-                    embed_params.append(param)
-                    assigned.add(name)
-        if embed_params:
-            param_groups.append(
-                {
-                    "params": embed_params,
-                    "lr": cfg.lr_base * cfg.lr_embed_mult,
-                    "label": "embeddings",
-                }
-            )
-
-        # Grupo 4: FFN / StreamFFN / todo lo demás — aprende normal
-        ffn_params = []
-        for name, param in self.model.named_parameters():
-            if name not in assigned and param.requires_grad:
-                ffn_params.append(param)
-                assigned.add(name)
-        if ffn_params:
-            param_groups.append(
-                {
-                    "params": ffn_params,
-                    "lr": cfg.lr_base * cfg.lr_ffn_mult,
-                    "label": "ffn_generation",
-                }
-            )
-
-        self.optimizer = torch.optim.AdamW(
-            param_groups,
-            betas=(0.9, 0.95),
-            weight_decay=0.01,
+        """Configura optimizer con Learning Rate diferencial."""
+        self.optimizer, self._baseline_lr, info = setup_optimizer(
+            self.model, self.config,
         )
-
-        # Guardar baseline LR para neuromodulación
-        self._baseline_lr = self.config.lr_base
-
-        # Log LR por grupo
-        for g in param_groups:
-            n = sum(p.numel() for p in g["params"])
+        for g in info:
             self._emit(
-                "system", f"  LR {g['label']}: {g['lr']:.2e} ({n / 1e6:.1f}M params)"
+                "system",
+                f"  LR {g['label']}: {g['lr']:.2e} ({g['n_params'] / 1e6:.1f}M params)",
             )
 
     def _compute_ewc_baseline(self) -> None:
-        """Calcula Fisher Information sobre los datos que el modelo ya maneja bien."""
+        """Calcula Fisher Information sobre datos que el modelo ya maneja bien."""
         self._emit("system", "Calculando Fisher Information para EWC...")
-
-        # Generar muestras del modelo actual (lo que "ya sabe")
-        baseline_prompts = [
-            "def suma(a, b):",
-            "for i in range(10):",
-            "class Punto:",
-            "if x > 0:",
-            "import os\n",
-            "def fibonacci(n):",
-            "return sorted(",
-            "try:\n    ",
-            "with open('",
-            "result = [x for x in",
-        ]
-
-        baseline_tokens = []
-        self.model.eval()
-        for prompt in baseline_prompts:
-            ids = self.tokenizer.Encode(prompt)
-            if len(ids) < 4:
-                continue
-            t = torch.tensor(ids, dtype=torch.long, device=self.device)
-            # Generar tokens para crear secuencia completa
-            for _ in range(20):  # 20 repeticiones con variación
-                # Usar subsecuencias aleatorias del prompt como muestras
-                if len(ids) > 2:
-                    start = random.randint(0, max(0, len(ids) - 3))
-                    chunk = ids[
-                        start : start + min(self.config.seq_len, len(ids) - start)
-                    ]
-                    baseline_tokens.append(torch.tensor(chunk, dtype=torch.long))
-
-        if baseline_tokens:
-            self.ewc = EWC(self.model, self.config.ewc_lambda)
-            self.ewc.compute_fisher(
-                self.model, baseline_tokens, self.device, self.config.ewc_samples
-            )
-            self._emit(
-                "system",
-                f"EWC listo: Fisher calculada sobre {len(baseline_tokens)} muestras",
-            )
-        else:
-            self._emit("system", "EWC: no se pudieron generar muestras baseline")
+        self.ewc = compute_ewc_baseline(
+            self.model,
+            self.tokenizer,
+            self.config.ewc_lambda,
+            self.config.ewc_samples,
+            self.config.seq_len,
+            self.device,
+        )
+        n_samples = len(self.ewc.fisher)
+        self._emit("system", f"EWC listo: Fisher calculada sobre {n_samples} params")
 
     # ── Tokenización ────────────────────────────────────────────────
 
-    def _tokenize_pair(self, problem: str, solution: str) -> torch.Tensor:
-        """Tokeniza un par problema→solución en formato training."""
-        text = f"### Problem:\n{problem}\n### Solution:\n```python\n{solution}\n```"
-        ids = self.tokenizer.Encode(text)
-        # Truncar a seq_len
-        if len(ids) > self.config.seq_len:
-            ids = ids[: self.config.seq_len]
-        return torch.tensor(ids, dtype=torch.long)
+    def _tokenize_pair(
+        self, problem: str, solution: str
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Tokeniza problema→solución con máscara de loss."""
+        return tokenize_pair(self.tokenizer, problem, solution, self.config.seq_len)
+
+    def _tokenize_teaching(self, text: str) -> tuple[torch.Tensor, torch.Tensor]:
+        """Tokeniza contenido del mentor (todos los tokens entrenables)."""
+        return tokenize_teaching(self.tokenizer, text, self.config.seq_len)
 
     # ── Generación del alumno ───────────────────────────────────────
 
@@ -355,59 +262,16 @@ class ClassroomEngine:
 
     # ── Paso de entrenamiento ───────────────────────────────────────
 
-    def _train_step(self, tokens_list: list[torch.Tensor]) -> tuple[float, float]:
-        """
-        Un paso de entrenamiento bio-inspirado.
-
-        Returns: (loss_ce, ewc_penalty)
-        """
-        self.model.train()
-        self.optimizer.zero_grad()
-
-        total_loss = torch.tensor(0.0, device=self.device)
-        total_ce = 0.0
-        n = 0
-        last_info: dict = {}
-
-        for tokens in tokens_list:
-            tokens = tokens.to(self.device)
-            if tokens.dim() == 1:
-                tokens = tokens.unsqueeze(0)
-            if tokens.shape[1] < 3:
-                continue
-
-            input_ids = tokens[:, :-1]
-            targets = tokens[:, 1:]
-            logits, _, info = self.model(input_ids, targets=targets)
-            last_info = info  # Guardar info para terr_acts
-
-            loss_ce = F.cross_entropy(
-                logits.reshape(-1, logits.size(-1)),
-                targets.reshape(-1),
-                ignore_index=0,
-            )
-            total_loss = total_loss + loss_ce
-            total_ce += loss_ce.item()
-            n += 1
-
-        # Capturar terr_acts para mecanismos bio
+    def _train_step(
+        self, examples: list[tuple[torch.Tensor, torch.Tensor]]
+    ) -> tuple[float, float]:
+        """Delega al módulo classroom_training y captura terr_acts."""
+        loss_ce, ewc_pen, last_info = train_step(
+            self.model, self.optimizer, self.ewc, examples, self.device,
+        )
         if last_info and "terr_acts" in last_info:
             self._last_terr_acts = [last_info["terr_acts"].detach()]
-
-        if n == 0:
-            return 0.0, 0.0
-
-        total_loss = total_loss / n
-
-        # EWC penalty
-        ewc_pen = self.ewc.penalty(self.model)
-        total_loss = total_loss + ewc_pen
-
-        total_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-        self.optimizer.step()
-
-        return total_ce / n, ewc_pen.item()
+        return loss_ce, ewc_pen
 
     # ── Quick brain check ───────────────────────────────────────────
 
@@ -437,138 +301,186 @@ class ClassroomEngine:
 
     # ── Curriculum ──────────────────────────────────────────────────
 
-    def _select_problem(self) -> tuple[int, str]:
-        """Selecciona el siguiente problema según el nivel actual."""
-        level = self.current_level
-        exercises = CURRICULUM[level]["ejercicios"]
+    def _select_concept(self) -> tuple[str, dict]:
+        """Selecciona el concepto y genera lección via mentor.
 
-        # Encontrar ejercicio no usado
-        available = [
-            i for i in range(len(exercises)) if i not in self.used_exercises[level]
-        ]
-        if not available:
-            # Todos usados, resetear
-            self.used_exercises[level] = set()
-            available = list(range(len(exercises)))
+        Returns:
+            (concept_id, lesson_dict) donde lesson_dict tiene
+            keys: explain, example, exercise, solution.
+        """
+        concept_id = self.student_profile.select_next_concept()
+        concept = _CONCEPT_BY_ID[concept_id]
+        profile_summary = self.student_profile.summary()
 
-        idx = random.choice(available)
-        self.used_exercises[level].add(idx)
-        return level, exercises[idx]
+        self._emit("system", f"Mentor preparando: {concept['name']}...")
+        lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
 
-    def _update_curriculum(self, correct: bool) -> None:
-        """Actualiza el nivel según la performance reciente."""
-        self.level_history.append(correct)
+        if not lesson:
+            self._emit("system", "Reintentando generación de lección...")
+            lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
 
-        if len(self.level_history) >= self.config.window_size:
-            accuracy = sum(self.level_history) / len(self.level_history)
-            if accuracy >= self.config.advance_threshold and self.current_level < 5:
-                self.current_level += 1
-                self.level_history.clear()
-                self._emit(
-                    "level_up",
-                    {
-                        "new_level": self.current_level,
-                        "nombre": CURRICULUM[self.current_level]["nombre"],
-                        "accuracy": accuracy,
-                    },
-                )
+        if not lesson:
+            # Fallback mínimo
+            lesson = {
+                "explain": "",
+                "example": "",
+                "exercise": f"Write a Python function demonstrating: {concept['desc']}",
+                "solution": "",
+            }
+
+        return concept_id, lesson
 
     # ── Lección completa ────────────────────────────────────────────
 
     def run_lesson(self) -> LessonResult:
-        """Ejecuta una lección completa."""
+        """Ejecuta una lección conversacional completa.
+
+        Flujo mentor:
+          1. Seleccionar concepto via StudentProfile (adaptativo)
+          2. Mentor genera lección: explicación + ejemplo + ejercicio + solución
+          3. Phase A — Absorber: entrenar en explicación + ejemplo (todos los tokens)
+          4. Phase B — Practicar: alumno intenta el ejercicio
+          5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
+          6. Actualizar perfil del alumno
+        """
         self.lesson_count += 1
 
-        # 1. Seleccionar problema
-        level, problem = self._select_problem()
+        # 1. Seleccionar concepto y generar lección
+        concept_id, lesson = self._select_concept()
+        concept = _CONCEPT_BY_ID[concept_id]
+        level = concept_level(concept_id)
+        self.current_level = level
+
         self._emit(
             "lesson_start",
             {
                 "lesson_id": self.lesson_count,
                 "level": level,
-                "level_name": CURRICULUM[level]["nombre"],
-                "problem": problem,
+                "level_name": concept["name"],
+                "concept": concept_id,
+                "problem": lesson.get("exercise", concept["desc"]),
             },
         )
 
-        # 2. Alumno intenta resolver
-        self._emit("student_thinking", {"lesson_id": self.lesson_count})
-        student_answer = self._student_generate(problem)
-        self._emit(
-            "student_answer",
-            {
+        # 2. Mostrar lo que el mentor enseña
+        if lesson.get("explain"):
+            self._emit("mentor_explain", {
                 "lesson_id": self.lesson_count,
-                "answer": student_answer,
-            },
-        )
-
-        # 3. Profesor evalúa
-        self._emit("teacher_evaluating", {"lesson_id": self.lesson_count})
-        eval_result = self.teacher.evaluate_student(problem, student_answer)
-        correct = eval_result.get("correct", False)
-        feedback = eval_result.get("feedback", "")
-
-        self._emit(
-            "teacher_feedback",
-            {
+                "explain": lesson["explain"],
+            })
+        if lesson.get("example"):
+            self._emit("mentor_example", {
                 "lesson_id": self.lesson_count,
-                "correct": correct,
-                "feedback": feedback,
-            },
-        )
+                "example": lesson["example"],
+            })
 
-        # 4. Obtener la solución correcta (del profesor)
-        if correct:
-            teacher_solution = student_answer  # El alumno acertó
-            self.total_correct += 1
-        else:
-            teacher_solution = eval_result.get("fix", "")
-            if not teacher_solution:
-                teacher_solution = self.teacher.generate_solution(problem)
-            if not teacher_solution:
-                teacher_solution = student_answer  # Fallback
+        # 3. Phase A — Absorber: entrenar en contenido del mentor
+        teaching_text = ""
+        if lesson.get("explain"):
+            teaching_text += lesson["explain"] + "\n\n"
+        if lesson.get("example"):
+            teaching_text += lesson["example"]
+
+        teach_loss = 0.0
+        if teaching_text.strip():
+            teach_ids, teach_labels = self._tokenize_teaching(teaching_text)
+            teach_loss, _ = self._train_step([(teach_ids, teach_labels)])
+            self._emit("system", f"Absorción completada (loss={teach_loss:.4f})")
+
+        # 4. Phase B — Practicar: alumno intenta el ejercicio
+        exercise = lesson.get("exercise", "")
+        teacher_solution = lesson.get("solution", "")
+        student_answer = ""
+        correct = False
+        feedback = ""
+        loss_ce = teach_loss
+        ewc_pen = 0.0
+
+        if exercise:
+            self._emit("student_thinking", {"lesson_id": self.lesson_count})
+            student_answer = self._student_generate(exercise)
+            self._emit(
+                "student_answer",
+                {"lesson_id": self.lesson_count, "answer": student_answer},
+            )
+
+            # 5. Phase C — Mentor evalúa el intento
+            self._emit("teacher_evaluating", {"lesson_id": self.lesson_count})
+            profile_summary = self.student_profile.summary()
+            eval_result = self.teacher.respond_to_attempt(
+                exercise, student_answer, profile_summary,
+            )
+            correct = eval_result.get("correct", False)
+            feedback = eval_result.get("feedback", "")
 
             self._emit(
-                "teacher_solution",
+                "teacher_feedback",
                 {
                     "lesson_id": self.lesson_count,
-                    "solution": teacher_solution,
+                    "correct": correct,
+                    "feedback": feedback,
                 },
             )
 
-        # 5. Paso de entrenamiento
-        tokens_new = self._tokenize_pair(problem, teacher_solution)
-        train_batch = [tokens_new]
+            if correct:
+                teacher_solution = student_answer
+                self.total_correct += 1
+            else:
+                fix = eval_result.get("fix", "")
+                if fix:
+                    teacher_solution = fix
+                if not teacher_solution:
+                    teacher_solution = (
+                        self.teacher.generate_solution(exercise) or student_answer
+                    )
+                self._emit(
+                    "teacher_solution",
+                    {"lesson_id": self.lesson_count, "solution": teacher_solution},
+                )
 
-        # Replay buffer: mezclar con ejemplos viejos
-        if len(self.replay) > 0:
-            n_replay = max(
-                1,
-                int(
-                    len(train_batch)
-                    / (1 - self.config.replay_ratio)
-                    * self.config.replay_ratio
-                ),
-            )
-            replay_samples = self.replay.sample(n_replay)
-            for s in replay_samples:
-                train_batch.append(s["tokens"])
+            # Entrenar en ejercicio→solución + replay
+            if teacher_solution:
+                ex_ids, ex_labels = self._tokenize_pair(exercise, teacher_solution)
+                train_batch: list[tuple[torch.Tensor, torch.Tensor]] = [
+                    (ex_ids, ex_labels),
+                ]
 
-        self._emit(
-            "training", {"lesson_id": self.lesson_count, "batch_size": len(train_batch)}
-        )
-        loss_ce, ewc_pen = self._train_step(train_batch)
+                if len(self.replay) > 0:
+                    n_replay = max(
+                        1,
+                        int(
+                            len(train_batch)
+                            / (1 - self.config.replay_ratio)
+                            * self.config.replay_ratio
+                        ),
+                    )
+                    replay_samples = self.replay.sample(n_replay)
+                    for s in replay_samples:
+                        train_batch.append((s["input_ids"], s["labels"]))
 
-        # 6. Guardar en replay buffer si fue correcto (o la corrección del profesor)
-        self.replay.add(problem, teacher_solution, tokens_new, level)
+                self._emit(
+                    "training",
+                    {"lesson_id": self.lesson_count, "batch_size": len(train_batch)},
+                )
+
+                loss_ce, ewc_pen = self._train_step(train_batch)
+
+                # Guardar en replay buffer
+                self.replay.add(
+                    exercise, teacher_solution, ex_ids, ex_labels, level,
+                )
+        else:
+            correct = True
+            feedback = "Lección absorbida (sin ejercicio)"
+
+        # 6. Actualizar perfil del alumno
+        error_desc = feedback if not correct else ""
+        self.student_profile.record(concept_id, correct, error_desc)
 
         # 7. Quick brain check
         brain_score = self._quick_brain_check()
 
-        # 8. Actualizar curriculum
-        self._update_curriculum(correct)
-
-        # 8.5 Bio-mechanisms hook
+        # 8. Bio-mechanisms hook
         bio_state = None
         if self.bio is not None:
             bio_state = self.bio.after_lesson(
@@ -598,7 +510,7 @@ class ClassroomEngine:
         result = LessonResult(
             lesson_id=self.lesson_count,
             level=level,
-            problem=problem,
+            problem=exercise or concept["desc"],
             student_answer=student_answer,
             teacher_solution=teacher_solution,
             correct=correct,
@@ -620,6 +532,7 @@ class ClassroomEngine:
                 "brain_score": round(brain_score, 4),
                 "accuracy": round(accuracy, 4),
                 "level": self.current_level,
+                "concept": concept_id,
                 "replay_size": len(self.replay),
             },
         )
@@ -634,95 +547,39 @@ class ClassroomEngine:
 
     def _save_checkpoint(self) -> None:
         """Guarda checkpoint del modelo."""
-        project_root = Path(__file__).parent.parent
-        ckpt_path = project_root / self.config.checkpoint_out
-        torch.save(
-            {
-                "modelo": self.model.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-                "paso_global": self.lesson_count,
-                "config": asdict(self.config),
-                "curriculum_level": self.current_level,
-                "accuracy": self.total_correct / max(1, self.lesson_count),
-            },
-            str(ckpt_path),
+        path = _persist_checkpoint(
+            self.model, self.optimizer, self.config,
+            self.lesson_count, self.current_level, self.total_correct,
         )
-        self._emit("checkpoint", {"path": str(ckpt_path), "lesson": self.lesson_count})
+        self._emit("checkpoint", {"path": path, "lesson": self.lesson_count})
 
     # ── Guardar sesión ──────────────────────────────────────────────
 
     def save_session(self) -> str:
         """Guarda la sesión completa como JSONL."""
-        project_root = Path(__file__).parent.parent
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        session_path = project_root / f"sessions/classroom_{ts}.jsonl"
-        session_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(session_path, "w", encoding="utf-8") as f:
-            for r in self.session_log:
-                f.write(json.dumps(asdict(r), ensure_ascii=False) + "\n")
-
+        path = _persist_session(self.session_log)
         self._emit(
             "session_saved",
-            {"path": str(session_path), "lessons": len(self.session_log)},
+            {"path": path, "lessons": len(self.session_log)},
         )
-        return str(session_path)
+        return path
 
     def save_recording(self) -> str:
         """Guarda la grabación completa de eventos como HTML reproducible."""
-        if not self._recording_events:
-            return ""
-
-        project_root = Path(__file__).parent.parent
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        recording_dir = project_root / "sessions"
-        recording_dir.mkdir(parents=True, exist_ok=True)
-
-        # Metadata
-        meta = {
-            "model": "PamparV3 (108M)",
-            "teacher_backend": self.config.teacher_backend,
-            "teacher_model": self.config.teacher_model,
-            "start_time": time.strftime(
-                "%Y-%m-%d %H:%M:%S",
-                time.localtime(self._recording_start),
-            ),
-            "duration_s": round(time.time() - self._recording_start, 1)
-            if self._recording_start
-            else 0,
-            "total_lessons": self.lesson_count,
-            "accuracy": round(self.total_correct / max(1, self.lesson_count), 4),
-            "final_level": self.current_level,
-            "ewc_lambda": self.config.ewc_lambda,
-            "lr_base": self.config.lr_base,
-        }
-
-        # Leer template del reproductor
-        replay_template = Path(__file__).parent / "classroom_replay.html"
-        if replay_template.exists():
-            template = replay_template.read_text(encoding="utf-8")
-        else:
-            template = "<html><body><pre>No replay template found</pre></body></html>"
-
-        # Inyectar datos en el template (archivo autocontenido)
-        recording_data = json.dumps(
-            {"meta": meta, "events": self._recording_events},
-            ensure_ascii=False,
+        path = _persist_recording(
+            self._recording_events,
+            self._recording_start,
+            self.config,
+            self.lesson_count,
+            self.total_correct,
+            self.current_level,
         )
-
-        html = template.replace(
-            "/*__RECORDING_DATA__*/",
-            f"window.__RECORDING__ = {recording_data};",
-        )
-
-        out_path = recording_dir / f"classroom_{ts}.html"
-        out_path.write_text(html, encoding="utf-8")
-
-        self._emit(
-            "recording_saved",
-            {"path": str(out_path), "events": len(self._recording_events)},
-        )
-        return str(out_path)
+        if path:
+            self._emit(
+                "recording_saved",
+                {"path": path, "events": len(self._recording_events)},
+            )
+        return path
 
     # ── Emitir eventos (SSE) ────────────────────────────────────────
 
@@ -747,52 +604,5 @@ class ClassroomEngine:
                 }
             )
 
-        # También imprimir en consola
-        if event_type == "system":
-            print(f"  🏫 {data}")
-        elif event_type == "lesson_start":
-            d = data if isinstance(data, dict) else {}
-            print(
-                f"\n  ═══ Lección {d.get('lesson_id', '?')} — Nivel {d.get('level', '?')} ({d.get('level_name', '')}) ═══"
-            )
-            print(f"  📝 {d.get('problem', '')[:80]}")
-        elif event_type == "student_answer":
-            d = data if isinstance(data, dict) else {}
-            ans = d.get("answer", "")[:100]
-            print(f"  🧑‍🎓 Alumno: {ans}")
-        elif event_type == "teacher_feedback":
-            d = data if isinstance(data, dict) else {}
-            icon = "✅" if d.get("correct") else "❌"
-            print(f"  👨‍🏫 Profesor: {icon} {d.get('feedback', '')[:100]}")
-        elif event_type == "lesson_complete":
-            d = data if isinstance(data, dict) else {}
-            print(
-                f"  📊 Loss: {d.get('loss', 0):.4f} | EWC: {d.get('ewc_penalty', 0):.6f} | Brain: {d.get('brain_score', 0):.2%} | Acc: {d.get('accuracy', 0):.1%} | Replay: {d.get('replay_size', 0)}"
-            )
-        elif event_type == "level_up":
-            d = data if isinstance(data, dict) else {}
-            print(
-                f"\n  🎉 ¡NIVEL UP! → Nivel {d.get('new_level', '?')}: {d.get('nombre', '')}"
-            )
-        elif event_type == "checkpoint":
-            d = data if isinstance(data, dict) else {}
-            print(f"  💾 Checkpoint guardado: lección {d.get('lesson', '?')}")
-        elif event_type == "bio_update":
-            d = data if isinstance(data, dict) else {}
-            parts = [
-                f"DA={d.get('dopamine', 0):.2f}",
-                f"NE={d.get('norepinephrine', 0):.2f}",
-                f"LR×{d.get('lr_factor', 1):.2f}",
-            ]
-            if d.get("ltp_applied"):
-                parts.append("LTP!")
-            if d.get("sleep_triggered"):
-                parts.append(f"SLEEP(loss={d.get('sleep_loss', 0):.3f})")
-            if d.get("adapters_total", 0) > 0:
-                parts.append(f"LoRA={d.get('adapters_total', 0)}")
-            if d.get("pruned"):
-                parts.append("PRUNED")
-            print(f"  🧠 Bio: {' | '.join(parts)}")
-        elif event_type == "error":
-            print(f"  ❗ {data}")
-
+        # Imprimir en consola
+        format_event_to_console(event_type, data)
