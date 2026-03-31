@@ -249,13 +249,15 @@ class ClassroomEngine:
         self.model.eval()
 
         if concept_type in ("conceptual", "bridge"):
-            # Formato conversacional: pregunta → respuesta en español
-            prompt = f"### Pregunta:\n{problem}\n### Respuesta:\n"
-            stops = ["###", "\n\n\n"]
-            max_tokens = 80
-            temperature = 0.7  # más exploratorio en lenguaje natural
+            # Formato conversacional: pregunta → respuesta en español (sin tildes)
+            from classroom_training import _norm_for_tok
+            prompt = _norm_for_tok(f"### Pregunta:\n{problem}\n### Respuesta:\n")
+            stops = ["###", "\n\n\n", "\n"]
+            max_tokens = 30   # una frase corta, no 80
+            temperature = 0.2  # más determinístico
         else:
             # Formato código Python
+            from classroom_training import _norm_for_tok
             prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
             stops = ["```", "###", "\n\n\n"]
             max_tokens = 200
@@ -269,7 +271,7 @@ class ClassroomEngine:
                 input_ids,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                top_k=40,
+                top_k=10 if concept_type in ("conceptual", "bridge") else 40,
                 top_p=0.9,
             )
 

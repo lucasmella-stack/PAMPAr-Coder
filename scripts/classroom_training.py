@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from typing import Protocol
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+def _norm_for_tok(text: str) -> str:
+    """Elimina diacríticos y reemplaza puntuación invertida para compatibilidad
+    con el tokenizador pampar_48k (que no tiene á/é/ó/ñ/¿/¡ en vocabulario)."""
+    nfkd = unicodedata.normalize("NFKD", text)
+    without_accents = "".join(c for c in nfkd if unicodedata.category(c) != "Mn")
+    return without_accents.replace("¿", "?").replace("¡", "!")
 
 
 class HasLRConfig(Protocol):
@@ -41,11 +50,13 @@ def setup_optimizer(
                 llaves_params.append(param)
                 assigned.add(name)
     if llaves_params:
-        param_groups.append({
-            "params": llaves_params,
-            "lr": config.lr_base * config.lr_llaves_mult,
-            "label": "llaves_talamo",
-        })
+        param_groups.append(
+            {
+                "params": llaves_params,
+                "lr": config.lr_base * config.lr_llaves_mult,
+                "label": "llaves_talamo",
+            }
+        )
 
     # Grupo 2: Atención — aprende lento
     attn_params = []
@@ -57,11 +68,13 @@ def setup_optimizer(
                 attn_params.append(param)
                 assigned.add(name)
     if attn_params:
-        param_groups.append({
-            "params": attn_params,
-            "lr": config.lr_base * config.lr_attn_mult,
-            "label": "attention",
-        })
+        param_groups.append(
+            {
+                "params": attn_params,
+                "lr": config.lr_base * config.lr_attn_mult,
+                "label": "attention",
+            }
+        )
 
     # Grupo 3: Embeddings — aprende lento
     embed_params = []
@@ -71,11 +84,13 @@ def setup_optimizer(
                 embed_params.append(param)
                 assigned.add(name)
     if embed_params:
-        param_groups.append({
-            "params": embed_params,
-            "lr": config.lr_base * config.lr_embed_mult,
-            "label": "embeddings",
-        })
+        param_groups.append(
+            {
+                "params": embed_params,
+                "lr": config.lr_base * config.lr_embed_mult,
+                "label": "embeddings",
+            }
+        )
 
     # Grupo 4: FFN / StreamFFN / todo lo demás
     ffn_params = []
@@ -84,11 +99,13 @@ def setup_optimizer(
             ffn_params.append(param)
             assigned.add(name)
     if ffn_params:
-        param_groups.append({
-            "params": ffn_params,
-            "lr": config.lr_base * config.lr_ffn_mult,
-            "label": "ffn_generation",
-        })
+        param_groups.append(
+            {
+                "params": ffn_params,
+                "lr": config.lr_base * config.lr_ffn_mult,
+                "label": "ffn_generation",
+            }
+        )
 
     optimizer = torch.optim.AdamW(param_groups, betas=(0.9, 0.95), weight_decay=0.01)
 
@@ -113,8 +130,8 @@ def tokenize_pair(
         para que el loss solo se compute sobre la solución.
     """
     prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
-    prompt_ids = tokenizer.Encode(prompt)
-    solution_ids = tokenizer.Encode(solution + "\n```")
+    prompt_ids = tokenizer.Encode(_norm_for_tok(prompt))
+    solution_ids = tokenizer.Encode(_norm_for_tok(solution + "\n```"))
 
     all_ids = prompt_ids + solution_ids
     if len(all_ids) > seq_len:
@@ -139,7 +156,7 @@ def tokenize_teaching(
 
     Se usa para que el alumno absorba explicaciones y ejemplos del mentor.
     """
-    ids = tokenizer.Encode(text)
+    ids = tokenizer.Encode(_norm_for_tok(text))
     if len(ids) > seq_len:
         ids = ids[:seq_len]
     input_ids = torch.tensor(ids, dtype=torch.long)
