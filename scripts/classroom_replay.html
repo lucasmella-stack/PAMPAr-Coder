@@ -540,14 +540,10 @@
 
       // ── Init ───────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
-        // Check for embedded data
-        if (window.__RECORDING__) {
-          loadRecording(window.__RECORDING__);
-        }
+        // Register fileInput BEFORE loadRecording (which calls clearChat and destroys the element)
+        const fileInput = document.getElementById("fileInput");
+        if (fileInput) fileInput.addEventListener("change", handleFile);
 
-        document
-          .getElementById("fileInput")
-          .addEventListener("change", handleFile);
         document.getElementById("btnPlay").addEventListener("click", play);
         document.getElementById("btnPause").addEventListener("click", pause);
         document
@@ -561,6 +557,11 @@
         document
           .getElementById("timelineBar")
           .addEventListener("click", seekTimeline);
+
+        // Check for embedded data (after listeners are set)
+        if (window.__RECORDING__) {
+          loadRecording(window.__RECORDING__);
+        }
       });
 
       function handleFile(e) {
