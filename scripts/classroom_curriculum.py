@@ -147,136 +147,334 @@ CURRICULUM: dict[int, dict] = {
 # Árbol de conceptos — el mentor elige qué enseñar basándose en esto
 # =============================================================================
 
+# Tipos de concepto:
+#   "conceptual" — sin código, lenguaje natural (etapas 0-3)
+#   "bridge"     — mezcla: concepto cotidiano + correspondencia Python (etapa 4)
+#   "coding"     — Python puro (etapas 5+, curriculum original)
+#
 # Orden de prerequisitos: cada concepto requiere dominar los anteriores en su grupo
-CONCEPT_TREE: list[dict[str, str | list[str]]] = [
+CONCEPT_TREE: list[dict] = [
+    # =========================================================================
+    # ETAPA 0 — PRESENCIA Y COMUNICACIÓN (sin código)
+    # El alumno aprende que existe, que puede responder, que hay un interlocutor.
+    # =========================================================================
+    {
+        "id": "greeting",
+        "name": "Saludos y presentación",
+        "type": "conceptual",
+        "stage": 0,
+        "desc": "Intercambio de saludos. El alumno aprende a responder y articular quién es.",
+        "prereqs": [],
+    },
+    # =========================================================================
+    # ETAPA 1 — CONCEPTOS PRIMITIVOS (sin código)
+    # Lo mismo que aprender letras y números antes de aprender a leer.
+    # =========================================================================
+    {
+        "id": "concept_number",
+        "name": "¿Qué es un número?",
+        "type": "conceptual",
+        "stage": 1,
+        "desc": "Un número representa una cantidad real: 1 manzana, 3 personas, 0 lluvia.",
+        "prereqs": ["greeting"],
+    },
+    {
+        "id": "concept_sequence",
+        "name": "Secuencias y orden",
+        "type": "conceptual",
+        "stage": 1,
+        "desc": "Una secuencia es algo que viene en orden. Contar: 1, 2, 3... Los días de la semana.",
+        "prereqs": ["concept_number"],
+    },
+    {
+        "id": "concept_word",
+        "name": "Palabras y significado",
+        "type": "conceptual",
+        "stage": 1,
+        "desc": "Una palabra es un símbolo con significado: 'casa', 'rojo', 'correr'.",
+        "prereqs": ["greeting"],
+    },
+    {
+        "id": "concept_true_false",
+        "name": "Verdadero y Falso",
+        "type": "conceptual",
+        "stage": 1,
+        "desc": "Solo hay dos opciones: algo es verdad o mentira. El cielo es azul: verdad. Las vacas vuelan: mentira.",
+        "prereqs": ["greeting"],
+    },
+    # =========================================================================
+    # ETAPA 2 — LÓGICA COTIDIANA (sin código)
+    # Como aprender a combinar letras en sílabas.
+    # =========================================================================
+    {
+        "id": "concept_compare",
+        "name": "Comparar cosas",
+        "type": "conceptual",
+        "stage": 2,
+        "desc": "Mayor, menor, igual. 5 es mayor que 3. Una jirafa es más alta que un gato.",
+        "prereqs": ["concept_number", "concept_word"],
+    },
+    {
+        "id": "concept_if_then",
+        "name": "Si... entonces...",
+        "type": "conceptual",
+        "stage": 2,
+        "desc": "Una regla: SI llueve, ENTONCES llevás paraguas. SI tienes hambre, ENTONCES comés.",
+        "prereqs": ["concept_true_false"],
+    },
+    {
+        "id": "concept_repeat",
+        "name": "Repetir acciones",
+        "type": "conceptual",
+        "stage": 2,
+        "desc": "A veces repetimos lo mismo varias veces hasta que algo cambia. Contar, respirar, caminar.",
+        "prereqs": ["concept_sequence"],
+    },
+    # =========================================================================
+    # ETAPA 3 — PROCEDIMIENTOS Y ABSTRACCIÓN (sin código)
+    # Como combinar sílabas en palabras y palabras en oraciones.
+    # =========================================================================
+    {
+        "id": "concept_steps",
+        "name": "Recetas y procedimientos",
+        "type": "conceptual",
+        "stage": 3,
+        "desc": "Una receta es una lista de pasos ordenados que llevan a un resultado. Primero X, luego Y.",
+        "prereqs": ["concept_sequence", "concept_if_then"],
+    },
+    {
+        "id": "concept_variable_box",
+        "name": "Cajas con nombre (variables)",
+        "type": "conceptual",
+        "stage": 3,
+        "desc": "Una caja con etiqueta que guarda algo. La caja 'nombre' guarda 'Ana'. La caja 'edad' guarda 25.",
+        "prereqs": ["concept_number", "concept_word"],
+    },
+    {
+        "id": "concept_function_machine",
+        "name": "Máquinas que procesan (funciones)",
+        "type": "conceptual",
+        "stage": 3,
+        "desc": "Una máquina recibe algo, lo transforma, y devuelve algo. Una licuadora: recibe fruta, devuelve jugo.",
+        "prereqs": ["concept_steps"],
+    },
+    # =========================================================================
+    # ETAPA 4 — PUENTE: CONCEPTOS → CÓDIGO (mezcla de lenguaje y Python)
+    # Como pasar de leer oraciones simples a leer textos más formales.
+    # =========================================================================
+    {
+        "id": "code_intro",
+        "name": "Python: instrucciones para la computadora",
+        "type": "bridge",
+        "stage": 4,
+        "desc": "Python es cómo le escribimos instrucciones a la computadora, igual que una receta.",
+        "prereqs": ["concept_function_machine", "concept_variable_box"],
+    },
+    {
+        "id": "code_values",
+        "name": "Números y texto en Python",
+        "type": "bridge",
+        "stage": 4,
+        "desc": "Los números son iguales: 5, 3.14. El texto va entre comillas: 'hola'.",
+        "prereqs": ["code_intro"],
+    },
+    {
+        "id": "code_true_false",
+        "name": "True y False en Python",
+        "type": "bridge",
+        "stage": 4,
+        "desc": "Verdadero se escribe True. Falso se escribe False. Es lo mismo que sí/no.",
+        "prereqs": ["code_intro", "concept_true_false"],
+    },
+    {
+        "id": "code_variables",
+        "name": "Variables en Python",
+        "type": "bridge",
+        "stage": 4,
+        "desc": "edad = 25 → la caja 'edad' ahora guarda 25. nombre = 'Ana'.",
+        "prereqs": ["concept_variable_box", "code_values"],
+    },
+    {
+        "id": "code_if",
+        "name": "if/else en Python",
+        "type": "bridge",
+        "stage": 4,
+        "desc": "El 'si... entonces...' cotidiano se escribe: if condicion: ... else: ...",
+        "prereqs": ["concept_if_then", "code_true_false"],
+    },
+    # =========================================================================
+    # ETAPA 5+ — CÓDIGO PYTHON (curriculum original, tipo "coding")
+    # =========================================================================
     # Nivel 1 — Fundamentos
     {
         "id": "arithmetic",
         "name": "Arithmetic operations",
+        "type": "coding",
+        "stage": 5,
         "desc": "suma, resta, multiplicación, división, módulo, potencia",
-        "prereqs": [],
+        "prereqs": ["code_variables"],
     },
     {
         "id": "variables_types",
         "name": "Variables and types",
+        "type": "coding",
+        "stage": 5,
         "desc": "int, float, str, bool, type conversion, f-strings",
         "prereqs": ["arithmetic"],
     },
     {
         "id": "conditionals",
         "name": "Conditionals",
+        "type": "coding",
+        "stage": 5,
         "desc": "if/elif/else, comparadores, operadores lógicos (and, or, not)",
         "prereqs": ["variables_types"],
     },
     {
         "id": "strings",
         "name": "String operations",
+        "type": "coding",
+        "stage": 5,
         "desc": "slicing, split, join, replace, find, lower/upper, f-strings",
         "prereqs": ["variables_types"],
     },
     {
         "id": "functions_basic",
         "name": "Basic functions",
+        "type": "coding",
+        "stage": 5,
         "desc": "def, parámetros, return, valores por defecto, docstrings",
         "prereqs": ["variables_types"],
     },
-    # Nivel 2 — Control de flujo
+    # Nivel 6 — Control de flujo
     {
         "id": "loops_for",
         "name": "For loops",
+        "type": "coding",
+        "stage": 6,
         "desc": "for, range, enumerate, iteración sobre secuencias",
         "prereqs": ["functions_basic", "conditionals"],
     },
     {
         "id": "loops_while",
         "name": "While loops",
+        "type": "coding",
+        "stage": 6,
         "desc": "while, break, continue, centinela, acumulador",
         "prereqs": ["loops_for"],
     },
     {
         "id": "lists",
         "name": "Lists",
+        "type": "coding",
+        "stage": 6,
         "desc": "crear, indexar, append, extend, slicing, list comprehensions",
         "prereqs": ["loops_for"],
     },
     {
         "id": "tuples_sets",
         "name": "Tuples and sets",
+        "type": "coding",
+        "stage": 6,
         "desc": "tuplas inmutables, sets, operaciones de conjuntos",
         "prereqs": ["lists"],
     },
     {
         "id": "dicts",
         "name": "Dictionaries",
+        "type": "coding",
+        "stage": 6,
         "desc": "crear, acceder, items, keys, values, dict comprehensions",
         "prereqs": ["lists"],
     },
-    # Nivel 3 — Funciones avanzadas
+    # Nivel 7 — Funciones avanzadas
     {
         "id": "recursion",
         "name": "Recursion",
+        "type": "coding",
+        "stage": 7,
         "desc": "caso base, caso recursivo, stack de llamadas, fibonacci, factorial",
         "prereqs": ["functions_basic", "conditionals"],
     },
     {
         "id": "higher_order",
         "name": "Higher-order functions",
+        "type": "coding",
+        "stage": 7,
         "desc": "map, filter, reduce, lambda, funciones como argumento",
         "prereqs": ["functions_basic", "lists"],
     },
     {
         "id": "generators",
         "name": "Generators",
+        "type": "coding",
+        "stage": 7,
         "desc": "yield, generadores, iteradores, lazy evaluation",
         "prereqs": ["loops_for", "functions_basic"],
     },
     {
         "id": "error_handling",
         "name": "Error handling",
+        "type": "coding",
+        "stage": 7,
         "desc": "try/except/finally, raise, excepciones custom",
         "prereqs": ["functions_basic"],
     },
-    # Nivel 4 — OOP
+    # Nivel 8 — OOP
     {
         "id": "classes_basic",
         "name": "Classes",
+        "type": "coding",
+        "stage": 8,
         "desc": "class, __init__, self, atributos, métodos",
         "prereqs": ["functions_basic", "dicts"],
     },
     {
         "id": "inheritance",
         "name": "Inheritance",
+        "type": "coding",
+        "stage": 8,
         "desc": "herencia, super(), override, polimorfismo",
         "prereqs": ["classes_basic"],
     },
     {
         "id": "dunder_methods",
         "name": "Dunder methods",
+        "type": "coding",
+        "stage": 8,
         "desc": "__str__, __repr__, __len__, __add__, __eq__, __iter__",
         "prereqs": ["classes_basic"],
     },
-    # Nivel 5 — Avanzado
+    # Nivel 9 — Avanzado
     {
         "id": "decorators",
         "name": "Decorators",
+        "type": "coding",
+        "stage": 9,
         "desc": "decoradores, functools.wraps, patrones de decorador",
         "prereqs": ["higher_order"],
     },
     {
         "id": "context_managers",
         "name": "Context managers",
+        "type": "coding",
+        "stage": 9,
         "desc": "with, __enter__/__exit__, contextlib",
         "prereqs": ["classes_basic", "error_handling"],
     },
     {
         "id": "algorithms",
         "name": "Algorithms",
+        "type": "coding",
+        "stage": 9,
         "desc": "sorting, searching, complejidad, divide and conquer",
         "prereqs": ["recursion", "lists"],
     },
     {
         "id": "file_io",
         "name": "File I/O",
+        "type": "coding",
+        "stage": 9,
         "desc": "open, read, write, with, json, csv",
         "prereqs": ["error_handling", "strings"],
     },
@@ -416,18 +614,55 @@ class StudentProfile:
 # ── Utilidades ──────────────────────────────────────────────────────────
 
 _LEVEL_MAP: dict[str, int] = {
-    "arithmetic": 1, "variables_types": 1, "conditionals": 1,
-    "strings": 1, "functions_basic": 1,
-    "loops_for": 2, "loops_while": 2, "lists": 2,
-    "tuples_sets": 2, "dicts": 2,
-    "recursion": 3, "higher_order": 3, "generators": 3,
-    "error_handling": 3,
-    "classes_basic": 4, "inheritance": 4, "dunder_methods": 4,
-    "decorators": 5, "context_managers": 5, "algorithms": 5,
-    "file_io": 5,
+    # Etapa 0: presencia
+    "greeting": 0,
+    # Etapa 1: conceptos primitivos
+    "concept_number": 1,
+    "concept_sequence": 1,
+    "concept_word": 1,
+    "concept_true_false": 1,
+    # Etapa 2: lógica cotidiana
+    "concept_compare": 2,
+    "concept_if_then": 2,
+    "concept_repeat": 2,
+    # Etapa 3: procedimientos
+    "concept_steps": 3,
+    "concept_variable_box": 3,
+    "concept_function_machine": 3,
+    # Etapa 4: puente
+    "code_intro": 4,
+    "code_values": 4,
+    "code_true_false": 4,
+    "code_variables": 4,
+    "code_if": 4,
+    # Etapa 5+: código Python
+    "arithmetic": 5,
+    "variables_types": 5,
+    "conditionals": 5,
+    "strings": 5,
+    "functions_basic": 5,
+    "loops_for": 6,
+    "loops_while": 6,
+    "lists": 6,
+    "tuples_sets": 6,
+    "dicts": 6,
+    "recursion": 7,
+    "higher_order": 7,
+    "generators": 7,
+    "error_handling": 7,
+    "classes_basic": 8,
+    "inheritance": 8,
+    "dunder_methods": 8,
+    "decorators": 9,
+    "context_managers": 9,
+    "algorithms": 9,
+    "file_io": 9,
 }
 
 
 def concept_level(concept_id: str) -> int:
-    """Mapea concept_id a nivel del curriculum (1-5)."""
-    return _LEVEL_MAP.get(concept_id, 1)
+    """Mapea concept_id a nivel del curriculum (0-9).
+
+    0 = presencia, 1-3 = conceptual, 4 = puente, 5-9 = código Python.
+    """
+    return _LEVEL_MAP.get(concept_id, 5)

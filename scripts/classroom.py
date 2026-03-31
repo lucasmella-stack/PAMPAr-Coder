@@ -26,16 +26,20 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bio_mechanisms import BioOrchestrator, BioState
 from classroom_curriculum import (
+    _CONCEPT_BY_ID,
     ClassroomConfig,
     StudentProfile,
-    _CONCEPT_BY_ID,
     concept_level,
 )
 from classroom_events import format_event_to_console
 from classroom_memory import EWC, LessonResult, ReplayBuffer, compute_ewc_baseline
 from classroom_persistence import (
     save_checkpoint as _persist_checkpoint,
+)
+from classroom_persistence import (
     save_recording as _persist_recording,
+)
+from classroom_persistence import (
     save_session as _persist_session,
 )
 from classroom_teacher import Teacher
@@ -199,7 +203,8 @@ class ClassroomEngine:
     def _setup_optimizer(self) -> None:
         """Configura optimizer con Learning Rate diferencial."""
         self.optimizer, self._baseline_lr, info = setup_optimizer(
-            self.model, self.config,
+            self.model,
+            self.config,
         )
         for g in info:
             self._emit(
@@ -235,18 +240,35 @@ class ClassroomEngine:
 
     # ── Generación del alumno ───────────────────────────────────────
 
-    def _student_generate(self, problem: str) -> str:
-        """El alumno (PamparV3) intenta resolver el problema."""
+    def _student_generate(self, problem: str, concept_type: str = "coding") -> str:
+        """El alumno (PamparV3) intenta resolver el problema.
+
+        Para conceptos conceptual/bridge usa formato conversacional en español.
+        Para coding usa el formato de código Python.
+        """
         self.model.eval()
-        prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
+
+        if concept_type in ("conceptual", "bridge"):
+            # Formato conversacional: pregunta → respuesta en español
+            prompt = f"### Pregunta:\n{problem}\n### Respuesta:\n"
+            stops = ["###", "\n\n\n"]
+            max_tokens = 80
+            temperature = 0.7  # más exploratorio en lenguaje natural
+        else:
+            # Formato código Python
+            prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
+            stops = ["```", "###", "\n\n\n"]
+            max_tokens = 200
+            temperature = 0.3
+
         ids = self.tokenizer.Encode(prompt)
         input_ids = torch.tensor([ids], dtype=torch.long, device=self.device)
 
         with torch.no_grad():
             output = self.model.generate(
                 input_ids,
-                max_tokens=200,
-                temperature=0.3,
+                max_tokens=max_tokens,
+                temperature=temperature,
                 top_k=40,
                 top_p=0.9,
             )
@@ -254,8 +276,7 @@ class ClassroomEngine:
         generated = output[0, len(ids) :].tolist()
         text = self.tokenizer.Decode(generated)
 
-        # Cortar en ``` o ### si aparece
-        for stop in ["```", "###", "\n\n\n"]:
+        for stop in stops:
             if stop in text:
                 text = text[: text.index(stop)]
         return text.strip()
@@ -267,7 +288,11 @@ class ClassroomEngine:
     ) -> tuple[float, float]:
         """Delega al módulo classroom_training y captura terr_acts."""
         loss_ce, ewc_pen, last_info = train_step(
-            self.model, self.optimizer, self.ewc, examples, self.device,
+            self.model,
+            self.optimizer,
+            self.ewc,
+            examples,
+            self.device,
         )
         if last_info and "terr_acts" in last_info:
             self._last_terr_acts = [last_info["terr_acts"].detach()]
@@ -310,21 +335,40 @@ class ClassroomEngine:
         """
         concept_id = self.student_profile.select_next_concept()
         concept = _CONCEPT_BY_ID[concept_id]
+        concept_type = concept.get("type", "coding")
         profile_summary = self.student_profile.summary()
 
-        self._emit("system", f"Mentor preparando: {concept['name']}...")
-        lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
+        self._emit(
+            "system", f"Mentor preparando: {concept['name']} [{concept_type}]..."
+        )
+        lesson = self.teacher.generate_lesson(
+            profile_summary, concept["name"], concept_type=concept_type
+        )
 
         if not lesson:
             self._emit("system", "Reintentando generación de lección...")
-            lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
+            lesson = self.teacher.generate_lesson(
+                profile_summary, concept["name"], concept_type=concept_type
+            )
 
         if not lesson:
-            # Fallback mínimo
+            # Fallback según tipo
+            if concept_type == "conceptual":
+                fallback_exercise = (
+                    f"¿Puedes explicar con tus palabras qué es: {concept['desc']}?"
+                )
+            elif concept_type == "bridge":
+                fallback_exercise = (
+                    f"Muestra en Python el concepto de: {concept['desc']}"
+                )
+            else:
+                fallback_exercise = (
+                    f"Write a Python function demonstrating: {concept['desc']}"
+                )
             lesson = {
                 "explain": "",
                 "example": "",
-                "exercise": f"Write a Python function demonstrating: {concept['desc']}",
+                "exercise": fallback_exercise,
                 "solution": "",
             }
 
@@ -335,19 +379,22 @@ class ClassroomEngine:
     def run_lesson(self) -> LessonResult:
         """Ejecuta una lección conversacional completa.
 
-        Flujo mentor:
-          1. Seleccionar concepto via StudentProfile (adaptativo)
-          2. Mentor genera lección: explicación + ejemplo + ejercicio + solución
-          3. Phase A — Absorber: entrenar en explicación + ejemplo (todos los tokens)
-          4. Phase B — Practicar: alumno intenta el ejercicio
-          5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
-          6. Actualizar perfil del alumno
+        Flujo según tipo de concepto:
+          conceptual/bridge:
+            Phase A — Absorber: entrenar en explicación + ejemplo (todos los tokens)
+            Phase B — Responder: alumno responde en lenguaje natural
+            Phase C — Corregir: entrenar en pregunta→respuesta correcta (sin máscara)
+          coding:
+            Phase A — Absorber: entrenar en explicación + ejemplo
+            Phase B — Practicar: alumno intenta el ejercicio en Python
+            Phase C — Corregir: entrenar en ejercicio→solución (con máscara de prompt)
         """
         self.lesson_count += 1
 
         # 1. Seleccionar concepto y generar lección
         concept_id, lesson = self._select_concept()
         concept = _CONCEPT_BY_ID[concept_id]
+        concept_type = concept.get("type", "coding")
         level = concept_level(concept_id)
         self.current_level = level
 
@@ -364,17 +411,25 @@ class ClassroomEngine:
 
         # 2. Mostrar lo que el mentor enseña
         if lesson.get("explain"):
-            self._emit("mentor_explain", {
-                "lesson_id": self.lesson_count,
-                "explain": lesson["explain"],
-            })
+            self._emit(
+                "mentor_explain",
+                {
+                    "lesson_id": self.lesson_count,
+                    "explain": lesson["explain"],
+                },
+            )
         if lesson.get("example"):
-            self._emit("mentor_example", {
-                "lesson_id": self.lesson_count,
-                "example": lesson["example"],
-            })
+            self._emit(
+                "mentor_example",
+                {
+                    "lesson_id": self.lesson_count,
+                    "example": lesson["example"],
+                },
+            )
 
         # 3. Phase A — Absorber: entrenar en contenido del mentor
+        #    Para conceptos conceptuales el text incluye la conversación natural.
+        #    Para coding incluye explicación + código de ejemplo.
         teaching_text = ""
         if lesson.get("explain"):
             teaching_text += lesson["explain"] + "\n\n"
@@ -387,7 +442,7 @@ class ClassroomEngine:
             teach_loss, _ = self._train_step([(teach_ids, teach_labels)])
             self._emit("system", f"Absorción completada (loss={teach_loss:.4f})")
 
-        # 4. Phase B — Practicar: alumno intenta el ejercicio
+        # 4. Phase B — El alumno intenta responder
         exercise = lesson.get("exercise", "")
         teacher_solution = lesson.get("solution", "")
         student_answer = ""
@@ -398,17 +453,20 @@ class ClassroomEngine:
 
         if exercise:
             self._emit("student_thinking", {"lesson_id": self.lesson_count})
-            student_answer = self._student_generate(exercise)
+            student_answer = self._student_generate(exercise, concept_type=concept_type)
             self._emit(
                 "student_answer",
                 {"lesson_id": self.lesson_count, "answer": student_answer},
             )
 
-            # 5. Phase C — Mentor evalúa el intento
+            # 5. Phase C — Mentor evalúa el intento (lenguaje o código según tipo)
             self._emit("teacher_evaluating", {"lesson_id": self.lesson_count})
             profile_summary = self.student_profile.summary()
             eval_result = self.teacher.respond_to_attempt(
-                exercise, student_answer, profile_summary,
+                exercise,
+                student_answer,
+                profile_summary,
+                concept_type=concept_type,
             )
             correct = eval_result.get("correct", False)
             feedback = eval_result.get("feedback", "")
@@ -429,7 +487,7 @@ class ClassroomEngine:
                 fix = eval_result.get("fix", "")
                 if fix:
                     teacher_solution = fix
-                if not teacher_solution:
+                if not teacher_solution and concept_type == "coding":
                     teacher_solution = (
                         self.teacher.generate_solution(exercise) or student_answer
                     )
@@ -438,9 +496,18 @@ class ClassroomEngine:
                     {"lesson_id": self.lesson_count, "solution": teacher_solution},
                 )
 
-            # Entrenar en ejercicio→solución + replay
+            # Entrenar en ejercicio→solución
             if teacher_solution:
-                ex_ids, ex_labels = self._tokenize_pair(exercise, teacher_solution)
+                if concept_type in ("conceptual", "bridge"):
+                    # Sin máscara de prompt: todo el par es señal de aprendizaje
+                    full_text = (
+                        f"### Pregunta:\n{exercise}\n### Respuesta:\n{teacher_solution}"
+                    )
+                    ex_ids, ex_labels = self._tokenize_teaching(full_text)
+                else:
+                    # Con máscara: solo la solución genera loss
+                    ex_ids, ex_labels = self._tokenize_pair(exercise, teacher_solution)
+
                 train_batch: list[tuple[torch.Tensor, torch.Tensor]] = [
                     (ex_ids, ex_labels),
                 ]
@@ -465,9 +532,13 @@ class ClassroomEngine:
 
                 loss_ce, ewc_pen = self._train_step(train_batch)
 
-                # Guardar en replay buffer
+                # Guardar en replay buffer (todos los tipos)
                 self.replay.add(
-                    exercise, teacher_solution, ex_ids, ex_labels, level,
+                    exercise,
+                    teacher_solution,
+                    ex_ids,
+                    ex_labels,
+                    level,
                 )
         else:
             correct = True
@@ -548,8 +619,12 @@ class ClassroomEngine:
     def _save_checkpoint(self) -> None:
         """Guarda checkpoint del modelo."""
         path = _persist_checkpoint(
-            self.model, self.optimizer, self.config,
-            self.lesson_count, self.current_level, self.total_correct,
+            self.model,
+            self.optimizer,
+            self.config,
+            self.lesson_count,
+            self.current_level,
+            self.total_correct,
         )
         self._emit("checkpoint", {"path": path, "lesson": self.lesson_count})
 
