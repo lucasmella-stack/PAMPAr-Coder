@@ -251,13 +251,15 @@ class ClassroomEngine:
         if concept_type in ("conceptual", "bridge"):
             # Formato conversacional: pregunta → respuesta en español (sin tildes)
             from classroom_training import _norm_for_tok
+
             prompt = _norm_for_tok(f"### Pregunta:\n{problem}\n### Respuesta:\n")
             stops = ["###", "\n\n\n", "\n"]
-            max_tokens = 30   # una frase corta, no 80
+            max_tokens = 30  # una frase corta, no 80
             temperature = 0.2  # más determinístico
         else:
             # Formato código Python
             from classroom_training import _norm_for_tok
+
             prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
             stops = ["```", "###", "\n\n\n"]
             max_tokens = 200
@@ -428,6 +430,14 @@ class ClassroomEngine:
                     "example": lesson["example"],
                 },
             )
+        if lesson.get("clave"):
+            self._emit(
+                "mentor_clave",
+                {
+                    "lesson_id": self.lesson_count,
+                    "clave": lesson["clave"],
+                },
+            )
 
         # 3. Phase A — Absorber: entrenar en contenido del mentor
         #    Para conceptos conceptuales el text incluye la conversación natural.
@@ -442,7 +452,12 @@ class ClassroomEngine:
         if teaching_text.strip():
             teach_ids, teach_labels = self._tokenize_teaching(teaching_text)
             teach_loss, _ = self._train_step([(teach_ids, teach_labels)])
-            self._emit("system", f"Absorción completada (loss={teach_loss:.4f})")
+            self._emit("system", f"Absorcion completada (loss={teach_loss:.4f})")
+
+        # Phase A+ — Refuerzo CLAVE: paso adicional solo con lo esencial
+        if lesson.get("clave"):
+            clave_ids, clave_labels = self._tokenize_teaching(lesson["clave"])
+            self._train_step([(clave_ids, clave_labels)])
 
         # 4. Phase B — El alumno intenta responder
         exercise = lesson.get("exercise", "")

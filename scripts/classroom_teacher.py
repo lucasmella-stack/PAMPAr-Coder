@@ -39,6 +39,8 @@ _SYSTEM_CONCEPTUAL = (
     "[Explanation of the concept in simple Spanish, using everyday analogies]\n"
     "---EXAMPLE---\n"
     "[2-3 concrete real-world examples that illustrate the concept. No code.]\n"
+    "---CLAVE---\n"
+    "[3 bullet points in Spanish starting with '- ': the exact ideas the student MUST retain from this lesson]\n"
     "---EXERCISE---\n"
     "[A simple question in Spanish the student can answer in natural language]\n"
     "---SOLUTION---\n"
@@ -48,6 +50,7 @@ _SYSTEM_CONCEPTUAL = (
     "- Be warm and encouraging, like talking to a curious child.\n"
     "- Explanations AND examples AND exercise in SPANISH.\n"
     "- Keep the exercise answerable in 1-3 sentences.\n"
+    "- The ---CLAVE--- section is the most important: distill the lesson into 3 ideas to retain.\n"
 )
 
 # ── Prompt BRIDGE (etapa 4): concepto cotidiano → Python ────────────────────
@@ -65,6 +68,8 @@ _SYSTEM_BRIDGE = (
     "[Everyday analogy first, then Python equivalent. Spanish + minimal Python.]\n"
     "---EXAMPLE---\n"
     "[Side by side: 'In real life: X ... In Python: Y'. Very short code.]\n"
+    "---CLAVE---\n"
+    "[3 bullet points in Spanish starting with '- ': what the student MUST retain from this bridge lesson]\n"
     "---EXERCISE---\n"
     "[A simple question that can be answered in Python + 1 sentence of explanation]\n"
     "---SOLUTION---\n"
@@ -73,6 +78,7 @@ _SYSTEM_BRIDGE = (
     "- Code blocks max 3 lines. No imports. No complex structures.\n"
     "- ALWAYS connect to the everyday concept first.\n"
     "- If the concept is 'variables in Python': start with 'Una caja con nombre...'\n"
+    "- The ---CLAVE--- section bridges real-world and Python: make it memorable.\n"
 )
 
 # ── Prompt CODING (etapas 5+): Python puro ──────────────────────────────────
@@ -90,6 +96,8 @@ _SYSTEM_MENTOR = (
     "[Brief concept explanation in Spanish, 2-3 sentences]\n"
     "---EXAMPLE---\n"
     "[A complete working code example demonstrating the concept]\n"
+    "---CLAVE---\n"
+    "[3 bullet points in Spanish starting with '- ': the exact patterns/rules the student must memorize]\n"
     "---EXERCISE---\n"
     "[A clear problem statement for the student to solve]\n"
     "---SOLUTION---\n"
@@ -99,6 +107,7 @@ _SYSTEM_MENTOR = (
     "- Each example/solution must be a complete, runnable function\n"
     "- Use the EXACT function name you specify in the exercise\n"
     "- Explanations in SPANISH, code in English\n"
+    "- The ---CLAVE--- section is critical: distill the 3 most important patterns to remember.\n"
 )
 
 # ── Prompt de evaluación de respuestas conceptuales ────────────────────────
@@ -321,6 +330,7 @@ class Teacher:
         markers = {
             "---EXPLAIN---": "explain",
             "---EXAMPLE---": "example",
+            "---CLAVE---": "clave",
             "---EXERCISE---": "exercise",
             "---SOLUTION---": "solution",
         }
@@ -352,5 +362,6 @@ class Teacher:
             }
 
         sections.setdefault("explain", "")
+        sections.setdefault("clave", "")
         sections.setdefault("exercise", "")
         return sections
