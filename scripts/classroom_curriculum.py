@@ -536,38 +536,59 @@ class StudentProfile:
                 return False
         return True
 
-    def select_next_concept(self) -> str:
+    def select_next_concept(self, max_drills: int = 6) -> str:
         """Elige el siguiente concepto a enseñar.
 
         Prioridad:
-        1. Conceptos con intentos pero no dominados (reforzar)
-        2. Nuevos conceptos cuyos prereqs están cumplidos
-        3. Random de los primeros conceptos si todo es nuevo
+        1. Nuevos conceptos disponibles (prereqs cumplidos) — siempre introduce al menos uno nuevo
+           antes de volver a reforzar, una vez que el concepto anterior supera max_drills intentos.
+        2. Conceptos con intentos pero no dominados Y con < max_drills intentos (reforzar)
+        3. Nuevos conceptos cuyos prereqs están cumplidos (avanzar)
+        4. Conceptos dominados para repaso espaciado
+
+        max_drills: máximo de intentos seguidos en un concepto sin haberlo dominado
+                    antes de forzar la introducción de uno nuevo.
         """
-        # 1. Conceptos que necesitan refuerzo (intentados pero no dominados)
-        needs_work = []
+        # Separar conceptos que necesitan refuerzo y los que ya se han taladrado mucho
+        drillable = []
+        overdrilled = []
         for concept in CONCEPT_TREE:
             cid = concept["id"]
             c = self.concepts[cid]
             if c["total"] > 0 and not self.is_mastered(cid):
-                needs_work.append((cid, self.mastery(cid)))
+                if c["total"] < max_drills:
+                    drillable.append((cid, self.mastery(cid)))
+                else:
+                    overdrilled.append((cid, self.mastery(cid)))
 
-        if needs_work:
-            # Priorizar los de menor mastery
-            needs_work.sort(key=lambda x: x[1])
-            return needs_work[0][0]
+        # Conceptos nuevos disponibles (prereqs cumplidos, no intentados)
+        available_new = [
+            concept["id"]
+            for concept in CONCEPT_TREE
+            if self.concepts[concept["id"]]["total"] == 0
+            and self.prereqs_met(concept["id"])
+        ]
 
-        # 2. Nuevos conceptos disponibles (prereqs cumplidos, no intentados)
-        available_new = []
-        for concept in CONCEPT_TREE:
-            cid = concept["id"]
-            if self.concepts[cid]["total"] == 0 and self.prereqs_met(cid):
-                available_new.append(cid)
+        # Si hay conceptos taladrados en exceso (≥ max_drills sin dominar)
+        # forzar introducción de algo nuevo antes de volver a drillarlo
+        if overdrilled and available_new:
+            return available_new[0]
 
+        # Reforzar conceptos con pocos intentos (todavía útil)
+        if drillable:
+            drillable.sort(key=lambda x: x[1])
+            return drillable[0][0]
+
+        # Avanzar a nuevo concepto aunque los anteriores no estén dominados
         if available_new:
-            return available_new[0]  # Primero en orden del árbol
+            return available_new[0]
 
-        # 3. Conceptos dominados para consolidar (repaso espaciado)
+        # Conceptos overdrilled: volver con ellos una vez agotados los nuevos
+        if overdrilled:
+            overdrilled.sort(key=lambda x: x[1])
+            return overdrilled[0][0]
+
+        # Repaso espaciado de conceptos dominados
         mastered = [c["id"] for c in CONCEPT_TREE if self.is_mastered(c["id"])]
         if mastered:
             return random.choice(mastered)

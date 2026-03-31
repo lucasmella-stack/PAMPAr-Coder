@@ -549,14 +549,16 @@ class ClassroomEngine:
 
                 loss_ce, ewc_pen = self._train_step(train_batch)
 
-                # Guardar en replay buffer (todos los tipos)
-                self.replay.add(
-                    exercise,
-                    teacher_solution,
-                    ex_ids,
-                    ex_labels,
-                    level,
-                )
+                # Guardar en replay buffer solo si el alumno acertó
+                # (evita fijar patrones incorrectos en el buffer)
+                if correct:
+                    self.replay.add(
+                        exercise,
+                        teacher_solution,
+                        ex_ids,
+                        ex_labels,
+                        level,
+                    )
         else:
             correct = True
             feedback = "Lección absorbida (sin ejercicio)"

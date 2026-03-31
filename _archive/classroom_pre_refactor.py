@@ -1,42 +1,22 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-classroom.py — Aula simulada: modelo profesor enseña a PamparV3.
+classroom.py — Motor principal del Classroom (ClassroomEngine).
 
-Implementa aprendizaje bio-inspirado:
-  - EWC (Elastic Weight Consolidation): protege pesos importantes
-  - Replay Buffer: mezcla ejemplos nuevos con viejos (simula sueño)
-  - LR diferencial: LLAVES casi congelado, generación aprende
-  - Curriculum progresivo: de trivial a complejo
-
-Uso:
-  python scripts/classroom.py --checkpoint checkpoints/v3_ghidra_v9.pt
-
-  # Con GitHub Models API:
-  python scripts/classroom.py --checkpoint checkpoints/v3_ghidra_v9.pt --teacher github
-
-  # Con OpenRouter:
-  python scripts/classroom.py --checkpoint checkpoints/v3_ghidra_v9.pt --teacher openrouter
+Orquesta profesor, alumno y entrenamiento bio-inspirado.
+Para ejecutar: usar classroom_server.py (CLI/Web).
 """
 
 from __future__ import annotations
 
-import argparse
-import copy
 import json
 import os
 import queue
 import random
-import subprocess
 import sys
-import threading
 import time
-import traceback
-import urllib.error
-import urllib.request
 from collections import deque
-from dataclasses import asdict, dataclass, field
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
@@ -47,6 +27,14 @@ import torch.nn.functional as F
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bio_mechanisms import BioOrchestrator, BioState
+from classroom_curriculum import (
+    CURRICULUM,
+    ClassroomConfig,
+    StudentProfile,
+    _CONCEPT_BY_ID,
+)
+from classroom_memory import EWC, LessonResult, ReplayBuffer
+from classroom_teacher import Teacher
 
 # Leer .env
 _env_file = Path(__file__).parent.parent / ".env"
@@ -59,432 +47,21 @@ if _env_file.exists():
 
 
 # =============================================================================
-# Configuración
-# =============================================================================
-
-
-@dataclass
-class ClassroomConfig:
-    """Configuración del aula."""
-
-    # Modelo
-    checkpoint_in: str = "checkpoints/v3_ghidra_v9.pt"
-    checkpoint_out: str = "checkpoints/v3_classroom.pt"
-    device: str = "auto"
-
-    # Teacher
-    teacher_backend: str = "github"  # "github" | "openrouter"
-    teacher_model: str = "openai/gpt-4o-mini"
-    api_key: str = ""
-
-    # Entrenamiento bio-inspirado
-    lr_base: float = 5e-6  # LR base (conservador)
-    lr_llaves_mult: float = 0.01  # LLAVES/Tálamo: 1% del LR base
-    lr_attn_mult: float = 0.1  # Atención: 10% del LR base
-    lr_embed_mult: float = 0.1  # Embeddings: 10% del LR base
-    lr_ffn_mult: float = 1.0  # FFN/StreamFFN: 100% del LR base
-
-    # EWC
-    ewc_lambda: float = 500.0  # Fuerza de la penalización EWC
-    ewc_samples: int = 200  # Muestras para calcular Fisher
-
-    # Replay buffer
-    replay_size: int = 100  # Tamaño del buffer
-    replay_ratio: float = 0.5  # 50% replay, 50% nuevo
-
-    # Curriculum
-    start_level: int = 1  # Nivel inicial (1-5)
-    advance_threshold: float = 0.7  # 70% correcto para avanzar
-    window_size: int = 10  # Ventana para calcular accuracy
-
-    # Sesión
-    max_lessons: int = 200  # Máximo de lecciones por sesión
-    guardar_cada: int = 20  # Guardar checkpoint cada N lecciones
-    seq_len: int = 256  # Longitud máx de secuencia para training
-
-    # Bio-inspired mechanisms
-    bio_enabled: bool = True  # Activar mecanismos bio-inspirados
-    sleep_every: int = 15  # Consolidación de sueño cada N lecciones
-    prune_every: int = 30  # Poda sináptica cada N lecciones
-
-    # Server
-    port: int = 8888
-
-    # Recording
-    record: bool = True  # Grabar sesión como video reproducible
-
-
-# =============================================================================
-# Teacher — Modelo profesor via API
-# =============================================================================
-
-CURRICULUM = {
-    1: {
-        "nombre": "Fundamentos",
-        "desc": "Variables, funciones simples, operaciones básicas",
-        "ejercicios": [
-            "Write a Python function `suma(a, b)` that returns the sum of two numbers.",
-            "Write a Python function `es_par(n)` that returns True if n is even, False otherwise.",
-            "Write a Python function `longitud(texto)` that returns the length of a string without using len().",
-            "Write a Python function `invertir(texto)` that returns the reversed string.",
-            "Write a Python function `contar_vocales(texto)` that counts vowels (a,e,i,o,u) case-insensitive.",
-            "Write a Python function `suma_digitos(n)` that returns the sum of all digits of a non-negative integer.",
-            "Write a Python function `es_palindromo(s)` that returns True if the string is a palindrome.",
-            "Write a Python function `maximo(a, b)` that returns the larger of two numbers without using max().",
-            "Write a Python function `absoluto(n)` that returns the absolute value without using abs().",
-            "Write a Python function `celsius_a_fahrenheit(c)` that converts Celsius to Fahrenheit.",
-            "Write a Python function `factorial(n)` that returns n! using a loop.",
-            "Write a Python function `potencia(base, exp)` that returns base**exp using a loop.",
-            "Write a Python function `duplicar_lista(lst)` that returns a new list with each element doubled.",
-            "Write a Python function `minimo_lista(lst)` that returns the smallest element without using min().",
-            "Write a Python function `contar_mayusculas(texto)` that counts uppercase letters in a string.",
-        ],
-    },
-    2: {
-        "nombre": "Estructuras de control",
-        "desc": "Loops, condicionales, listas, diccionarios",
-        "ejercicios": [
-            "Write a Python function `fizzbuzz(n)` that returns 'FizzBuzz' if n divisible by 3 and 5, 'Fizz' if by 3, 'Buzz' if by 5, else str(n).",
-            "Write a Python function `fibonacci(n)` that returns the n-th Fibonacci number (0-indexed).",
-            "Write a Python function `frecuencia(lista)` that returns a dict mapping each element to its count.",
-            "Write a Python function `aplanar(lista)` that flattens a list of lists by one level.",
-            "Write a Python function `cuadrados_pares(n)` that returns squares of all even numbers from 2 to n.",
-            "Write a Python function `invertir_dict(d)` that returns a new dict with keys and values swapped.",
-            "Write a Python function `busqueda_lineal(lista, objetivo)` that returns the index or -1 if not found.",
-            "Write a Python function `eliminar_duplicados(lista)` that returns a list without duplicates, preserving order.",
-            "Write a Python function `es_primo(n)` that returns True if n is prime.",
-            "Write a Python function `ordenar_burbuja(lista)` that sorts a list using bubble sort.",
-            "Write a Python function `interseccion(a, b)` that returns elements common to both lists.",
-            "Write a Python function `rotar_lista(lst, k)` that rotates list left by k positions.",
-        ],
-    },
-    3: {
-        "nombre": "Funciones avanzadas",
-        "desc": "Recursión, generadores, comprensiones complejas",
-        "ejercicios": [
-            "Write a Python function `merge_sort(lista)` that returns a new sorted list using merge sort.",
-            "Write a Python function `busqueda_binaria(lista, objetivo)` that returns the index or -1.",
-            "Write a Python function `primos_hasta(n)` that yields all primes up to n using a generator.",
-            "Write a Python function `memoize(fn)` that returns a cached version of fn.",
-            "Write a Python function `aplanar_profundo(lst)` that recursively flattens nested lists.",
-            "Write a Python function `permutaciones(lst)` that returns all permutations of a list.",
-            "Write a Python function `cifrado_cesar(texto, k)` that shifts each letter by k positions.",
-            "Write a Python function `potencia_recursiva(base, exp)` that calculates power recursively.",
-            "Write a Python function `torre_hanoi(n, origen, destino, auxiliar)` that prints the moves.",
-            "Write a Python function `zip_manual(a, b)` that zips two lists without using zip().",
-        ],
-    },
-    4: {
-        "nombre": "Clases y OOP",
-        "desc": "Clases, herencia, métodos especiales",
-        "ejercicios": [
-            "Write a Python class `Stack` with methods `push(item)`, `pop()`, `is_empty()`, `peek()`.",
-            "Write a Python class `Punto` with x, y attributes and a method `distancia(otro)` for Euclidean distance.",
-            "Write a Python class `Cola` implementing a FIFO queue with `enqueue(item)` and `dequeue()`.",
-            "Write a Python class `Fraccion` with add, sub, mul, and __str__ using GCD simplification.",
-            "Write a Python class `Contador` that counts how many times it has been called (using __call__).",
-            "Write a Python class `Vector` with __add__, __sub__, __mul__ (scalar) and __repr__.",
-            "Write a Python class `ListaEnlazada` with `agregar(valor)`, `buscar(valor)`, `__len__`.",
-            "Write a Python class `Matriz` with __add__ and __mul__ for 2D matrix operations.",
-        ],
-    },
-    5: {
-        "nombre": "Patrones avanzados",
-        "desc": "Decoradores, context managers, algoritmos complejos",
-        "ejercicios": [
-            "Write a Python decorator `cronometrar` that prints how long a function takes to execute.",
-            "Write a Python context manager class `TempFile` that creates a temp file and deletes it on exit.",
-            "Write a Python function `lru_cache(maxsize)` decorator that caches the last maxsize unique calls.",
-            "Write a Python function `dijkstra(grafo, inicio)` that returns shortest distances from inicio.",
-            "Write a Python async function `fetch_all(urls)` that fetches URLs concurrently with asyncio.",
-            "Write a Python function `quick_sort(lista)` implementing quicksort with median-of-three pivot.",
-        ],
-    },
-}
-
-
-class Teacher:
-    """Modelo profesor via API (GitHub Models o OpenRouter)."""
-
-    ENDPOINTS = {
-        "github": "https://models.inference.ai.azure.com/chat/completions",
-        "openrouter": "https://openrouter.ai/api/v1/chat/completions",
-    }
-
-    def __init__(self, backend: str, model: str, api_key: str):
-        self.backend = backend
-        self.model = model
-        self.api_key = api_key
-        self.endpoint = self.ENDPOINTS[backend]
-
-    def _headers(self) -> dict[str, str]:
-        h = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        if self.backend == "openrouter":
-            h["HTTP-Referer"] = "https://github.com/lucasmella-stack/PAMPAr-Coder"
-            h["X-Title"] = "PAMPAr Classroom"
-        return h
-
-    def _call(
-        self, messages: list[dict], max_tokens: int = 800, temperature: float = 0.3
-    ) -> str | None:
-        """Llama a la API del profesor."""
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-            }
-        ).encode("utf-8")
-
-        req = urllib.request.Request(
-            self.endpoint,
-            data=payload,
-            headers=self._headers(),
-            method="POST",
-        )
-
-        for intento in range(3):
-            try:
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                    return data["choices"][0]["message"]["content"]
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    time.sleep(10 * (intento + 1))
-                    continue
-                body = e.read().decode("utf-8", errors="ignore")[:200]
-                print(f"  [Teacher API {e.code}] {body}")
-                return None
-            except Exception as e:
-                print(f"  [Teacher error] {e}")
-                time.sleep(5)
-        return None
-
-    def generate_solution(self, problem: str) -> str | None:
-        """Pide al profesor la solución correcta para un problema."""
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a Python expert teacher. When given a coding problem, "
-                    "respond with ONLY the Python code solution. No explanations, "
-                    "no markdown, no ```python blocks. Just clean, correct Python code. "
-                    "Use the EXACT function/class names specified in the problem."
-                ),
-            },
-            {"role": "user", "content": problem},
-        ]
-        return self._call(messages, max_tokens=500, temperature=0.2)
-
-    def evaluate_student(self, problem: str, student_code: str) -> dict:
-        """El profesor evalúa el código del alumno."""
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a Python teacher evaluating a student's code. "
-                    "Respond with a JSON object with these fields:\n"
-                    '  "correct": true/false,\n'
-                    '  "feedback": "brief feedback in Spanish",\n'
-                    '  "fix": "corrected code if wrong, empty if correct"\n'
-                    "Respond ONLY with the JSON object, no other text."
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"Problem:\n{problem}\n\nStudent's code:\n{student_code}",
-            },
-        ]
-        raw = self._call(messages, max_tokens=600, temperature=0.1)
-        if not raw:
-            return {"correct": False, "feedback": "Error de comunicación", "fix": ""}
-        try:
-            # Extraer JSON de la respuesta
-            raw = raw.strip()
-            if raw.startswith("```"):
-                raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            return {"correct": False, "feedback": raw[:200], "fix": ""}
-
-    def generate_hint(self, problem: str, level: int) -> str | None:
-        """Genera una pista adaptada al nivel del alumno."""
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    f"You are teaching a beginner (level {level}/5). "
-                    "Give a helpful hint for solving this problem in Spanish. "
-                    "Be encouraging but brief (2-3 sentences max). "
-                    "Do NOT give the solution, just a hint about the approach."
-                ),
-            },
-            {"role": "user", "content": problem},
-        ]
-        return self._call(messages, max_tokens=150, temperature=0.5)
-
-
-# =============================================================================
-# EWC — Elastic Weight Consolidation
-# =============================================================================
-
-
-class EWC:
-    """
-    Elastic Weight Consolidation (Kirkpatrick et al., 2017).
-
-    Simula LTP biológica: identifica pesos importantes (alta Fisher info)
-    y penaliza moverlos durante entrenamiento nuevo.
-
-    L_total = L_task + (λ/2) * Σ F_i * (θ_i - θ*_i)²
-    """
-
-    def __init__(self, model: nn.Module, lam: float = 500.0):
-        self.lam = lam
-        self.params_star: dict[str, torch.Tensor] = {}
-        self.fisher: dict[str, torch.Tensor] = {}
-
-    def compute_fisher(
-        self,
-        model: nn.Module,
-        data_loader: list[torch.Tensor],
-        device: torch.device,
-        n_samples: int = 200,
-    ) -> None:
-        """Calcula la Diagonal Fisher Information Matrix sobre datos existentes."""
-        model.eval()
-
-        # Guardar pesos originales (θ*)
-        self.params_star = {
-            n: p.data.clone() for n, p in model.named_parameters() if p.requires_grad
-        }
-
-        # Inicializar Fisher a cero
-        self.fisher = {
-            n: torch.zeros_like(p.data)
-            for n, p in model.named_parameters()
-            if p.requires_grad
-        }
-
-        n = min(n_samples, len(data_loader))
-        samples = random.sample(data_loader, n) if len(data_loader) > n else data_loader
-
-        for tokens in samples:
-            model.zero_grad()
-            tokens = tokens.to(device)
-            if tokens.dim() == 1:
-                tokens = tokens.unsqueeze(0)
-
-            input_ids = tokens[:, :-1]
-            targets = tokens[:, 1:]
-            logits, _, _ = model(input_ids, targets=targets)
-
-            loss = F.cross_entropy(
-                logits.reshape(-1, logits.size(-1)),
-                targets.reshape(-1),
-                ignore_index=0,
-            )
-            loss.backward()
-
-            for name, param in model.named_parameters():
-                if param.requires_grad and param.grad is not None:
-                    self.fisher[name] += param.grad.data.pow(2) / n
-
-        model.zero_grad()
-
-    def penalty(self, model: nn.Module) -> torch.Tensor:
-        """Calcula la penalización EWC: (λ/2) * Σ F_i * (θ_i - θ*_i)²"""
-        loss = torch.tensor(0.0, device=next(model.parameters()).device)
-        for name, param in model.named_parameters():
-            if name in self.fisher:
-                loss += (
-                    self.fisher[name] * (param - self.params_star[name]).pow(2)
-                ).sum()
-        return (self.lam / 2.0) * loss
-
-
-# =============================================================================
-# Replay Buffer — Simula consolidación durante sueño
-# =============================================================================
-
-
-class ReplayBuffer:
-    """
-    Buffer circular de ejemplos exitosos.
-
-    Mezcla ejemplos nuevos con viejos para evitar olvido catastrófico.
-    Como el replay neuronal durante el sueño: reactiva memorias viejas
-    mientras integra las nuevas.
-    """
-
-    def __init__(self, maxsize: int = 100):
-        self.buffer: deque[dict] = deque(maxlen=maxsize)
-
-    def add(
-        self, problem: str, solution: str, tokens: torch.Tensor, level: int
-    ) -> None:
-        self.buffer.append(
-            {
-                "problem": problem,
-                "solution": solution,
-                "tokens": tokens.cpu(),
-                "level": level,
-                "timestamp": time.time(),
-            }
-        )
-
-    def sample(self, n: int) -> list[dict]:
-        if len(self.buffer) == 0:
-            return []
-        n = min(n, len(self.buffer))
-        return random.sample(list(self.buffer), n)
-
-    def __len__(self) -> int:
-        return len(self.buffer)
-
-
-# =============================================================================
 # Classroom Engine — Motor principal
 # =============================================================================
 
 
-@dataclass
-class LessonResult:
-    """Resultado de una lección."""
-
-    lesson_id: int
-    level: int
-    problem: str
-    student_answer: str
-    teacher_solution: str
-    correct: bool
-    feedback: str
-    loss: float
-    ewc_penalty: float
-    brain_score: float  # AccN5 simplificado
-    timestamp: float = field(default_factory=time.time)
-
-
 class ClassroomEngine:
     """
-    Motor del aula — orquesta profesor, alumno y entrenamiento.
+    Motor del aula — orquesta mentor, alumno y entrenamiento.
 
-    Flujo de una lección:
-      1. Seleccionar problema del curriculum (según nivel)
-      2. Alumno genera respuesta
-      3. Profesor evalúa y da feedback
-      4. Si incorrecto: profesor da la solución correcta
-      5. Paso de entrenamiento con:
-         - Loss CE sobre la solución correcta
-         - Penalización EWC (proteger pesos importantes)
-         - Replay de 50% ejemplos viejos
-         - LR diferencial (LLAVES congelado, FFN aprende)
-      6. Si correcto: guardar en replay buffer
-      7. Actualizar curriculum (avanzar si accuracy > threshold)
+    Flujo conversacional de una lección:
+      1. Seleccionar concepto via StudentProfile (adaptativo)
+      2. Mentor (Qwen) genera lección: explicación + ejemplo + ejercicio + solución
+      3. Phase A — Absorber: entrenar en explicación+ejemplo (todos los tokens)
+      4. Phase B — Practicar: alumno genera respuesta al ejercicio
+      5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
+      6. Actualizar perfil del alumno (mastery por concepto)
     """
 
     def __init__(self, config: ClassroomConfig):
@@ -503,6 +80,9 @@ class ClassroomEngine:
         self.lesson_count = 0
         self.total_correct = 0
         self.used_exercises: dict[int, set[int]] = {i: set() for i in range(1, 6)}
+
+        # Perfil adaptativo del alumno (árbol de conceptos)
+        self.student_profile = StudentProfile()
 
         # Sesión — log completo
         self.session_log: list[LessonResult] = []
@@ -558,13 +138,15 @@ class ClassroomEngine:
         if not api_key:
             if self.config.teacher_backend == "github":
                 api_key = os.environ.get("GITHUB_TOKEN", "")
+            elif self.config.teacher_backend == "qwen":
+                api_key = os.environ.get("QWEN_API_KEY", "")
             else:
                 api_key = os.environ.get("OPENROUTER_API_KEY", "")
 
         if not api_key:
             self._emit(
                 "error",
-                "No se encontró API key. Configura GITHUB_TOKEN o OPENROUTER_API_KEY en .env",
+                "No se encontró API key. Configura GITHUB_TOKEN, OPENROUTER_API_KEY o QWEN_API_KEY en .env",
             )
             return
 
@@ -740,14 +322,48 @@ class ClassroomEngine:
 
     # ── Tokenización ────────────────────────────────────────────────
 
-    def _tokenize_pair(self, problem: str, solution: str) -> torch.Tensor:
-        """Tokeniza un par problema→solución en formato training."""
-        text = f"### Problem:\n{problem}\n### Solution:\n```python\n{solution}\n```"
-        ids = self.tokenizer.Encode(text)
+    def _tokenize_pair(
+        self, problem: str, solution: str
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Tokeniza un par problema→solución con máscara de loss.
+
+        Returns:
+            (input_ids, labels) donde labels tiene -100 en el prompt
+            para que el loss solo se compute sobre la solución.
+        """
+        prompt = f"### Problem:\n{problem}\n### Solution:\n```python\n"
+        prompt_ids = self.tokenizer.Encode(prompt)
+        solution_ids = self.tokenizer.Encode(solution + "\n```")
+
+        all_ids = prompt_ids + solution_ids
         # Truncar a seq_len
+        if len(all_ids) > self.config.seq_len:
+            all_ids = all_ids[: self.config.seq_len]
+            # Recalcular cuántos tokens de solución quedan
+            n_prompt = min(len(prompt_ids), len(all_ids))
+        else:
+            n_prompt = len(prompt_ids)
+
+        input_ids = torch.tensor(all_ids, dtype=torch.long)
+        labels = input_ids.clone()
+        # Maskear el prompt: el modelo NO debe entrenar en predecir el enunciado
+        labels[:n_prompt] = -100
+
+        return input_ids, labels
+
+    def _tokenize_teaching(self, text: str) -> tuple[torch.Tensor, torch.Tensor]:
+        """Tokeniza contenido de enseñanza donde TODOS los tokens son entrenables.
+
+        Se usa para que el alumno absorba explicaciones y ejemplos del mentor.
+        A diferencia de _tokenize_pair, no hay máscara: el modelo aprende a
+        predecir cada token de la conversación del mentor.
+        """
+        ids = self.tokenizer.Encode(text)
         if len(ids) > self.config.seq_len:
             ids = ids[: self.config.seq_len]
-        return torch.tensor(ids, dtype=torch.long)
+        input_ids = torch.tensor(ids, dtype=torch.long)
+        labels = input_ids.clone()
+        return input_ids, labels
 
     # ── Generación del alumno ───────────────────────────────────────
 
@@ -778,9 +394,14 @@ class ClassroomEngine:
 
     # ── Paso de entrenamiento ───────────────────────────────────────
 
-    def _train_step(self, tokens_list: list[torch.Tensor]) -> tuple[float, float]:
+    def _train_step(
+        self, examples: list[tuple[torch.Tensor, torch.Tensor]]
+    ) -> tuple[float, float]:
         """
-        Un paso de entrenamiento bio-inspirado.
+        Un paso de entrenamiento con loss masking.
+
+        Args:
+            examples: lista de (input_ids, labels) donde labels=-100 en prompt
 
         Returns: (loss_ce, ewc_penalty)
         """
@@ -792,22 +413,25 @@ class ClassroomEngine:
         n = 0
         last_info: dict = {}
 
-        for tokens in tokens_list:
-            tokens = tokens.to(self.device)
-            if tokens.dim() == 1:
-                tokens = tokens.unsqueeze(0)
-            if tokens.shape[1] < 3:
+        for input_ids, labels in examples:
+            input_ids = input_ids.to(self.device)
+            labels = labels.to(self.device)
+            if input_ids.dim() == 1:
+                input_ids = input_ids.unsqueeze(0)
+                labels = labels.unsqueeze(0)
+            if input_ids.shape[1] < 3:
                 continue
 
-            input_ids = tokens[:, :-1]
-            targets = tokens[:, 1:]
-            logits, _, info = self.model(input_ids, targets=targets)
-            last_info = info  # Guardar info para terr_acts
+            # Shift: predecir el siguiente token
+            inp = input_ids[:, :-1]
+            tgt = labels[:, 1:]  # labels ya tiene -100 en el prompt
+            logits, _, info = self.model(inp)
+            last_info = info
 
             loss_ce = F.cross_entropy(
                 logits.reshape(-1, logits.size(-1)),
-                targets.reshape(-1),
-                ignore_index=0,
+                tgt.reshape(-1),
+                ignore_index=-100,
             )
             total_loss = total_loss + loss_ce
             total_ce += loss_ce.item()
@@ -860,138 +484,202 @@ class ClassroomEngine:
 
     # ── Curriculum ──────────────────────────────────────────────────
 
-    def _select_problem(self) -> tuple[int, str]:
-        """Selecciona el siguiente problema según el nivel actual."""
-        level = self.current_level
-        exercises = CURRICULUM[level]["ejercicios"]
+    @staticmethod
+    def _concept_level(concept_id: str) -> int:
+        """Mapea concepto a nivel del curriculum (1-5)."""
+        _level_map = {
+            "arithmetic": 1, "variables_types": 1, "conditionals": 1,
+            "strings": 1, "functions_basic": 1,
+            "loops_for": 2, "loops_while": 2, "lists": 2,
+            "tuples_sets": 2, "dicts": 2,
+            "recursion": 3, "higher_order": 3, "generators": 3,
+            "error_handling": 3,
+            "classes_basic": 4, "inheritance": 4, "dunder_methods": 4,
+            "decorators": 5, "context_managers": 5, "algorithms": 5,
+            "file_io": 5,
+        }
+        return _level_map.get(concept_id, 1)
 
-        # Encontrar ejercicio no usado
-        available = [
-            i for i in range(len(exercises)) if i not in self.used_exercises[level]
-        ]
-        if not available:
-            # Todos usados, resetear
-            self.used_exercises[level] = set()
-            available = list(range(len(exercises)))
+    def _select_concept(self) -> tuple[str, dict]:
+        """Selecciona el concepto y genera lección via mentor.
 
-        idx = random.choice(available)
-        self.used_exercises[level].add(idx)
-        return level, exercises[idx]
+        Returns:
+            (concept_id, lesson_dict) donde lesson_dict tiene
+            keys: explain, example, exercise, solution.
+        """
+        concept_id = self.student_profile.select_next_concept()
+        concept = _CONCEPT_BY_ID[concept_id]
+        profile_summary = self.student_profile.summary()
 
-    def _update_curriculum(self, correct: bool) -> None:
-        """Actualiza el nivel según la performance reciente."""
-        self.level_history.append(correct)
+        self._emit("system", f"Mentor preparando: {concept['name']}...")
+        lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
 
-        if len(self.level_history) >= self.config.window_size:
-            accuracy = sum(self.level_history) / len(self.level_history)
-            if accuracy >= self.config.advance_threshold and self.current_level < 5:
-                self.current_level += 1
-                self.level_history.clear()
-                self._emit(
-                    "level_up",
-                    {
-                        "new_level": self.current_level,
-                        "nombre": CURRICULUM[self.current_level]["nombre"],
-                        "accuracy": accuracy,
-                    },
-                )
+        if not lesson:
+            self._emit("system", "Reintentando generación de lección...")
+            lesson = self.teacher.generate_lesson(profile_summary, concept["name"])
+
+        if not lesson:
+            # Fallback mínimo
+            lesson = {
+                "explain": "",
+                "example": "",
+                "exercise": f"Write a Python function demonstrating: {concept['desc']}",
+                "solution": "",
+            }
+
+        return concept_id, lesson
 
     # ── Lección completa ────────────────────────────────────────────
 
     def run_lesson(self) -> LessonResult:
-        """Ejecuta una lección completa."""
+        """Ejecuta una lección conversacional completa.
+
+        Flujo mentor:
+          1. Seleccionar concepto via StudentProfile (adaptativo)
+          2. Mentor genera lección: explicación + ejemplo + ejercicio + solución
+          3. Phase A — Absorber: entrenar en explicación + ejemplo (todos los tokens)
+          4. Phase B — Practicar: alumno intenta el ejercicio
+          5. Phase C — Corregir: mentor evalúa, entrenar en solución correcta + replay
+          6. Actualizar perfil del alumno
+        """
         self.lesson_count += 1
 
-        # 1. Seleccionar problema
-        level, problem = self._select_problem()
+        # 1. Seleccionar concepto y generar lección
+        concept_id, lesson = self._select_concept()
+        concept = _CONCEPT_BY_ID[concept_id]
+        level = self._concept_level(concept_id)
+        self.current_level = level
+
         self._emit(
             "lesson_start",
             {
                 "lesson_id": self.lesson_count,
                 "level": level,
-                "level_name": CURRICULUM[level]["nombre"],
-                "problem": problem,
+                "level_name": concept["name"],
+                "concept": concept_id,
+                "problem": lesson.get("exercise", concept["desc"]),
             },
         )
 
-        # 2. Alumno intenta resolver
-        self._emit("student_thinking", {"lesson_id": self.lesson_count})
-        student_answer = self._student_generate(problem)
-        self._emit(
-            "student_answer",
-            {
+        # 2. Mostrar lo que el mentor enseña
+        if lesson.get("explain"):
+            self._emit("mentor_explain", {
                 "lesson_id": self.lesson_count,
-                "answer": student_answer,
-            },
-        )
-
-        # 3. Profesor evalúa
-        self._emit("teacher_evaluating", {"lesson_id": self.lesson_count})
-        eval_result = self.teacher.evaluate_student(problem, student_answer)
-        correct = eval_result.get("correct", False)
-        feedback = eval_result.get("feedback", "")
-
-        self._emit(
-            "teacher_feedback",
-            {
+                "explain": lesson["explain"],
+            })
+        if lesson.get("example"):
+            self._emit("mentor_example", {
                 "lesson_id": self.lesson_count,
-                "correct": correct,
-                "feedback": feedback,
-            },
-        )
+                "example": lesson["example"],
+            })
 
-        # 4. Obtener la solución correcta (del profesor)
-        if correct:
-            teacher_solution = student_answer  # El alumno acertó
-            self.total_correct += 1
-        else:
-            teacher_solution = eval_result.get("fix", "")
-            if not teacher_solution:
-                teacher_solution = self.teacher.generate_solution(problem)
-            if not teacher_solution:
-                teacher_solution = student_answer  # Fallback
+        # 3. Phase A — Absorber: entrenar en contenido del mentor
+        teaching_text = ""
+        if lesson.get("explain"):
+            teaching_text += lesson["explain"] + "\n\n"
+        if lesson.get("example"):
+            teaching_text += lesson["example"]
+
+        teach_loss = 0.0
+        if teaching_text.strip():
+            teach_ids, teach_labels = self._tokenize_teaching(teaching_text)
+            teach_loss, _ = self._train_step([(teach_ids, teach_labels)])
+            self._emit("system", f"Absorción completada (loss={teach_loss:.4f})")
+
+        # 4. Phase B — Practicar: alumno intenta el ejercicio
+        exercise = lesson.get("exercise", "")
+        teacher_solution = lesson.get("solution", "")
+        student_answer = ""
+        correct = False
+        feedback = ""
+        loss_ce = teach_loss
+        ewc_pen = 0.0
+
+        if exercise:
+            self._emit("student_thinking", {"lesson_id": self.lesson_count})
+            student_answer = self._student_generate(exercise)
+            self._emit(
+                "student_answer",
+                {"lesson_id": self.lesson_count, "answer": student_answer},
+            )
+
+            # 5. Phase C — Mentor evalúa el intento
+            self._emit("teacher_evaluating", {"lesson_id": self.lesson_count})
+            profile_summary = self.student_profile.summary()
+            eval_result = self.teacher.respond_to_attempt(
+                exercise, student_answer, profile_summary,
+            )
+            correct = eval_result.get("correct", False)
+            feedback = eval_result.get("feedback", "")
 
             self._emit(
-                "teacher_solution",
+                "teacher_feedback",
                 {
                     "lesson_id": self.lesson_count,
-                    "solution": teacher_solution,
+                    "correct": correct,
+                    "feedback": feedback,
                 },
             )
 
-        # 5. Paso de entrenamiento
-        tokens_new = self._tokenize_pair(problem, teacher_solution)
-        train_batch = [tokens_new]
+            if correct:
+                teacher_solution = student_answer
+                self.total_correct += 1
+            else:
+                fix = eval_result.get("fix", "")
+                if fix:
+                    teacher_solution = fix
+                if not teacher_solution:
+                    teacher_solution = (
+                        self.teacher.generate_solution(exercise) or student_answer
+                    )
+                self._emit(
+                    "teacher_solution",
+                    {"lesson_id": self.lesson_count, "solution": teacher_solution},
+                )
 
-        # Replay buffer: mezclar con ejemplos viejos
-        if len(self.replay) > 0:
-            n_replay = max(
-                1,
-                int(
-                    len(train_batch)
-                    / (1 - self.config.replay_ratio)
-                    * self.config.replay_ratio
-                ),
-            )
-            replay_samples = self.replay.sample(n_replay)
-            for s in replay_samples:
-                train_batch.append(s["tokens"])
+            # Entrenar en ejercicio→solución + replay
+            if teacher_solution:
+                ex_ids, ex_labels = self._tokenize_pair(exercise, teacher_solution)
+                train_batch: list[tuple[torch.Tensor, torch.Tensor]] = [
+                    (ex_ids, ex_labels),
+                ]
 
-        self._emit(
-            "training", {"lesson_id": self.lesson_count, "batch_size": len(train_batch)}
-        )
-        loss_ce, ewc_pen = self._train_step(train_batch)
+                if len(self.replay) > 0:
+                    n_replay = max(
+                        1,
+                        int(
+                            len(train_batch)
+                            / (1 - self.config.replay_ratio)
+                            * self.config.replay_ratio
+                        ),
+                    )
+                    replay_samples = self.replay.sample(n_replay)
+                    for s in replay_samples:
+                        train_batch.append((s["input_ids"], s["labels"]))
 
-        # 6. Guardar en replay buffer si fue correcto (o la corrección del profesor)
-        self.replay.add(problem, teacher_solution, tokens_new, level)
+                self._emit(
+                    "training",
+                    {"lesson_id": self.lesson_count, "batch_size": len(train_batch)},
+                )
+
+                loss_ce, ewc_pen = self._train_step(train_batch)
+
+                # Guardar en replay buffer
+                self.replay.add(
+                    exercise, teacher_solution, ex_ids, ex_labels, level,
+                )
+        else:
+            correct = True
+            feedback = "Lección absorbida (sin ejercicio)"
+
+        # 6. Actualizar perfil del alumno
+        error_desc = feedback if not correct else ""
+        self.student_profile.record(concept_id, correct, error_desc)
 
         # 7. Quick brain check
         brain_score = self._quick_brain_check()
 
-        # 8. Actualizar curriculum
-        self._update_curriculum(correct)
-
-        # 8.5 Bio-mechanisms hook
+        # 8. Bio-mechanisms hook
         bio_state = None
         if self.bio is not None:
             bio_state = self.bio.after_lesson(
@@ -1021,7 +709,7 @@ class ClassroomEngine:
         result = LessonResult(
             lesson_id=self.lesson_count,
             level=level,
-            problem=problem,
+            problem=exercise or concept["desc"],
             student_answer=student_answer,
             teacher_solution=teacher_solution,
             correct=correct,
@@ -1043,6 +731,7 @@ class ClassroomEngine:
                 "brain_score": round(brain_score, 4),
                 "accuracy": round(accuracy, 4),
                 "level": self.current_level,
+                "concept": concept_id,
                 "replay_size": len(self.replay),
             },
         )
@@ -1175,10 +864,20 @@ class ClassroomEngine:
             print(f"  🏫 {data}")
         elif event_type == "lesson_start":
             d = data if isinstance(data, dict) else {}
+            concept = d.get("concept", "")
             print(
-                f"\n  ═══ Lección {d.get('lesson_id', '?')} — Nivel {d.get('level', '?')} ({d.get('level_name', '')}) ═══"
+                f"\n  ═══ Lección {d.get('lesson_id', '?')} — {d.get('level_name', '')} [{concept}] (Nivel {d.get('level', '?')}) ═══"
             )
-            print(f"  📝 {d.get('problem', '')[:80]}")
+            print(f"  📝 {d.get('problem', '')[:100]}")
+        elif event_type == "mentor_explain":
+            d = data if isinstance(data, dict) else {}
+            print(f"  📖 Mentor explica: {d.get('explain', '')[:120]}")
+        elif event_type == "mentor_example":
+            d = data if isinstance(data, dict) else {}
+            example = d.get("example", "")
+            lines = example.split("\n")
+            preview = lines[0][:80] if lines else ""
+            print(f"  💻 Mentor ejemplo: {preview}{'...' if len(lines) > 1 else ''}")
         elif event_type == "student_answer":
             d = data if isinstance(data, dict) else {}
             ans = d.get("answer", "")[:100]
@@ -1189,8 +888,9 @@ class ClassroomEngine:
             print(f"  👨‍🏫 Profesor: {icon} {d.get('feedback', '')[:100]}")
         elif event_type == "lesson_complete":
             d = data if isinstance(data, dict) else {}
+            concept = d.get("concept", "")
             print(
-                f"  📊 Loss: {d.get('loss', 0):.4f} | EWC: {d.get('ewc_penalty', 0):.6f} | Brain: {d.get('brain_score', 0):.2%} | Acc: {d.get('accuracy', 0):.1%} | Replay: {d.get('replay_size', 0)}"
+                f"  📊 Loss: {d.get('loss', 0):.4f} | EWC: {d.get('ewc_penalty', 0):.6f} | Brain: {d.get('brain_score', 0):.2%} | Acc: {d.get('accuracy', 0):.1%} | Replay: {d.get('replay_size', 0)} | Concepto: {concept}"
             )
         elif event_type == "level_up":
             d = data if isinstance(data, dict) else {}
@@ -1218,257 +918,3 @@ class ClassroomEngine:
             print(f"  🧠 Bio: {' | '.join(parts)}")
         elif event_type == "error":
             print(f"  ❗ {data}")
-
-
-# =============================================================================
-# HTTP Server — SSE para la UI
-# =============================================================================
-
-
-class ClassroomHandler(SimpleHTTPRequestHandler):
-    """Handler HTTP con SSE para la UI del classroom."""
-
-    engine: ClassroomEngine = None  # type: ignore
-    ui_path: str = ""
-
-    def do_GET(self) -> None:
-        if self.path == "/" or self.path == "/index.html":
-            self._serve_ui()
-        elif self.path == "/events":
-            self._serve_sse()
-        elif self.path == "/status":
-            self._serve_status()
-        else:
-            self.send_error(404)
-
-    def do_POST(self) -> None:
-        if self.path == "/start":
-            self._handle_start()
-        elif self.path == "/stop":
-            self._handle_stop()
-        elif self.path == "/save":
-            self._handle_save()
-        else:
-            self.send_error(404)
-
-    def _serve_ui(self) -> None:
-        """Sirve el archivo HTML de la UI."""
-        try:
-            ui_file = Path(self.ui_path)
-            content = ui_file.read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-        except Exception as e:
-            self.send_error(500, str(e))
-
-    def _serve_sse(self) -> None:
-        """Server-Sent Events stream."""
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-
-        try:
-            while True:
-                try:
-                    event = self.engine.event_queue.get(timeout=1.0)
-                    msg = f"event: {event['event']}\ndata: {event['data']}\n\n"
-                    self.wfile.write(msg.encode("utf-8"))
-                    self.wfile.flush()
-                except queue.Empty:
-                    # Heartbeat
-                    self.wfile.write(b": heartbeat\n\n")
-                    self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError):
-            pass
-
-    def _serve_status(self) -> None:
-        """Estado actual del aula."""
-        e = self.engine
-        status = {
-            "lesson_count": e.lesson_count,
-            "level": e.current_level,
-            "accuracy": e.total_correct / max(1, e.lesson_count),
-            "replay_size": len(e.replay),
-            "session_log_size": len(e.session_log),
-        }
-        body = json.dumps(status).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _handle_start(self) -> None:
-        """Inicia las lecciones en background."""
-        threading.Thread(target=self._run_lessons, daemon=True).start()
-        self._json_response({"status": "started"})
-
-    def _handle_stop(self) -> None:
-        """Detiene las lecciones."""
-        self.engine._running = False
-        self._json_response({"status": "stopped"})
-
-    def _handle_save(self) -> None:
-        """Guarda la sesión."""
-        path = self.engine.save_session()
-        rec_path = self.engine.save_recording()
-        self.engine._save_checkpoint()
-        self._json_response({"status": "saved", "path": path, "recording": rec_path})
-
-    def _run_lessons(self) -> None:
-        """Loop principal de lecciones."""
-        self.engine._running = True
-        try:
-            while (
-                self.engine._running
-                and self.engine.lesson_count < self.engine.config.max_lessons
-            ):
-                self.engine.run_lesson()
-                time.sleep(1)  # Pausa entre lecciones
-        except Exception as e:
-            self.engine._emit("error", f"Error: {e}\n{traceback.format_exc()}")
-        finally:
-            self.engine._emit("system", "Sesión finalizada.")
-            self.engine.save_session()
-            self.engine.save_recording()
-            self.engine._save_checkpoint()
-
-    def _json_response(self, data: dict, code: int = 200) -> None:
-        body = json.dumps(data).encode("utf-8")
-        self.send_response(code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def log_message(self, format, *args) -> None:
-        """Silenciar logs del HTTP server."""
-        pass
-
-
-# =============================================================================
-# Main
-# =============================================================================
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="PAMPAr Classroom — Aula simulada")
-    parser.add_argument(
-        "--checkpoint",
-        default="checkpoints/v3_ghidra_v9.pt",
-        help="Checkpoint del alumno",
-    )
-    parser.add_argument(
-        "--checkpoint-out",
-        default="checkpoints/v3_classroom.pt",
-        help="Donde guardar el progreso",
-    )
-    parser.add_argument(
-        "--teacher",
-        choices=["github", "openrouter"],
-        default="github",
-        help="Backend del profesor",
-    )
-    parser.add_argument(
-        "--model", default="openai/gpt-4o-mini", help="Modelo del profesor"
-    )
-    parser.add_argument(
-        "--api-key",
-        default="",
-        help="API key (o usa GITHUB_TOKEN / OPENROUTER_API_KEY)",
-    )
-    parser.add_argument("--lr", type=float, default=5e-6, help="Learning rate base")
-    parser.add_argument("--ewc-lambda", type=float, default=500.0, help="Fuerza EWC")
-    parser.add_argument(
-        "--max-lessons", type=int, default=200, help="Máximo de lecciones"
-    )
-    parser.add_argument(
-        "--port", type=int, default=8888, help="Puerto del servidor web"
-    )
-    parser.add_argument("--no-ui", action="store_true", help="Solo consola, sin UI web")
-    parser.add_argument(
-        "--no-bio", action="store_true", help="Desactivar mecanismos bio-inspirados"
-    )
-    parser.add_argument("--level", type=int, default=1, help="Nivel inicial (1-5)")
-
-    args = parser.parse_args()
-
-    config = ClassroomConfig(
-        checkpoint_in=args.checkpoint,
-        checkpoint_out=args.checkpoint_out,
-        teacher_backend=args.teacher,
-        teacher_model=args.model,
-        api_key=args.api_key,
-        lr_base=args.lr,
-        ewc_lambda=args.ewc_lambda,
-        max_lessons=args.max_lessons,
-        port=args.port,
-        start_level=args.level,
-        bio_enabled=not args.no_bio,
-    )
-
-    engine = ClassroomEngine(config)
-    engine.load()
-
-    if not engine.teacher:
-        print("\n❌ No se pudo configurar el profesor. Revisa tu API key.")
-        sys.exit(1)
-
-    if args.no_ui:
-        # Modo consola
-        print("\n" + "=" * 60)
-        print("  🏫 PAMPAr CLASSROOM — Modo consola")
-        print("=" * 60)
-        engine._running = True
-        try:
-            while engine._running and engine.lesson_count < config.max_lessons:
-                engine.run_lesson()
-                time.sleep(0.5)
-        except KeyboardInterrupt:
-            print("\n\n  Interrumpido por usuario.")
-        finally:
-            engine.save_session()
-            rec = engine.save_recording()
-            engine._save_checkpoint()
-            accuracy = engine.total_correct / max(1, engine.lesson_count)
-            print(
-                f"\n  📊 Resumen: {engine.lesson_count} lecciones, {accuracy:.1%} accuracy, nivel {engine.current_level}"
-            )
-            if rec:
-                print(f"  🎥 Grabación guardada: {rec}")
-    else:
-        # Modo UI web
-        ui_path = Path(__file__).parent / "classroom.html"
-        ClassroomHandler.engine = engine
-        ClassroomHandler.ui_path = str(ui_path)
-
-        server = HTTPServer(("127.0.0.1", config.port), ClassroomHandler)
-        print(f"\n  🏫 PAMPAr CLASSROOM — UI en http://localhost:{config.port}")
-        print(f"  Presiona Ctrl+C para detener\n")
-
-        # Abrir navegador automáticamente
-        try:
-            import webbrowser
-
-            webbrowser.open(f"http://localhost:{config.port}")
-        except Exception:
-            pass
-
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            print("\n  Detenido.")
-            engine.save_session()
-            engine.save_recording()
-            engine._save_checkpoint()
-            server.server_close()
-
-
-if __name__ == "__main__":
-    main()

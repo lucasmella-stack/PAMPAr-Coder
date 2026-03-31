@@ -137,17 +137,17 @@ Sistema donde Qwen-plus actúa como mentor conversacional — genera explicacion
 
 **Flujo**: StudentProfile → Mentor genera lección → Phase A (absorber explicación+ejemplo) → Phase B (alumno intenta ejercicio) → Phase C (mentor corrige, entrenar en solución+replay) → actualizar perfil.
 
-| Módulo                    | Líneas | Responsabilidad                                          |
-| ------------------------- | ------ | -------------------------------------------------------- |
-| `classroom.py`            | ~608   | ClassroomEngine — motor conversacional (orquestador)     |
-| `classroom_curriculum.py` | ~433   | ClassroomConfig + CONCEPT_TREE (21 conceptos) + StudentProfile + concept_level |
-| `classroom_teacher.py`    | ~252   | Mentor API (Qwen/GitHub/OpenRouter) + parse de lecciones |
-| `classroom_training.py`   | ~211   | Tokenización + LR diferencial + train_step               |
-| `classroom_memory.py`     | ~187   | EWC + ReplayBuffer + LessonResult + compute_ewc_baseline |
-| `classroom_events.py`     | ~104   | Formateo dict-based de eventos para consola              |
-| `classroom_persistence.py`| ~123   | Guardado de checkpoints, sesiones JSONL, grabaciones HTML|
-| `classroom_server.py`     | ~255   | HTTP SSE server + CLI entry point                        |
-| `bio_mechanisms.py`       | ~497   | 5 bio-mechanisms coordinados por BioOrchestrator         |
+| Módulo                     | Líneas | Responsabilidad                                                                |
+| -------------------------- | ------ | ------------------------------------------------------------------------------ |
+| `classroom.py`             | ~608   | ClassroomEngine — motor conversacional (orquestador)                           |
+| `classroom_curriculum.py`  | ~433   | ClassroomConfig + CONCEPT_TREE (21 conceptos) + StudentProfile + concept_level |
+| `classroom_teacher.py`     | ~252   | Mentor API (Qwen/GitHub/OpenRouter) + parse de lecciones                       |
+| `classroom_training.py`    | ~211   | Tokenización + LR diferencial + train_step                                     |
+| `classroom_memory.py`      | ~187   | EWC + ReplayBuffer + LessonResult + compute_ewc_baseline                       |
+| `classroom_events.py`      | ~104   | Formateo dict-based de eventos para consola                                    |
+| `classroom_persistence.py` | ~123   | Guardado de checkpoints, sesiones JSONL, grabaciones HTML                      |
+| `classroom_server.py`      | ~255   | HTTP SSE server + CLI entry point                                              |
+| `bio_mechanisms.py`        | ~497   | 5 bio-mechanisms coordinados por BioOrchestrator                               |
 
 **CONCEPT_TREE**: 21 conceptos en 5 niveles con prerequisitos (arithmetic → algorithms).
 **StudentProfile**: mastery tracking adaptativo — prioriza refuerzo, luego nuevos, luego repaso.

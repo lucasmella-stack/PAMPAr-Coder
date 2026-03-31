@@ -91,9 +91,7 @@ def save_recording(
             "%Y-%m-%d %H:%M:%S",
             time.localtime(recording_start),
         ),
-        "duration_s": round(time.time() - recording_start, 1)
-        if recording_start
-        else 0,
+        "duration_s": round(time.time() - recording_start, 1) if recording_start else 0,
         "total_lessons": lesson_count,
         "accuracy": round(total_correct / max(1, lesson_count), 4),
         "final_level": current_level,

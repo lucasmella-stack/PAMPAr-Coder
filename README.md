@@ -99,26 +99,27 @@ Sistema de aprendizaje donde un modelo mentor (Qwen-plus via DashScope) enseña 
 
 21 conceptos organizados en 5 niveles con prerequisitos:
 
-| Nivel | Conceptos |
-| ----- | --------- |
-| 1 | arithmetic → variables_types → conditionals, strings, functions_basic |
-| 2 | loops_for → loops_while, lists → tuples_sets, dicts |
-| 3 | recursion, higher_order, generators, error_handling |
-| 4 | classes_basic → inheritance, dunder_methods |
-| 5 | decorators, context_managers, algorithms, file_io |
+| Nivel | Conceptos                                                             |
+| ----- | --------------------------------------------------------------------- |
+| 1     | arithmetic → variables_types → conditionals, strings, functions_basic |
+| 2     | loops_for → loops_while, lists → tuples_sets, dicts                   |
+| 3     | recursion, higher_order, generators, error_handling                   |
+| 4     | classes_basic → inheritance, dunder_methods                           |
+| 5     | decorators, context_managers, algorithms, file_io                     |
 
 El `StudentProfile` trackea mastery por concepto y selecciona adaptativamente:
+
 - Prioriza conceptos con intentos pero no dominados (refuerzo)
 - Luego conceptos nuevos cuyos prereqs están cumplidos
 - Finalmente repaso espaciado de conceptos dominados
 
 ### Mecanismos base
 
-| Mecanismo                              | Proposito                                                                  |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| **EWC** (Elastic Weight Consolidation) | Protege pesos importantes — penaliza cambios en params criticos            |
-| **Replay Buffer**                      | Mezcla ejemplos nuevos con anteriores (simula consolidacion durante sueño) |
-| **LR Diferencial**                     | LLAVES/Talamo 0.01x, atencion 0.1x, embedding 0.1x, FFN 1.0x             |
+| Mecanismo                              | Proposito                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------- |
+| **EWC** (Elastic Weight Consolidation) | Protege pesos importantes — penaliza cambios en params criticos              |
+| **Replay Buffer**                      | Mezcla ejemplos nuevos con anteriores (simula consolidacion durante sueño)   |
+| **LR Diferencial**                     | LLAVES/Talamo 0.01x, atencion 0.1x, embedding 0.1x, FFN 1.0x                 |
 | **Absorción conversacional**           | Entrena en explicaciones + ejemplos del mentor (distilación de conocimiento) |
 
 ### Bio-Mechanisms (`bio_mechanisms.py`)
@@ -177,15 +178,15 @@ python scripts/classroom_server.py \
 
 ## Subsistemas
 
-| Modulo        | Componentes                 | Proposito                                                                 |
-| ------------- | --------------------------- | ------------------------------------------------------------------------- |
-| **Modelo**    | `pampar/coder/v3/`          | PamparV3: forward, generate, routing, bloques                             |
-| **Memoria**   | `pampar/memoria/`           | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune             |
-| **Runtime**   | `pampar/runtime/`           | Agente (orquestador), Scanner (device), BootProtocol                      |
-| **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                     |
-| **Inference** | `pampar/inference.py`       | Servidor JSON-lines stdin/stdout para VS Code                             |
+| Modulo        | Componentes                 | Proposito                                                                                       |
+| ------------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Modelo**    | `pampar/coder/v3/`          | PamparV3: forward, generate, routing, bloques                                                   |
+| **Memoria**   | `pampar/memoria/`           | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune                                   |
+| **Runtime**   | `pampar/runtime/`           | Agente (orquestador), Scanner (device), BootProtocol                                            |
+| **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                                           |
+| **Inference** | `pampar/inference.py`       | Servidor JSON-lines stdin/stdout para VS Code                                                   |
 | **Classroom** | `scripts/classroom*.py`     | Mentor conversacional: engine + teacher + curriculum + training + events + memory + persistence |
-| **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 mecanismos de neurociencia: Neuromod, LTP, Sleep, Neurogenesis, Pruning |
+| **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 mecanismos de neurociencia: Neuromod, LTP, Sleep, Neurogenesis, Pruning                       |
 
 ---
 

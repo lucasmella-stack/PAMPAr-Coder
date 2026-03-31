@@ -45,7 +45,7 @@ class Neuromodulator:
     """
 
     def __init__(
-        self, baseline_lr: float, min_mult: float = 0.3, max_mult: float = 3.0
+        self, baseline_lr: float, min_mult: float = 0.3, max_mult: float = 1.5
     ):
         self.baseline_lr = baseline_lr
         self.min_mult = min_mult
@@ -74,25 +74,32 @@ class Neuromodulator:
         self.dopamine *= decay
         self.norepinephrine *= decay
 
+        # Anti-saturación: si hay racha larga de errores, NE decae más rápido
+        recent_errors = sum(1 for c in self._recent_correct if not c)
+        if recent_errors >= 7:
+            self.norepinephrine *= 0.7  # Decay extra para evitar espiral
+
         if correct:
             # Éxito → dopamina sube (más en niveles altos)
             self.dopamine += 0.3 * (1.0 + level * 0.1)
+            # Éxito reduce alerta
+            self.norepinephrine *= 0.8
         else:
-            # Error → norepinefrina sube (más plasticidad)
-            self.norepinephrine += 0.4
+            # Error → norepinefrina sube (más plasticidad, pero moderado)
+            self.norepinephrine += 0.2
 
         # Detectar novedad: si el loss es mucho mayor que el promedio reciente
         if len(self._recent_losses) > 3:
             avg_loss = sum(self._recent_losses) / len(self._recent_losses)
             if loss > avg_loss * 1.5:
-                self.norepinephrine += 0.2  # Material nuevo/difícil
+                self.norepinephrine += 0.1  # Material nuevo/difícil
 
         # Factor de modulación combinado
         # Dopamina alta + Norepinefrina baja = consolidar (LR moderado)
         # Dopamina baja + Norepinefrina alta = explorar (LR alto)
         factor = 0.5 * self.dopamine + 0.7 * self.norepinephrine
 
-        # Clampear a rango seguro
+        # Clampear a rango seguro (max 50% boost)
         factor = max(self.min_mult, min(self.max_mult, factor))
 
         return factor
@@ -292,20 +299,22 @@ class SleepConsolidator:
             n = 0
 
             for sample in all_samples:
-                tokens = sample["tokens"].to(device)
-                if tokens.dim() == 1:
-                    tokens = tokens.unsqueeze(0)
-                if tokens.shape[-1] < 3:
+                input_ids = sample["input_ids"].to(device)
+                labels = sample["labels"].to(device)
+                if input_ids.dim() == 1:
+                    input_ids = input_ids.unsqueeze(0)
+                    labels = labels.unsqueeze(0)
+                if input_ids.shape[-1] < 3:
                     continue
 
-                input_ids = tokens[:, :-1]
-                targets = tokens[:, 1:]
-                logits, _, _ = model(input_ids, targets=targets)
+                inp = input_ids[:, :-1]
+                tgt = labels[:, 1:]
+                logits, _, _ = model(inp)
 
                 loss = F.cross_entropy(
                     logits.reshape(-1, logits.size(-1)),
-                    targets.reshape(-1),
-                    ignore_index=0,
+                    tgt.reshape(-1),
+                    ignore_index=-100,
                 )
                 batch_loss = batch_loss + loss
                 n += 1
