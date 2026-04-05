@@ -56,6 +56,13 @@ class ConfigV3:
     # sym_factor controla el tamaño del bottleneck lateral.
     lateral_bottleneck: int = 128  # dim → 128 → dim para el gate lateral
 
+    # ── Mixed Selectivity (Modulación FiLM) ──────────────────────────────────
+    # 1 FFN compartido × n_streams moduladores (en vez de n_streams FFN)
+    # El ContextModulator genera gamma/beta desde un vector de 63 indicadores
+    # (zona_acts[52] + terr_acts[4] + depth[1] + conf[1] + n_levels[1] + stream_oh[4])
+    use_mixed_selectivity: bool = True  # Activar FFN compartido + modulación
+    modulator_bottleneck: int = 128  # 63 → 128 → dim×2 para gamma+beta
+
     # ── Secuencia ────────────────────────────────────────────────────────────
     max_seq_len: int = 4096
 
@@ -118,13 +125,23 @@ class ConfigV3:
         # Re-routing ligero por nivel
         reroute = self.dim * self.n_zonas  # Linear(dim, n_zonas) sin bias
 
-        # 4 × StreamFFN SwiGLU por nivel
+        # FFN por nivel: Mixed Selectivity o Legacy
         ffn_single = (
             self.dim * self.ffn_hidden  # gate
             + self.dim * self.ffn_hidden  # up
             + self.ffn_hidden * self.dim  # down
         )
-        ffns = ffn_single * self.n_streams
+
+        if self.use_mixed_selectivity:
+            # 1 FFN compartido + n_streams moduladores
+            modulator_single = (
+                63 * self.modulator_bottleneck  # ctx → bottleneck
+                + self.modulator_bottleneck * self.dim * 2  # bottleneck → gamma+beta
+            )
+            ffns = ffn_single + modulator_single * self.n_streams
+        else:
+            # Legacy: n_streams FFN independientes
+            ffns = ffn_single * self.n_streams
 
         # Lateral gates (bottleneck): n_streams × (dim→bottleneck→dim)
         lateral = self.n_streams * (
@@ -145,7 +162,12 @@ class ConfigV3:
             "embedding": emb,
             "talamo_inicial": talamo,
             "atencion_total": attn * self.n_levels,
-            "ffn_streams_total": ffns * self.n_levels,
+            "ffn_total": ffns * self.n_levels,
+            "modulators_total": (
+                (modulator_single * self.n_streams * self.n_levels)
+                if self.use_mixed_selectivity
+                else 0
+            ),
             "lateral_gates_total": lateral * self.n_levels,
             "rerouting_total": reroute * self.n_levels,
             "total": total,

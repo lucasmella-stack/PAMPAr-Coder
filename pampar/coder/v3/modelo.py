@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 """
-PamparV3 — Modelo principal con arquitectura 2D.
+PamparV3 — Modelo principal con arquitectura 2D + Mixed Selectivity.
 
 Arquitectura:
   tok_emb [48K, 640]
@@ -9,16 +9,23 @@ Arquitectura:
         → terr_acts [B, L, 4], zona_acts [B, L, 52]
     → 4 streams inicializados desde tok_emb
     → [NivelProfundo × n_levels]
-        cada nivel: attn compartida + re-routing + 4 FFN streams
+        cada nivel: attn compartida + re-routing
+                  + 1 FFN compartido + 4 ContextModulator (FiLM)
                   + lateral gates (fibras blancas)
     → norm_f (RMSNorm)
     → lm_head (weight-tied con tok_emb)
+
+Mixed Selectivity: 1 FFN compartido por nivel, modulado por 63 indicadores
+contextuales (zona_acts + terr_acts + depth + conf + stream_id).
+La misma memoria se lee de formas diferentes según el contexto.
+Ahorro: ~32M params vs 4 FFN independientes por nivel.
 
 4 streams × 5 niveles = grilla 2D donde:
   - La profundidad refina el significado (como capas corticales)
   - La anchura especializa por tipo de token (como áreas corticales)
   - Las lateral gates comunican áreas a cada nivel (como fibras blancas)
   - El re-routing adapta qué área lidera según el contexto acumulado
+  - Los moduladores permiten mixed selectivity (misma neurona, roles múltiples)
 """
 
 from __future__ import annotations
@@ -181,9 +188,15 @@ class PamparV3(nn.Module):
                 # Se usan lambdas para pasar args no-tensor (agregar_fn)
                 def create_checkpoint_fn(n):
                     def fn(*stream_tensors):
-                        s_list = list(stream_tensors[:-1])
-                        ta = stream_tensors[-1]
-                        new_s, new_ta, _ = n(s_list, ta, TalamoInicial.agregar_fn)
+                        s_list = list(stream_tensors[:-2])
+                        ta = stream_tensors[-2]
+                        za = stream_tensors[-1]
+                        new_s, new_ta, _ = n(
+                            s_list,
+                            ta,
+                            TalamoInicial.agregar_fn,
+                            zona_acts=za,
+                        )
                         return (*new_s, new_ta)
 
                     return fn
@@ -192,6 +205,7 @@ class PamparV3(nn.Module):
                     create_checkpoint_fn(nivel),
                     *streams,
                     terr_acts,
+                    zona_acts,
                     use_reentrant=False,
                 )
                 streams = list(result[: self.config.n_streams])
