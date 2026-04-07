@@ -1,0 +1,93 @@
+{
+  "model": "PAMPAr-Coder V3",
+  "params_m": 62.6,
+  "checkpoint": "checkpoints\\v3_train.pt",
+  "benchmark": "HumanEval",
+  "n_problems": 5,
+  "samples_per_task": 1,
+  "temperature": 0.2,
+  "pass_at_1_pct": 0.0,
+  "pass_at_1_unbiased_pct": 0.0,
+  "passed": 0,
+  "total": 5,
+  "elapsed_sec": 229.9,
+  "device": "cuda",
+  "date": "2026-04-07 18:12",
+  "results": [
+    {
+      "task_id": "HumanEval/0",
+      "entry_point": "has_close_elements",
+      "passed": false,
+      "n_samples": 1,
+      "pass_count": 0,
+      "samples": [
+        {
+          "sample": 0,
+          "passed": false,
+          "error": "SyntaxError: closing parenthesis ']' does not match opening parenthesis '(' (<humaneval>, line 12)",
+          "completion_len": 1382
+        }
+      ]
+    },
+    {
+      "task_id": "HumanEval/1",
+      "entry_point": "separate_paren_groups",
+      "passed": false,
+      "n_samples": 1,
+      "pass_count": 0,
+      "samples": [
+        {
+          "sample": 0,
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<humaneval>, line 12)",
+          "completion_len": 1550
+        }
+      ]
+    },
+    {
+      "task_id": "HumanEval/2",
+      "entry_point": "truncate_number",
+      "passed": false,
+      "n_samples": 1,
+      "pass_count": 0,
+      "samples": [
+        {
+          "sample": 0,
+          "passed": false,
+          "error": "SyntaxError: '(' was never closed (<humaneval>, line 12)",
+          "completion_len": 2164
+        }
+      ]
+    },
+    {
+      "task_id": "HumanEval/3",
+      "entry_point": "below_zero",
+      "passed": false,
+      "n_samples": 1,
+      "pass_count": 0,
+      "samples": [
+        {
+          "sample": 0,
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1099
+        }
+      ]
+    },
+    {
+      "task_id": "HumanEval/4",
+      "entry_point": "mean_absolute_deviation",
+      "passed": false,
+      "n_samples": 1,
+      "pass_count": 0,
+      "samples": [
+        {
+          "sample": 0,
+          "passed": false,
+          "error": "TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'",
+          "completion_len": 1825
+        }
+      ]
+    }
+  ]
+}
