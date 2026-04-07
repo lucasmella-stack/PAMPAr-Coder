@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 """
 Fixtures compartidas para la suite de tests de PAMPAr-Coder v3.
 

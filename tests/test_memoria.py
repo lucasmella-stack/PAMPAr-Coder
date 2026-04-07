@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 """
 Tests del sistema de memoria de PAMPAr-Coder v3.
 

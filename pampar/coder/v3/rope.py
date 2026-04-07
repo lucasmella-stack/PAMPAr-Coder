@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 # Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 """Rotary Position Embedding (RoPE) — Su et al., 2021."""
 

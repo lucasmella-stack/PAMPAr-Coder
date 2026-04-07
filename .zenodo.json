@@ -1,0 +1,70 @@
+{
+  "title": "PAMPAr-Coder V3: A Brain-Inspired 2D Stream Architecture with Mixed Selectivity for Efficient Code Generation",
+  "description": "<p>PAMPAr-Coder V3 is a compact code generation language model with 62.6M parameters, designed to train and run at full FP16 precision on consumer GPUs with as little as 4GB VRAM.</p><p>The architecture introduces two key innovations: (1) a <strong>2D Stream organization</strong> that arranges computation as four specialized cortical streams (Syntax, Semantics, Logic, Structural) across five depth levels, connected by bidirectional lateral gates analogous to white-matter fiber tracts; and (2) <strong>Mixed Selectivity via FiLM</strong>, where a single shared Feed-Forward Network per level is dynamically re-read by context-dependent gamma/beta modulators derived from a 63-dimensional context vector — reducing FFN parameters by ~73% per level compared to four independent networks.</p><p>Additional contributions include TalamoNivel adaptive per-level re-routing, Grouped Query Attention (8Q/2KV), and the MotorCuriosidad ZPD-based curriculum scheduler that adapts training difficulty across 161 topic categories and 3.2M lines of code data.</p><p>After 55,000 training steps, the model reaches a cross-entropy loss of ~1.38 and saturates 29 of 40 curriculum topics at level 1, demonstrating active learning progress with training still ongoing.</p><p>This release includes: full model source code (PyTorch), training scripts, PAMPAr-48k bilingual tokenizer (48K vocabulary), configuration, and the research paper preprint.</p>",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "other-open",
+  "creators": [
+    {
+      "name": "Mella Chillemi, Lucas Ricardo",
+      "affiliation": "Independent Researcher",
+      "orcid": ""
+    }
+  ],
+  "keywords": [
+    "language model",
+    "code generation",
+    "brain-inspired AI",
+    "mixed selectivity",
+    "FiLM modulation",
+    "grouped query attention",
+    "curriculum learning",
+    "ZPD",
+    "cortical streams",
+    "lateral gates",
+    "LLAVES routing",
+    "parameter efficiency",
+    "PyTorch",
+    "natural language processing",
+    "deep learning"
+  ],
+  "related_identifiers": [
+    {
+      "scheme": "doi",
+      "identifier": "10.5281/zenodo.18315642",
+      "relation": "isCitedBy",
+      "resource_type": "software"
+    }
+  ],
+  "references": [
+    "Perez E., Strub F., de Vries H., Dumoulin V., Courville A. (2018). FiLM: Visual Reasoning with a General Conditioning Layer. AAAI 2018.",
+    "Rigotti M., Barak O., Warden M. R., et al. (2013). The importance of mixed selectivity in complex cognitive tasks. Nature, 497, 585-590.",
+    "Ainslie J., Lee-Thorp J., de Jong M., et al. (2023). GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints. EMNLP 2023.",
+    "Roziere B., Gehring J., Gloeckle F., et al. (2023). Code Llama: Open Foundation Models for Code. arXiv:2308.12950.",
+    "Lozhkov A., Li R., Allal L. B., et al. (2024). StarCoder2 and the Stack v2: The Next Generation. arXiv:2402.19173.",
+    "Vygotsky L. S. (1978). Mind in Society: The Development of Higher Psychological Processes. Harvard University Press.",
+    "Mella Chillemi, L. R. (2026). PAMPAr-o1 v9: A Brain-Inspired Territorial Architecture for Language Modeling. DOI: 10.5281/zenodo.18315642.",
+    "Elhage N., Hume T., Gray C., et al. (2022). Toy Models of Superposition. Transformer Circuits Thread.",
+    "Felleman D. J. & Van Essen D. C. (1991). Distributed hierarchical processing in the primate cerebral cortex. Cerebral Cortex, 1(1), 1-47."
+  ],
+  "notes": "This software is released under the Business Source License 1.1 (BUSL-1.1). The paper preprint is available in the paper/ directory. The model is intended for research and non-commercial use. Commercial licensing inquiries: lucas.mella@outlook.com",
+  "version": "3.0.0",
+  "language": "eng",
+  "subjects": [
+    {
+      "term": "Computer Science - Computation and Language",
+      "identifier": "cs.CL",
+      "scheme": "arXiv"
+    },
+    {
+      "term": "Computer Science - Machine Learning",
+      "identifier": "cs.LG",
+      "scheme": "arXiv"
+    },
+    {
+      "term": "Computer Science - Programming Languages",
+      "identifier": "cs.PL",
+      "scheme": "arXiv"
+    }
+  ]
+}

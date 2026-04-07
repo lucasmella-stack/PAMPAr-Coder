@@ -1,0 +1,105 @@
+cff-version: 1.2.0
+message: >-
+  If you use PAMPAr-Coder V3 in your research or products,
+  please cite it using the metadata below.
+
+title: >-
+  PAMPAr-Coder V3: A Brain-Inspired 2D Stream Architecture
+  with Mixed Selectivity for Efficient Code Generation
+
+version: "3.0.0"
+
+doi: "10.5281/zenodo.XXXXXXX"
+
+date-released: "2026-04-07"
+
+license: "BUSL-1.1"
+
+repository-code: "https://github.com/lucasmella-stack/PAMPAr-Coder"
+
+abstract: >-
+  PAMPAr-Coder V3 is a 62.6M-parameter code language model with a
+  brain-inspired 2D Stream architecture. It organizes computation as four
+  specialized cortical streams (Syntax, Semantics, Logic, Structural) across
+  five depth levels connected by lateral gates. A single shared Feed-Forward
+  Network per level is dynamically modulated via FiLM (Feature-wise Linear
+  Modulation) using a 63-dimensional context vector, reducing FFN parameters
+  by 73% versus independent per-stream networks. A ZPD-based curriculum
+  scheduler (MotorCuriosidad) adapts training difficulty across 161 topic
+  categories. The model trains end-to-end at FP16 precision on a consumer
+  4GB GPU — a regime requiring quantization for competing models.
+
+keywords:
+  - code generation
+  - language model
+  - brain-inspired architecture
+  - mixed selectivity
+  - FiLM modulation
+  - grouped query attention
+  - curriculum learning
+  - ZPD
+  - parameter efficiency
+  - cortical streams
+  - lateral gates
+  - LLAVES routing
+
+authors:
+  - family-names: "Mella Chillemi"
+    given-names: "Lucas Ricardo"
+    affiliation: "Independent Researcher"
+    city: "Buenos Aires"
+    country: "AR"
+    email: "lucas.mella@outlook.com"
+
+references:
+  - type: article
+    title: >-
+      PAMPAr-o1 v9: A Brain-Inspired Territorial Architecture for Language
+      Modeling with Explicit Rule-Based Routing
+    authors:
+      - family-names: "Mella Chillemi"
+        given-names: "Lucas Ricardo"
+    year: 2026
+    doi: "10.5281/zenodo.18315642"
+
+  - type: article
+    title: >-
+      FiLM: Visual Reasoning with a General Conditioning Layer
+    authors:
+      - family-names: "Perez"
+        given-names: "Ethan"
+      - family-names: "Strub"
+        given-names: "Florian"
+      - family-names: "de Vries"
+        given-names: "Harm"
+      - family-names: "Dumoulin"
+        given-names: "Vincent"
+      - family-names: "Courville"
+        given-names: "Aaron"
+    year: 2018
+    conference:
+      name: "AAAI 2018"
+
+  - type: article
+    title: "The importance of mixed selectivity in complex cognitive tasks"
+    authors:
+      - family-names: "Rigotti"
+        given-names: "Mattia"
+      - family-names: "Barak"
+        given-names: "Omri"
+    year: 2013
+    journal: "Nature"
+    volume: 497
+    start: 585
+    end: 590
+
+  - type: article
+    title: >-
+      GQA: Training Generalized Multi-Query Transformer Models from
+      Multi-Head Checkpoints
+    authors:
+      - family-names: "Ainslie"
+        given-names: "Joshua"
+    year: 2023
+    conference:
+      name: "EMNLP 2023"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 """
 test_inference_integration.py — Prueba fehaciente del servidor pampar.inference.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 # Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
 """
 train_v3.py — Entrenamiento autónomo de PamparV3.

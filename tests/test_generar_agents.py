@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: BUSL-1.1
 """
 Tests de pampar.runtime.generar_agents — Milestone 3: generador determinista
 del AGENTS.md contextual.
