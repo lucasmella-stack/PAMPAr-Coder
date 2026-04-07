@@ -29,17 +29,17 @@ from collections import deque
 from pathlib import Path
 from typing import Optional
 
+import sentencepiece as spm
 import torch
 import torch.nn.utils as nn_utils
-import sentencepiece as spm
 
 # ── Rutas relativas al script ──────────────────────────────────────────────────
-ROOT = Path(__file__).resolve().parent.parent          # PAMPAr-Coder/
+ROOT = Path(__file__).resolve().parent.parent  # PAMPAr-Coder/
 sys.path.insert(0, str(ROOT))
 
-from pampar.coder.v3 import PamparV3, ConfigV3, PRESET_V3
-from pampar.training import MotorCuriosidad, LectorBiblioteca
+from pampar.coder.v3 import PRESET_V3, ConfigV3, PamparV3
 from pampar.memoria import ClasificadorPareto
+from pampar.training import LectorBiblioteca, MotorCuriosidad
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,6 +52,7 @@ logger = logging.getLogger("train_v3")
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _cargar_indice(ruta: Path) -> dict:
     """Carga biblioteca/indice.json y valida el formato básico."""
@@ -88,6 +89,7 @@ def _pp_loss(loss: float) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # ViajeIntelectualV3 — bucle de entrenamiento autónomo
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class ReplayPareto:
     """
@@ -140,7 +142,7 @@ class ReplayPareto:
         # Si supera capacidad, descartar el menos importante
         if len(self._buffer) > self._maxlen:
             self._buffer.sort(key=lambda x: x[0], reverse=True)
-            self._buffer = self._buffer[:self._maxlen]
+            self._buffer = self._buffer[: self._maxlen]
 
     def sample(self, device: torch.device) -> Optional[torch.Tensor]:
         """Devuelve un tensor aleatorio sesgado hacia alta importancia."""
@@ -306,15 +308,26 @@ class ViajeIntelectualV3:
         """Imprime un resumen compacto del estado actual."""
         res = self.motor.resumen()
         elapsed = time.time() - self._tiempo_inicio
-        hh = int(elapsed // 3600); mm = int((elapsed % 3600) // 60)
+        hh = int(elapsed // 3600)
+        mm = int((elapsed % 3600) // 60)
 
-        avg_loss = sum(self._historial_loss) / len(self._historial_loss) if self._historial_loss else 0.0
+        avg_loss = (
+            sum(self._historial_loss) / len(self._historial_loss)
+            if self._historial_loss
+            else 0.0
+        )
 
         logger.info(
             "[paso %6d  %02dh%02dm]  nivel=%d  dom=%d/%d  %s  avg100=%.3f  tema=%s",
-            self.paso_global, hh, mm,
-            res['nivel_actual'], res['temas_dominados'], res['temas_total'],
-            _pp_loss(loss), avg_loss, nombre_tema,
+            self.paso_global,
+            hh,
+            mm,
+            res["nivel_actual"],
+            res["temas_dominados"],
+            res["temas_total"],
+            _pp_loss(loss),
+            avg_loss,
+            nombre_tema,
         )
 
     # ── Bucle principal ───────────────────────────────────────────────────────
@@ -330,7 +343,10 @@ class ViajeIntelectualV3:
         if ruta_motor is None:
             ruta_motor = self.ruta_ckpt.parent / "motor_v3.json"
 
-        logger.info("Iniciando ViajeIntelectualV3 — %s", "∞ pasos" if max_pasos == 0 else f"{max_pasos} pasos")
+        logger.info(
+            "Iniciando ViajeIntelectualV3 — %s",
+            "∞ pasos" if max_pasos == 0 else f"{max_pasos} pasos",
+        )
         logger.info("Checkpoint → %s", self.ruta_ckpt)
 
         try:
@@ -386,7 +402,12 @@ class ViajeIntelectualV3:
 
                 # ── Log en vivo cada 10 pasos
                 if self.paso_global % 10 == 0:
-                    logger.info("paso %d | %s | tema=%s", self.paso_global, _pp_loss(loss), nombre_tema)
+                    logger.info(
+                        "paso %d | %s | tema=%s",
+                        self.paso_global,
+                        _pp_loss(loss),
+                        nombre_tema,
+                    )
 
                 # ── 2c. REPLAY BUFFER (clasificado con Pareto)
                 self._agregar_a_replay(tokens, loss)
@@ -417,13 +438,16 @@ class ViajeIntelectualV3:
                     if replay_st["size"] > 0:
                         logger.info(
                             "ReplayPareto: %d muestras  imp_media=%.3f  imp_max=%.3f",
-                            replay_st["size"], replay_st["imp_media"], replay_st["imp_max"]
+                            replay_st["size"],
+                            replay_st["imp_media"],
+                            replay_st["imp_max"],
                         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CLI
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -432,31 +456,65 @@ def _parse_args() -> argparse.Namespace:
     )
 
     # Rutas
-    p.add_argument("--checkpoint", type=Path, default=ROOT / "checkpoints" / "v3_train.pt",
-                   help="Ruta del checkpoint a guardar/reanudar")
-    p.add_argument("--tokenizer", type=Path, default=ROOT / "data" / "tokenizer" / "pampar_48k.model",
-                   help="Modelo SentencePiece 48K")
-    p.add_argument("--biblioteca", type=Path, default=ROOT / "biblioteca",
-                   help="Raíz de la biblioteca de conocimiento")
-    p.add_argument("--indice", type=Path, default=None,
-                   help="Ruta a indice.json (por defecto: biblioteca/indice.json)")
-    p.add_argument("--estado", type=Path, default=None,
-                   help="Ruta para el estado del MotorCuriosidad (JSON)")
+    p.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=ROOT / "checkpoints" / "v3_train.pt",
+        help="Ruta del checkpoint a guardar/reanudar",
+    )
+    p.add_argument(
+        "--tokenizer",
+        type=Path,
+        default=ROOT / "data" / "tokenizer" / "pampar_48k.model",
+        help="Modelo SentencePiece 48K",
+    )
+    p.add_argument(
+        "--biblioteca",
+        type=Path,
+        default=ROOT / "biblioteca",
+        help="Raíz de la biblioteca de conocimiento",
+    )
+    p.add_argument(
+        "--indice",
+        type=Path,
+        default=None,
+        help="Ruta a indice.json (por defecto: biblioteca/indice.json)",
+    )
+    p.add_argument(
+        "--estado",
+        type=Path,
+        default=None,
+        help="Ruta para el estado del MotorCuriosidad (JSON)",
+    )
 
     # Hiperparámetros
     p.add_argument("--lr", type=float, default=3e-4, help="Tasa de aprendizaje (AdamW)")
-    p.add_argument("--pasos-por-tema", type=int, default=20, help="Gradients steps por sesión")
-    p.add_argument("--replay-cada", type=int, default=500, help="Pasos entre replay. 0=desactivado")
-    p.add_argument("--guardar-cada", type=int, default=200, help="Pasos entre checkpoints")
-    p.add_argument("--max-pasos", type=int, default=0, help="Límite total de pasos. 0=infinito")
+    p.add_argument(
+        "--pasos-por-tema", type=int, default=20, help="Gradients steps por sesión"
+    )
+    p.add_argument(
+        "--replay-cada", type=int, default=500, help="Pasos entre replay. 0=desactivado"
+    )
+    p.add_argument(
+        "--guardar-cada", type=int, default=200, help="Pasos entre checkpoints"
+    )
+    p.add_argument(
+        "--max-pasos", type=int, default=0, help="Límite total de pasos. 0=infinito"
+    )
     p.add_argument("--seq-len", type=int, default=512, help="max_seq_len del lector")
     p.add_argument("--batch-size", type=int, default=2, help="Tamaño de batch")
     p.add_argument("--max-grad-norm", type=float, default=1.0, help="Clip de gradiente")
-    p.add_argument("--replay-size", type=int, default=256, help="Tamaño del replay buffer")
+    p.add_argument(
+        "--replay-size", type=int, default=256, help="Tamaño del replay buffer"
+    )
 
     # Dispositivo
-    p.add_argument("--device", type=str, default="auto",
-                   help="'auto' (cuda si disponible), 'cuda', 'cpu'")
+    p.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        help="'auto' (cuda si disponible), 'cuda', 'cpu'",
+    )
 
     return p.parse_args()
 
@@ -467,7 +525,9 @@ def _resolver_device(arg: str) -> torch.device:
     return torch.device(arg)
 
 
-def _cargar_o_init_modelo(ruta_ckpt: Path, device: torch.device) -> tuple[PamparV3, int]:
+def _cargar_o_init_modelo(
+    ruta_ckpt: Path, device: torch.device
+) -> tuple[PamparV3, int]:
     """
     Carga modelo desde checkpoint o inicializa uno nuevo.
 
@@ -495,8 +555,11 @@ def main() -> None:
     device = _resolver_device(args.device)
     logger.info("Device: %s", device)
     if device.type == "cuda":
-        logger.info("GPU: %s  (%.1f GiB VRAM)", torch.cuda.get_device_name(0),
-                    torch.cuda.get_device_properties(0).total_memory / 1e9)
+        logger.info(
+            "GPU: %s  (%.1f GiB VRAM)",
+            torch.cuda.get_device_name(0),
+            torch.cuda.get_device_properties(0).total_memory / 1e9,
+        )
 
     # ── Tokenizer ─────────────────────────────────────────────────────────────
     if not args.tokenizer.exists():
@@ -514,7 +577,8 @@ def main() -> None:
     if modelo.config.vocab_size != vocab_size:
         logger.error(
             "vocab_size mismatch: modelo=%d, tokenizer=%d",
-            modelo.config.vocab_size, vocab_size,
+            modelo.config.vocab_size,
+            vocab_size,
         )
         sys.exit(1)
 
@@ -556,13 +620,23 @@ def main() -> None:
 
     # ── Motor de curiosidad ────────────────────────────────────────────────────
     ruta_motor = args.estado or (args.checkpoint.parent / "motor_v3.json")
-    motor = MotorCuriosidad(ruta_estado=ruta_motor, nivel_actual=1)
+    # Fresh start: no cargar estado previo del motor (pertenece a otro modelo)
+    if not args.checkpoint.exists() and Path(ruta_motor).exists():
+        logger.info("Fresh start — motor reiniciado (ignorando %s)", ruta_motor.name)
+        motor = MotorCuriosidad(ruta_estado=None, nivel_actual=1)
+        motor.ruta_estado = ruta_motor  # guardar aquí en adelante
+    else:
+        motor = MotorCuriosidad(ruta_estado=ruta_motor, nivel_actual=1)
 
     n_nuevos = motor.registrar_temas_desde_indice(indice)
     logger.info("Motor listo — %d temas nuevos registrados", n_nuevos)
     res = motor.resumen()
-    logger.info("Estado motor: nivel=%d  dominados=%d/%d",
-                res["nivel_actual"], res["temas_dominados"], res["temas_total"])
+    logger.info(
+        "Estado motor: nivel=%d  dominados=%d/%d",
+        res["nivel_actual"],
+        res["temas_dominados"],
+        res["temas_total"],
+    )
 
     # ── Viaje ─────────────────────────────────────────────────────────────────
     viaje = ViajeIntelectualV3(

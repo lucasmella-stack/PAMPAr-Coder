@@ -100,6 +100,10 @@ _archive/
 # Large dataset files (>100MB — no caben en GitHub)
 biblioteca/python_real/magicoder_oss_75k.jsonl
 biblioteca/python_real/starcoder2_self_oss_50k.jsonl
+# Datasets generados por integrar_datos.py (2.4 GB — usar script para regenerar)
+biblioteca/instruccion/
+biblioteca/ejercicios/
+biblioteca/textbook/
 
 # OS
 .DS_Store
