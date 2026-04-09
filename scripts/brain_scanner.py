@@ -40,18 +40,22 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from pampar.coder.v3.config import PRESET_V3, ConfigV3
+from pampar.coder.v3.llaves import clasificar_token
 from pampar.coder.v3.modelo import PamparV3
 from pampar.coder.v3.talamo import TalamoInicial
-from pampar.coder.v3.zonas import Zona, Territorio, ZONA_TERRITORIO
-from pampar.coder.v3.llaves import clasificar_token
-
+from pampar.coder.v3.zonas import ZONA_TERRITORIO, Territorio, Zona
 
 # =============================================================================
 # CONSTANTES
 # =============================================================================
 
 STREAM_NAMES = ["SINTAXIS", "SEMANTICA", "LOGICO", "ESTRUCTURAL"]
-STREAM_COLORS = ["\033[94m", "\033[92m", "\033[93m", "\033[95m"]  # blue, green, yellow, purple
+STREAM_COLORS = [
+    "\033[94m",
+    "\033[92m",
+    "\033[93m",
+    "\033[95m",
+]  # blue, green, yellow, purple
 RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
@@ -92,36 +96,15 @@ CODE_SUITE = [
 
 
 # =============================================================================
-# CARGA DEL MODELO
+# CARGA DEL MODELO (delegada a pampar.inference)
 # =============================================================================
 
-def cargar_modelo(
-    checkpoint: Path,
-    device: torch.device,
-) -> tuple[PamparV3, object]:
-    """Carga modelo y tokenizer."""
-    import sentencepiece as spm
-
-    tok_path = PROJECT_ROOT / "data" / "tokenizer" / "pampar_48k.model"
-    if not tok_path.exists():
-        raise FileNotFoundError(f"Tokenizer no encontrado: {tok_path}")
-
-    tokenizer = spm.SentencePieceProcessor()
-    tokenizer.Load(str(tok_path))
-
-    model = PamparV3(PRESET_V3).to(device)
-    ckpt = torch.load(str(checkpoint), map_location=device, weights_only=False)
-    state_dict = ckpt.get("modelo", ckpt.get("model", ckpt))
-    model.load_state_dict(state_dict, strict=False)
-    model.registrar_tokenizer(tokenizer)
-    model.eval()
-
-    return model, tokenizer
-
+from pampar.inference import load_model
 
 # =============================================================================
 # BARRA VISUAL
 # =============================================================================
+
 
 def barra(valor: float, ancho: int = 20, color: str = "") -> str:
     """Dibuja una barra horizontal proporcional al valor [0, 1]."""
@@ -150,12 +133,13 @@ def heatmap_char(valor: float) -> str:
         return f"\033[32m▓{RESET}"  # verde
     if v < 0.8:
         return f"\033[33m█{RESET}"  # amarillo
-    return f"\033[31m█{RESET}"      # rojo
+    return f"\033[31m█{RESET}"  # rojo
 
 
 # =============================================================================
 # FORWARD INSTRUMENTADO
 # =============================================================================
+
 
 @torch.no_grad()
 def forward_instrumentado(
@@ -205,8 +189,7 @@ def forward_instrumentado(
 
         # 4a. Representación combinada
         x_combined = sum(
-            streams[t] * terr_acts[:, :, t:t + 1]
-            for t in range(config.n_streams)
+            streams[t] * terr_acts[:, :, t : t + 1] for t in range(config.n_streams)
         )
 
         # 4b. Atención compartida
@@ -222,7 +205,7 @@ def forward_instrumentado(
         new_streams = []
         for t in range(config.n_streams):
             h_normed = nivel.norm_streams[t](streams[t] + x_attn)
-            h = nivel.ffns[t](h_normed) * terr_acts[:, :, t:t + 1]
+            h = nivel.ffns[t](h_normed) * terr_acts[:, :, t : t + 1]
             new_streams.append(streams[t] + nivel.drop(h))
 
         # 4e. Lateral gates
@@ -230,8 +213,7 @@ def forward_instrumentado(
 
         # 4f. Confianza Early Exit
         x_out = sum(
-            streams[t] * terr_acts[:, :, t:t + 1]
-            for t in range(config.n_streams)
+            streams[t] * terr_acts[:, :, t : t + 1] for t in range(config.n_streams)
         )
         per_token_conf = torch.sigmoid(nivel.exit_head(x_out)).squeeze(-1)
         k = max(1, int(per_token_conf.numel() * config.exit_percentile))
@@ -240,16 +222,18 @@ def forward_instrumentado(
 
         # Capturar datos por nivel
         terr_por_nivel.append(terr_acts[0].cpu())
-        norms = [streams[t][0].norm(dim=-1).mean().item() for t in range(config.n_streams)]
+        norms = [
+            streams[t][0].norm(dim=-1).mean().item() for t in range(config.n_streams)
+        ]
         stream_norms.append(norms)
 
     return {
-        "zona_acts": zona_acts[0].cpu(),           # [L, 52]
-        "terr_por_nivel": terr_por_nivel,           # list[[L, 4]]
-        "confianza": confianzas,                    # [n_levels]
-        "lateral_scales": lateral_scales,           # [n_levels, 4]
-        "stream_norms": stream_norms,               # [n_levels, 4]
-        "attn_norms": attn_norms,                   # [n_levels]
+        "zona_acts": zona_acts[0].cpu(),  # [L, 52]
+        "terr_por_nivel": terr_por_nivel,  # list[[L, 4]]
+        "confianza": confianzas,  # [n_levels]
+        "lateral_scales": lateral_scales,  # [n_levels, 4]
+        "stream_norms": stream_norms,  # [n_levels, 4]
+        "attn_norms": attn_norms,  # [n_levels]
     }
 
 
@@ -257,11 +241,14 @@ def forward_instrumentado(
 # VISUALIZACIÓN: ACTIVACIONES TERRITORIALES
 # =============================================================================
 
+
 def mostrar_routing(tokens: list[str], info: dict) -> str:
     """Muestra cómo el Tálamo enruta cada token a los 4 streams."""
     lines = []
     lines.append(f"\n{BOLD}═══ TÁLAMO: ROUTING INICIAL ═══{RESET}\n")
-    lines.append(f"  {'Token':<15} {'SINTAXIS':>10} {'SEMANTICA':>10} {'LOGICO':>10} {'ESTRUCTURAL':>10}  Dominante")
+    lines.append(
+        f"  {'Token':<15} {'SINTAXIS':>10} {'SEMANTICA':>10} {'LOGICO':>10} {'ESTRUCTURAL':>10}  Dominante"
+    )
     lines.append(f"  {'─' * 15} {'─' * 10} {'─' * 10} {'─' * 10} {'─' * 13} {'─' * 12}")
 
     terr_0 = info["terr_por_nivel"][0]  # [L, 4]
@@ -273,7 +260,9 @@ def mostrar_routing(tokens: list[str], info: dict) -> str:
 
         tok_display = repr(tok).strip("'")[:14]
         vals = " ".join(f"{a:10.3f}" for a in acts)
-        lines.append(f"  {tok_display:<15} {vals}  {color}{STREAM_NAMES[dominant]}{RESET}")
+        lines.append(
+            f"  {tok_display:<15} {vals}  {color}{STREAM_NAMES[dominant]}{RESET}"
+        )
 
     return "\n".join(lines)
 
@@ -281,6 +270,7 @@ def mostrar_routing(tokens: list[str], info: dict) -> str:
 # =============================================================================
 # VISUALIZACIÓN: ZONAS DE BRODMANN
 # =============================================================================
+
 
 def mostrar_zonas(tokens: list[str], info: dict) -> str:
     """Muestra las zonas de Brodmann más activas por token."""
@@ -308,6 +298,7 @@ def mostrar_zonas(tokens: list[str], info: dict) -> str:
 # VISUALIZACIÓN: EVOLUCIÓN POR NIVEL
 # =============================================================================
 
+
 def mostrar_evolucion(tokens: list[str], info: dict) -> str:
     """Muestra cómo evolucionan las activaciones territoriales a través de los 5 niveles."""
     lines = []
@@ -318,7 +309,10 @@ def mostrar_evolucion(tokens: list[str], info: dict) -> str:
     for t_idx, name in enumerate(STREAM_NAMES):
         color = STREAM_COLORS[t_idx]
         lines.append(f"  {color}{BOLD}{name}{RESET}")
-        lines.append(f"  {'Token':<12} " + " ".join(f"{'N' + str(n):<8}" for n in range(n_levels + 1)))
+        lines.append(
+            f"  {'Token':<12} "
+            + " ".join(f"{'N' + str(n):<8}" for n in range(n_levels + 1))
+        )
 
         for i, tok in enumerate(tokens):
             tok_display = repr(tok).strip("'")[:11]
@@ -336,6 +330,7 @@ def mostrar_evolucion(tokens: list[str], info: dict) -> str:
 # VISUALIZACIÓN: FIBRAS BLANCAS (LateralGate)
 # =============================================================================
 
+
 def mostrar_fibras_blancas(info: dict) -> str:
     """Muestra los pesos de comunicación lateral entre streams."""
     lines = []
@@ -344,7 +339,13 @@ def mostrar_fibras_blancas(info: dict) -> str:
 
     scales = info["lateral_scales"]  # [n_levels, 4]
 
-    lines.append(f"  {'Nivel':<8} " + " ".join(f"{STREAM_COLORS[t]}{name:<14}{RESET}" for t, name in enumerate(STREAM_NAMES)))
+    lines.append(
+        f"  {'Nivel':<8} "
+        + " ".join(
+            f"{STREAM_COLORS[t]}{name:<14}{RESET}"
+            for t, name in enumerate(STREAM_NAMES)
+        )
+    )
     lines.append(f"  {'─' * 8} " + " ".join("─" * 14 for _ in STREAM_NAMES))
 
     for n, level_scales in enumerate(scales):
@@ -360,7 +361,9 @@ def mostrar_fibras_blancas(info: dict) -> str:
         for t in range(4)
     ]
     max_idx = max(range(4), key=lambda t: avg_scales[t])
-    lines.append(f"\n  Stream más comunicativo: {STREAM_COLORS[max_idx]}{BOLD}{STREAM_NAMES[max_idx]}{RESET} (escala promedio: {avg_scales[max_idx]:.4f})")
+    lines.append(
+        f"\n  Stream más comunicativo: {STREAM_COLORS[max_idx]}{BOLD}{STREAM_NAMES[max_idx]}{RESET} (escala promedio: {avg_scales[max_idx]:.4f})"
+    )
 
     return "\n".join(lines)
 
@@ -369,15 +372,22 @@ def mostrar_fibras_blancas(info: dict) -> str:
 # VISUALIZACIÓN: CONFIANZA EARLY EXIT
 # =============================================================================
 
+
 def mostrar_early_exit(info: dict) -> str:
     """Muestra la confianza de early exit por nivel."""
     lines = []
     lines.append(f"\n{BOLD}═══ EARLY EXIT (confianza por nivel) ═══{RESET}")
-    lines.append(f"  Umbral: {PRESET_V3.umbral_exit:.0%} — mín {PRESET_V3.capas_min} niveles\n")
+    lines.append(
+        f"  Umbral: {PRESET_V3.umbral_exit:.0%} — mín {PRESET_V3.capas_min} niveles\n"
+    )
 
     for n, conf in enumerate(info["confianza"]):
         color = "\033[32m" if conf >= PRESET_V3.umbral_exit else "\033[31m"
-        marker = " ◄ EXIT" if conf >= PRESET_V3.umbral_exit and n >= PRESET_V3.capas_min - 1 else ""
+        marker = (
+            " ◄ EXIT"
+            if conf >= PRESET_V3.umbral_exit and n >= PRESET_V3.capas_min - 1
+            else ""
+        )
         lines.append(f"  Nivel {n}  {barra(conf, 30, color)}{BOLD}{marker}{RESET}")
 
     return "\n".join(lines)
@@ -386,6 +396,7 @@ def mostrar_early_exit(info: dict) -> str:
 # =============================================================================
 # VISUALIZACIÓN: NORMAS DE STREAMS
 # =============================================================================
+
 
 def mostrar_stream_norms(info: dict) -> str:
     """Muestra la norma L2 de cada stream por nivel (actividad del stream)."""
@@ -396,7 +407,13 @@ def mostrar_stream_norms(info: dict) -> str:
     # Normalizar al max para visualización
     max_norm = max(max(level) for level in norms)
 
-    lines.append(f"  {'Nivel':<8} " + " ".join(f"{STREAM_COLORS[t]}{name:<14}{RESET}" for t, name in enumerate(STREAM_NAMES)))
+    lines.append(
+        f"  {'Nivel':<8} "
+        + " ".join(
+            f"{STREAM_COLORS[t]}{name:<14}{RESET}"
+            for t, name in enumerate(STREAM_NAMES)
+        )
+    )
     lines.append(f"  {'─' * 8} " + " ".join("─" * 14 for _ in STREAM_NAMES))
 
     for n, level_norms in enumerate(norms):
@@ -413,6 +430,7 @@ def mostrar_stream_norms(info: dict) -> str:
 # TERRITORY TABLE (reutiliza lógica de neuro_trainer)
 # =============================================================================
 
+
 def _build_territory_table(tokenizer: object) -> torch.Tensor:
     """Construye lookup table: token_id → territorio target (0-3)."""
     vocab_size = tokenizer.GetPieceSize()
@@ -428,6 +446,7 @@ def _build_territory_table(tokenizer: object) -> torch.Tensor:
 # VISUALIZACIÓN: PRECISIÓN DE ROUTING VS LLAVES
 # =============================================================================
 
+
 def mostrar_precision(
     tokens: list[str],
     token_ids: list[int],
@@ -437,8 +456,12 @@ def mostrar_precision(
     """Compara routing actual vs territorio esperado de LLAVES por token."""
     lines = []
     lines.append(f"\n{BOLD}═══ PRECISIÓN DE ROUTING vs LLAVES ═══{RESET}\n")
-    lines.append(f"  {'Token':<15} {'Esperado':<14} {'Actual N0':<14} {'Actual N5':<14} {'N0':>3} {'N5':>3}  Zona LLAVES")
-    lines.append(f"  {'─' * 15} {'─' * 14} {'─' * 14} {'─' * 14} {'─' * 3} {'─' * 3}  {'─' * 20}")
+    lines.append(
+        f"  {'Token':<15} {'Esperado':<14} {'Actual N0':<14} {'Actual N5':<14} {'N0':>3} {'N5':>3}  Zona LLAVES"
+    )
+    lines.append(
+        f"  {'─' * 15} {'─' * 14} {'─' * 14} {'─' * 14} {'─' * 3} {'─' * 3}  {'─' * 20}"
+    )
 
     n_levels = len(info["confianza"])
     terr_0 = info["terr_por_nivel"][0]
@@ -481,11 +504,19 @@ def mostrar_precision(
 
     acc_n0 = correct_n0 / total * 100 if total > 0 else 0
     acc_nlast = correct_nlast / total * 100 if total > 0 else 0
-    color_n0 = "\033[32m" if acc_n0 >= 80 else "\033[33m" if acc_n0 >= 50 else "\033[31m"
-    color_nlast = "\033[32m" if acc_nlast >= 80 else "\033[33m" if acc_nlast >= 50 else "\033[31m"
+    color_n0 = (
+        "\033[32m" if acc_n0 >= 80 else "\033[33m" if acc_n0 >= 50 else "\033[31m"
+    )
+    color_nlast = (
+        "\033[32m" if acc_nlast >= 80 else "\033[33m" if acc_nlast >= 50 else "\033[31m"
+    )
 
-    lines.append(f"\n  {BOLD}Accuracy N0: {color_n0}{acc_n0:.1f}%{RESET}  ({correct_n0}/{total})")
-    lines.append(f"  {BOLD}Accuracy N{n_levels}: {color_nlast}{acc_nlast:.1f}%{RESET}  ({correct_nlast}/{total})")
+    lines.append(
+        f"\n  {BOLD}Accuracy N0: {color_n0}{acc_n0:.1f}%{RESET}  ({correct_n0}/{total})"
+    )
+    lines.append(
+        f"  {BOLD}Accuracy N{n_levels}: {color_nlast}{acc_nlast:.1f}%{RESET}  ({correct_nlast}/{total})"
+    )
 
     return "\n".join(lines)
 
@@ -493,6 +524,7 @@ def mostrar_precision(
 # =============================================================================
 # VISUALIZACIÓN: MARGEN DE ROUTING
 # =============================================================================
+
 
 def mostrar_margen(tokens: list[str], info: dict) -> str:
     """Muestra el margen de decisión del routing (1er vs 2do stream)."""
@@ -503,7 +535,9 @@ def mostrar_margen(tokens: list[str], info: dict) -> str:
     n_levels = len(info["confianza"])
     terr_last = info["terr_por_nivel"][n_levels]
 
-    lines.append(f"  {'Token':<15} {'Dominante':<12} {'1er':>6} {'2do':>6} {'Margen':>8}  Visual")
+    lines.append(
+        f"  {'Token':<15} {'Dominante':<12} {'1er':>6} {'2do':>6} {'Margen':>8}  Visual"
+    )
     lines.append(f"  {'─' * 15} {'─' * 12} {'─' * 6} {'─' * 6} {'─' * 8}  {'─' * 20}")
 
     margins = []
@@ -516,7 +550,9 @@ def mostrar_margen(tokens: list[str], info: dict) -> str:
         margins.append(margin)
 
         color = STREAM_COLORS[dominant[0]]
-        m_color = "\033[32m" if margin > 0.05 else "\033[33m" if margin > 0.02 else "\033[31m"
+        m_color = (
+            "\033[32m" if margin > 0.05 else "\033[33m" if margin > 0.02 else "\033[31m"
+        )
 
         tok_display = repr(tok).strip("'")[:14]
         lines.append(
@@ -529,11 +565,19 @@ def mostrar_margen(tokens: list[str], info: dict) -> str:
 
     avg_margin = sum(margins) / len(margins) if margins else 0
     min_margin = min(margins) if margins else 0
-    m_color = "\033[32m" if avg_margin > 0.05 else "\033[33m" if avg_margin > 0.02 else "\033[31m"
+    m_color = (
+        "\033[32m"
+        if avg_margin > 0.05
+        else "\033[33m"
+        if avg_margin > 0.02
+        else "\033[31m"
+    )
     lines.append(f"\n  {BOLD}Margen promedio: {m_color}{avg_margin:.4f}{RESET}")
     lines.append(f"  {BOLD}Margen mínimo:  {m_color}{min_margin:.4f}{RESET}")
     if min_margin < 0.01:
-        lines.append(f"  {BOLD}\033[31m⚠ Tokens con margen <0.01 → routing casi aleatorio{RESET}")
+        lines.append(
+            f"  {BOLD}\033[31m⚠ Tokens con margen <0.01 → routing casi aleatorio{RESET}"
+        )
 
     return "\n".join(lines)
 
@@ -541,6 +585,7 @@ def mostrar_margen(tokens: list[str], info: dict) -> str:
 # =============================================================================
 # VISUALIZACIÓN: RESUMEN CUANTITATIVO
 # =============================================================================
+
 
 def mostrar_resumen(
     tokens: list[str],
@@ -558,11 +603,13 @@ def mostrar_resumen(
 
     # 1. Routing accuracy
     correct_n0 = sum(
-        1 for i, tid in enumerate(token_ids)
+        1
+        for i, tid in enumerate(token_ids)
         if terr_0[i].argmax().item() == territory_table[tid].item()
     )
     correct_nlast = sum(
-        1 for i, tid in enumerate(token_ids)
+        1
+        for i, tid in enumerate(token_ids)
         if terr_last[i].argmax().item() == territory_table[tid].item()
     )
     total = len(tokens)
@@ -598,24 +645,42 @@ def mostrar_resumen(
 
     lines.append(f"  {'Métrica':<35} {'Valor':>10}  Estado")
     lines.append(f"  {'─' * 35} {'─' * 10}  {'─' * 12}")
-    lines.append(f"  {'Routing accuracy N0':<35} {acc_n0:>9.1f}%  {status(acc_n0 >= 70)}")
-    lines.append(f"  {'Routing accuracy N' + str(n_levels):<35} {acc_nlast:>9.1f}%  {status(acc_nlast >= 70)}")
-    lines.append(f"  {'Margen promedio':<35} {avg_margin:>10.4f}  {status(avg_margin > 0.02)}")
-    lines.append(f"  {'Margen mínimo':<35} {min_margin:>10.4f}  {status(min_margin > 0.005)}")
-    lines.append(f"  {'Diferenciación (std promedio)':<35} {avg_std:>10.4f}  {status(avg_std > 0.02)}")
-    lines.append(f"  {'Early Exit max confianza':<35} {max_conf:>9.1%}  {status(exit_ok)}")
-    lines.append(f"  {'Diversidad routing (1-Gini)':<35} {1 - gini:>10.3f}  {status(gini < 0.6)}")
-    lines.append(f"  {'Distribución':<35} " + " ".join(
-        f"{STREAM_COLORS[t]}{STREAM_NAMES[t][:4]}={dominant_counts[t]}{RESET}" for t in range(4)
-    ))
+    lines.append(
+        f"  {'Routing accuracy N0':<35} {acc_n0:>9.1f}%  {status(acc_n0 >= 70)}"
+    )
+    lines.append(
+        f"  {'Routing accuracy N' + str(n_levels):<35} {acc_nlast:>9.1f}%  {status(acc_nlast >= 70)}"
+    )
+    lines.append(
+        f"  {'Margen promedio':<35} {avg_margin:>10.4f}  {status(avg_margin > 0.02)}"
+    )
+    lines.append(
+        f"  {'Margen mínimo':<35} {min_margin:>10.4f}  {status(min_margin > 0.005)}"
+    )
+    lines.append(
+        f"  {'Diferenciación (std promedio)':<35} {avg_std:>10.4f}  {status(avg_std > 0.02)}"
+    )
+    lines.append(
+        f"  {'Early Exit max confianza':<35} {max_conf:>9.1%}  {status(exit_ok)}"
+    )
+    lines.append(
+        f"  {'Diversidad routing (1-Gini)':<35} {1 - gini:>10.3f}  {status(gini < 0.6)}"
+    )
+    lines.append(
+        f"  {'Distribución':<35} "
+        + " ".join(
+            f"{STREAM_COLORS[t]}{STREAM_NAMES[t][:4]}={dominant_counts[t]}{RESET}"
+            for t in range(4)
+        )
+    )
 
     # Score global (0-100)
     score = (
-        min(acc_nlast, 100) * 0.35 +
-        min(avg_margin * 1000, 100) * 0.20 +
-        min(avg_std * 1000, 100) * 0.15 +
-        (100 if exit_ok else max_conf * 100) * 0.15 +
-        (1 - gini) * 100 * 0.15
+        min(acc_nlast, 100) * 0.35
+        + min(avg_margin * 1000, 100) * 0.20
+        + min(avg_std * 1000, 100) * 0.15
+        + (100 if exit_ok else max_conf * 100) * 0.15
+        + (1 - gini) * 100 * 0.15
     )
     s_color = "\033[32m" if score >= 70 else "\033[33m" if score >= 40 else "\033[31m"
     lines.append(f"\n  {BOLD}Score global: {s_color}{score:.0f}/100{RESET}")
@@ -641,6 +706,7 @@ def _gini_coefficient(counts: list[int]) -> float:
 # =============================================================================
 # SUITE: BATERÍA DE TESTS DIVERSA
 # =============================================================================
+
 
 def ejecutar_suite(
     model: PamparV3,
@@ -702,19 +768,25 @@ def ejecutar_suite(
         all_margins.extend(margins)
         all_max_conf.append(max_conf)
 
-        per_sample.append({
-            "label": label,
-            "code": code.split("\n")[0][:40],
-            "tokens": n,
-            "acc_n0": acc_n0,
-            "acc_nlast": acc_nlast,
-            "margin": avg_margin,
-            "max_conf": max_conf,
-        })
+        per_sample.append(
+            {
+                "label": label,
+                "code": code.split("\n")[0][:40],
+                "tokens": n,
+                "acc_n0": acc_n0,
+                "acc_nlast": acc_nlast,
+                "margin": avg_margin,
+                "max_conf": max_conf,
+            }
+        )
 
     # Tabla de resultados
-    lines.append(f"  {'Muestra':<16} {'Código':<42} {'Tok':>3} {'AccN0':>6} {'AccN5':>6} {'Marg':>6} {'Exit':>5}")
-    lines.append(f"  {'─' * 16} {'─' * 42} {'─' * 3} {'─' * 6} {'─' * 6} {'─' * 6} {'─' * 5}")
+    lines.append(
+        f"  {'Muestra':<16} {'Código':<42} {'Tok':>3} {'AccN0':>6} {'AccN5':>6} {'Marg':>6} {'Exit':>5}"
+    )
+    lines.append(
+        f"  {'─' * 16} {'─' * 42} {'─' * 3} {'─' * 6} {'─' * 6} {'─' * 6} {'─' * 5}"
+    )
 
     for s in per_sample:
         c_n0 = "\033[32m" if s["acc_n0"] >= 70 else "\033[31m"
@@ -739,19 +811,23 @@ def ejecutar_suite(
 
     lines.append(f"\n  {'─' * 90}")
     c_g = "\033[32m" if global_acc_nlast >= 70 else "\033[31m"
-    lines.append(f"  {BOLD}GLOBAL{RESET}  Tokens: {all_total}  "
-                 f"AccN0: {global_acc_n0:.1f}%  "
-                 f"{BOLD}AccN5: {c_g}{global_acc_nlast:.1f}%{RESET}  "
-                 f"Margen: {global_margin:.4f}  "
-                 f"Exit promedio: {global_exit:.1%}")
-    lines.append(f"  {BOLD}Peor muestra:{RESET} {worst['label']} → acc={worst['acc_nlast']:.1f}%")
+    lines.append(
+        f"  {BOLD}GLOBAL{RESET}  Tokens: {all_total}  "
+        f"AccN0: {global_acc_n0:.1f}%  "
+        f"{BOLD}AccN5: {c_g}{global_acc_nlast:.1f}%{RESET}  "
+        f"Margen: {global_margin:.4f}  "
+        f"Exit promedio: {global_exit:.1%}"
+    )
+    lines.append(
+        f"  {BOLD}Peor muestra:{RESET} {worst['label']} → acc={worst['acc_nlast']:.1f}%"
+    )
 
     # Score
     score = (
-        min(global_acc_nlast, 100) * 0.40 +
-        min(global_margin * 1000, 100) * 0.25 +
-        min(global_exit * 100, 100) * 0.15 +
-        min(min_acc, 100) * 0.20
+        min(global_acc_nlast, 100) * 0.40
+        + min(global_margin * 1000, 100) * 0.25
+        + min(global_exit * 100, 100) * 0.15
+        + min(min_acc, 100) * 0.20
     )
     s_color = "\033[32m" if score >= 70 else "\033[33m" if score >= 40 else "\033[31m"
     lines.append(f"\n  {BOLD}Score Suite: {s_color}{score:.0f}/100{RESET}")
@@ -762,6 +838,7 @@ def ejecutar_suite(
 # =============================================================================
 # COMPARACIÓN DE CHECKPOINTS
 # =============================================================================
+
 
 def comparar_checkpoints(
     ckpt_a: Path,
@@ -778,7 +855,7 @@ def comparar_checkpoints(
 
     results: dict[str, dict] = {}
     for label, path in [("A", ckpt_a), ("B", ckpt_b)]:
-        model, tokenizer = cargar_modelo(path, device)
+        model, tokenizer = load_model(path, device, verbose=False)
         territory_table = _build_territory_table(tokenizer)
 
         acc_n0_total = 0
@@ -839,7 +916,9 @@ def comparar_checkpoints(
             torch.cuda.empty_cache()
 
     # Tabla comparativa
-    lines.append(f"  {'Métrica':<30} {'Ckpt A':>10} {'Ckpt B':>10} {'Delta':>10}  Mejor")
+    lines.append(
+        f"  {'Métrica':<30} {'Ckpt A':>10} {'Ckpt B':>10} {'Delta':>10}  Mejor"
+    )
     lines.append(f"  {'─' * 30} {'─' * 10} {'─' * 10} {'─' * 10}  {'─' * 6}")
 
     metrics = [
@@ -876,6 +955,7 @@ def comparar_checkpoints(
 # GENERACIÓN DE CÓDIGO
 # =============================================================================
 
+
 def mostrar_generacion(
     model: PamparV3,
     tokenizer: object,
@@ -905,7 +985,7 @@ def mostrar_generacion(
 
     # Separar prompt del generado
     prompt_text = tokenizer.Decode(prompt_ids)
-    new_text = generated_text[len(prompt_text):]
+    new_text = generated_text[len(prompt_text) :]
 
     lines.append(f"  {DIM}{'─' * 60}{RESET}")
     lines.append(f"  {DIM}{prompt_text}{RESET}{BOLD}{new_text}{RESET}")
@@ -914,7 +994,9 @@ def mostrar_generacion(
 
     # Análisis del routing de lo generado
     with torch.no_grad():
-        info = forward_instrumentado(model, output_ids[:, :min(64, output_ids.shape[1])])
+        info = forward_instrumentado(
+            model, output_ids[:, : min(64, output_ids.shape[1])]
+        )
 
     n_levels = len(info["confianza"])
     terr_last = info["terr_por_nivel"][n_levels]
@@ -927,10 +1009,13 @@ def mostrar_generacion(
             d = terr_last[i].argmax().item()
             dominant_counts[d] += 1
         n_gen = gen_end - gen_start
-        lines.append(f"\n  Routing generado: " + " ".join(
-            f"{STREAM_COLORS[t]}{STREAM_NAMES[t][:4]}={dominant_counts[t]}/{n_gen}{RESET}"
-            for t in range(4)
-        ))
+        lines.append(
+            f"\n  Routing generado: "
+            + " ".join(
+                f"{STREAM_COLORS[t]}{STREAM_NAMES[t][:4]}={dominant_counts[t]}/{n_gen}{RESET}"
+                for t in range(4)
+            )
+        )
 
     return "\n".join(lines)
 
@@ -938,6 +1023,7 @@ def mostrar_generacion(
 # =============================================================================
 # VISUALIZACIÓN: PESOS DEL MODELO
 # =============================================================================
+
 
 def mostrar_pesos(model: PamparV3) -> str:
     """Muestra distribución de pesos por componente del modelo."""
@@ -973,12 +1059,24 @@ def mostrar_pesos(model: PamparV3) -> str:
         exit_p = sum(p.numel() for p in nivel.exit_head.parameters())
         nivel_total = attn_p + ffn_p + lat_p + tal_p + exit_p
 
-        lines.append(f"\n  Nivel {i}:  {nivel_total:,} params ({nivel_total / 1e6:.1f}M)")
-        lines.append(f"    Atención GQA:   {attn_p:>10,}  {barra(attn_p / nivel_total, 15)}")
-        lines.append(f"    4× StreamFFN:   {ffn_p:>10,}  {barra(ffn_p / nivel_total, 15)}")
-        lines.append(f"    LateralGate:    {lat_p:>10,}  {barra(lat_p / nivel_total, 15)}")
-        lines.append(f"    TalamoNivel:    {tal_p:>10,}  {barra(tal_p / nivel_total, 15)}")
-        lines.append(f"    Exit Head:      {exit_p:>10,}  {barra(exit_p / nivel_total, 15)}")
+        lines.append(
+            f"\n  Nivel {i}:  {nivel_total:,} params ({nivel_total / 1e6:.1f}M)"
+        )
+        lines.append(
+            f"    Atención GQA:   {attn_p:>10,}  {barra(attn_p / nivel_total, 15)}"
+        )
+        lines.append(
+            f"    4× StreamFFN:   {ffn_p:>10,}  {barra(ffn_p / nivel_total, 15)}"
+        )
+        lines.append(
+            f"    LateralGate:    {lat_p:>10,}  {barra(lat_p / nivel_total, 15)}"
+        )
+        lines.append(
+            f"    TalamoNivel:    {tal_p:>10,}  {barra(tal_p / nivel_total, 15)}"
+        )
+        lines.append(
+            f"    Exit Head:      {exit_p:>10,}  {barra(exit_p / nivel_total, 15)}"
+        )
 
     # Distribución de magnitud de pesos
     lines.append(f"\n  {BOLD}Salud de pesos (magnitud):{RESET}")
@@ -998,8 +1096,14 @@ def mostrar_pesos(model: PamparV3) -> str:
             alert = f" \033[33m⚠ baja varianza{RESET}"
 
         if alert:
-            short_name = name.replace("niveles.", "N").replace("ffns.", "FFN").replace("lateral.", "Lat.")
-            lines.append(f"    {short_name:<45} μ|w|={mean_abs:.4f}  σ={std:.4f}{alert}")
+            short_name = (
+                name.replace("niveles.", "N")
+                .replace("ffns.", "FFN")
+                .replace("lateral.", "Lat.")
+            )
+            lines.append(
+                f"    {short_name:<45} μ|w|={mean_abs:.4f}  σ={std:.4f}{alert}"
+            )
 
     return "\n".join(lines)
 
@@ -1007,6 +1111,7 @@ def mostrar_pesos(model: PamparV3) -> str:
 # =============================================================================
 # EXPORTAR HTML
 # =============================================================================
+
 
 def exportar_html(
     tokens: list[str],
@@ -1087,11 +1192,11 @@ def exportar_html(
     stds = [terr_last[i].std().item() for i in range(total)]
     avg_std = sum(stds) / len(stds) if stds else 0
     score = (
-        min(acc_nlast, 100) * 0.35 +
-        min(avg_margin * 1000, 100) * 0.20 +
-        min(avg_std * 1000, 100) * 0.15 +
-        (100 if max_conf >= 0.9 else max_conf * 100) * 0.15 +
-        50 * 0.15
+        min(acc_nlast, 100) * 0.35
+        + min(avg_margin * 1000, 100) * 0.20
+        + min(avg_std * 1000, 100) * 0.15
+        + (100 if max_conf >= 0.9 else max_conf * 100) * 0.15
+        + 50 * 0.15
     )
     score_color = "#a6e3a1" if score >= 70 else "#f9e2af" if score >= 40 else "#f38ba8"
 
@@ -1126,9 +1231,9 @@ th {{ background: #313244; }}
 <h2>Métricas de Salud</h2>
 <div class="metrics">
   <div class="metric"><div class="value" style="color:{score_color}">{score:.0f}/100</div><div class="label">Score Global</div></div>
-  <div class="metric"><div class="value" style="color:{'#a6e3a1' if acc_nlast >= 70 else '#f38ba8'}">{acc_nlast:.1f}%</div><div class="label">Accuracy Routing</div></div>
-  <div class="metric"><div class="value" style="color:{'#a6e3a1' if avg_margin > 0.02 else '#f9e2af'}">{avg_margin:.4f}</div><div class="label">Margen Promedio</div></div>
-  <div class="metric"><div class="value" style="color:{'#a6e3a1' if max_conf >= 0.9 else '#f38ba8'}">{max_conf:.1%}</div><div class="label">Early Exit Max</div></div>
+  <div class="metric"><div class="value" style="color:{"#a6e3a1" if acc_nlast >= 70 else "#f38ba8"}">{acc_nlast:.1f}%</div><div class="label">Accuracy Routing</div></div>
+  <div class="metric"><div class="value" style="color:{"#a6e3a1" if avg_margin > 0.02 else "#f9e2af"}">{avg_margin:.4f}</div><div class="label">Margen Promedio</div></div>
+  <div class="metric"><div class="value" style="color:{"#a6e3a1" if max_conf >= 0.9 else "#f38ba8"}">{max_conf:.1%}</div><div class="label">Early Exit Max</div></div>
   <div class="metric"><div class="value">{avg_std:.4f}</div><div class="label">Diferenciación</div></div>
 </div>
 
@@ -1140,7 +1245,7 @@ th {{ background: #313244; }}
 
 <h2>Evolución por Nivel</h2>
 <table>
-<tr><th>Token</th>{"".join(f'<th>N{n}</th>' for n in range(n_levels + 1))}</tr>
+<tr><th>Token</th>{"".join(f"<th>N{n}</th>" for n in range(n_levels + 1))}</tr>
 {"".join(evo_rows)}
 </table>
 
@@ -1168,50 +1273,68 @@ def _stream_hex(idx: int) -> str:
 # MAIN
 # =============================================================================
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="PAMPAr Brain Scanner — Diagnóstico completo de la arquitectura cerebral",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--code", type=str, default=None,
-        help="Código Python a analizar (ej: 'def fibonacci(n):')"
+        "--code",
+        type=str,
+        default=None,
+        help="Código Python a analizar (ej: 'def fibonacci(n):')",
     )
     parser.add_argument(
-        "--suite", action="store_true",
-        help="Ejecutar suite completa de diagnóstico (20 muestras diversas)"
+        "--suite",
+        action="store_true",
+        help="Ejecutar suite completa de diagnóstico (20 muestras diversas)",
     )
     parser.add_argument(
-        "--compare", nargs=2, metavar=("CKPT_A", "CKPT_B"),
-        help="Comparar dos checkpoints lado a lado"
+        "--compare",
+        nargs=2,
+        metavar=("CKPT_A", "CKPT_B"),
+        help="Comparar dos checkpoints lado a lado",
     )
     parser.add_argument(
-        "--generate", type=str, default=None,
-        help="Generar código desde un prompt y analizar routing"
+        "--generate",
+        type=str,
+        default=None,
+        help="Generar código desde un prompt y analizar routing",
     )
     parser.add_argument(
-        "--weights", action="store_true",
-        help="Mostrar distribución de pesos del modelo"
+        "--weights",
+        action="store_true",
+        help="Mostrar distribución de pesos del modelo",
     )
     parser.add_argument(
-        "--checkpoint", type=str,
+        "--checkpoint",
+        type=str,
         default=str(PROJECT_ROOT / "checkpoints" / "v3_sft_v8.pt"),
-        help="Path al checkpoint (.pt)"
+        help="Path al checkpoint (.pt)",
     )
     parser.add_argument(
-        "--device", type=str, default="auto",
+        "--device",
+        type=str,
+        default="auto",
         choices=["auto", "cuda", "cpu"],
     )
     parser.add_argument(
-        "--html", type=str, default=None,
-        help="Exportar resultado como HTML (ej: scan.html)"
+        "--html",
+        type=str,
+        default=None,
+        help="Exportar resultado como HTML (ej: scan.html)",
     )
 
     args = parser.parse_args()
 
-    has_action = args.code or args.weights or args.suite or args.compare or args.generate
+    has_action = (
+        args.code or args.weights or args.suite or args.compare or args.generate
+    )
     if not has_action:
-        parser.error("Necesitas al menos uno de: --code, --suite, --compare, --generate, --weights")
+        parser.error(
+            "Necesitas al menos uno de: --code, --suite, --compare, --generate, --weights"
+        )
 
     # Resolver device
     if args.device == "auto":
@@ -1241,8 +1364,10 @@ def main() -> None:
         print(f"\033[31mError: Checkpoint no encontrado: {ckpt_path}{RESET}")
         sys.exit(1)
 
-    model, tokenizer = cargar_modelo(ckpt_path, device)
-    print(f"   Modelo cargado: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M params")
+    model, tokenizer = load_model(ckpt_path, device, verbose=False)
+    print(
+        f"   Modelo cargado: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M params"
+    )
 
     # Construir territory table
     territory_table = _build_territory_table(tokenizer)
@@ -1285,7 +1410,9 @@ def main() -> None:
         # Exportar HTML si se pidió
         if args.html:
             html_path = Path(args.html)
-            exportar_html(tokens_str, tokens_ids, info, html_path, args.code, territory_table)
+            exportar_html(
+                tokens_str, tokens_ids, info, html_path, args.code, territory_table
+            )
             print(f"\n   {BOLD}HTML exportado:{RESET} {html_path.resolve()}")
 
     print()

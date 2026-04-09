@@ -79,30 +79,61 @@ def _resolve_tokenizer_path(checkpoint_path: Path, tokenizer_arg: str | None) ->
 # ---------------------------------------------------------------------------
 
 
-def load_model(checkpoint_path: Path, device: torch.device):
-    """Carga PamparV3 desde un checkpoint .pt."""
+def load_model(
+    checkpoint_path: Path,
+    device: torch.device,
+    *,
+    with_tokenizer: bool = True,
+    verbose: bool = True,
+):
+    """Carga PamparV3 desde un checkpoint .pt.
+
+    Returns:
+        (model, config) si with_tokenizer=False
+        (model, tokenizer) si with_tokenizer=True  (default, retrocompatible)
+    """
+    import dataclasses
+
     import sentencepiece as spm
 
-    from pampar.coder.v3.config import PRESET_V3
+    from pampar.coder.v3.config import PRESET_V3, ConfigV3
     from pampar.coder.v3.modelo import PamparV3
 
-    tokenizer_path = _resolve_tokenizer_path(checkpoint_path, None)
+    log = _stderr if verbose else (lambda _: None)
 
-    _stderr(f"Cargando tokenizer: {tokenizer_path}")
-    tokenizer = spm.SentencePieceProcessor()
-    tokenizer.Load(str(tokenizer_path))
-
-    _stderr(f"Cargando modelo: {checkpoint_path}")
-    model = PamparV3(PRESET_V3).to(device)
-
-    ckpt = torch.load(str(checkpoint_path), map_location=device, weights_only=False)
+    log(f"Cargando modelo: {checkpoint_path}")
+    ckpt = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
     state_dict = ckpt.get("modelo", ckpt.get("model", ckpt))
+
+    # Reconstruir config desde el checkpoint si está disponible
+    raw_cfg = ckpt.get("config", {})
+    if isinstance(raw_cfg, ConfigV3):
+        config = raw_cfg
+    elif isinstance(raw_cfg, dict) and "dim" in raw_cfg:
+        campos = {f.name for f in dataclasses.fields(ConfigV3)}
+        kwargs = {k: v for k, v in raw_cfg.items() if k in campos}
+        try:
+            config = ConfigV3(**kwargs)
+        except TypeError:
+            config = PRESET_V3
+    else:
+        config = PRESET_V3
+
+    model = PamparV3(config).to(device)
     model.load_state_dict(state_dict, strict=False)
-    model.registrar_tokenizer(tokenizer)
     model.eval()
 
     params = sum(p.numel() for p in model.parameters()) / 1e6
-    _stderr(f"Modelo listo: {params:.1f}M params en {device}")
+    log(f"Modelo listo: {params:.1f}M params en {device}")
+
+    if not with_tokenizer:
+        return model, config
+
+    tokenizer_path = _resolve_tokenizer_path(checkpoint_path, None)
+    log(f"Cargando tokenizer: {tokenizer_path}")
+    tokenizer = spm.SentencePieceProcessor()
+    tokenizer.Load(str(tokenizer_path))
+    model.registrar_tokenizer(tokenizer)
 
     return model, tokenizer
 

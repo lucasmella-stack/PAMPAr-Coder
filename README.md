@@ -1,16 +1,16 @@
 # PAMPAr-Coder
 
-> **Motor de razonamiento puro** — 108M params, local-first, RAG desde el dispositivo.
+> **Motor de razonamiento puro** — 62.6M params, local-first, RAG desde el dispositivo.
 
 ## Qué es PAMPAr-Coder
 
-PAMPAr-Coder es un modelo de lenguaje de 108M parámetros que **razona sobre información de referencia** en lugar de memorizar respuestas. Funciona como un físico: entiende los axiomas fundamentales y puede derivar soluciones para cualquier dominio usando documentación disponible en el dispositivo.
+PAMPAr-Coder es un modelo de lenguaje de 62.6M parámetros que **razona sobre información de referencia** en lugar de memorizar respuestas. Funciona como un físico: entiende los axiomas fundamentales y puede derivar soluciones para cualquier dominio usando documentación disponible en el dispositivo.
 
 - **Pesos**: capacidad de razonar (leer docs, entender problemas, derivar soluciones step-by-step)
 - **Dispositivo**: conocimiento vía RAG local (docs de Python, MDN, man pages, archivos del usuario)
 - **Hardware**: diseñado para correr en consumer hardware (GTX 1650, 4 GB VRAM)
 
-**Estado actual**: `v3_ghidra_v9.pt` — Routing Score 89, eval 6/16 (38%). Sistema Classroom con mentor conversacional (Qwen-plus) + 5 mecanismos bio-inspirados. Árbol de 21 conceptos con prerequisitos adaptativos.
+**Estado actual**: `v3_train.pt` — 98K steps, Mixed Selectivity (FiLM). Sistema Classroom con mentor conversacional (Qwen-plus) + 5 mecanismos bio-inspirados. Árbol de 21 conceptos con prerequisitos adaptativos.
 
 ---
 
@@ -51,7 +51,7 @@ tok_emb [48K x 640]
 | `n_kv_heads`     | 2 (GQA 4:1) |
 | `vocab_size`     | 48 000      |
 | `max_seq_len`    | 4096        |
-| **Total params** | **108.3M**  |
+| **Total params** | **62.6M**   |
 
 ---
 
@@ -226,7 +226,7 @@ gen = model.generate(ids, max_tokens=100, temperature=0.8, top_k=50)
 from pampar.runtime import Agente
 
 agente = Agente(
-    checkpoint="checkpoints/v3_ghidra_v9.pt",
+    checkpoint="checkpoints/v3_train.pt",
     workspace_root=".",
 )
 respuesta = agente.responder("como leer un CSV con pandas?")
@@ -239,7 +239,7 @@ respuesta = agente.responder("como leer un CSV con pandas?")
 ```
 PAMPAr-Coder/
 +-- pampar/
-|   +-- coder/v3/           # Arquitectura activa (108M)
+|   +-- coder/v3/           # Arquitectura activa (62.6M)
 |   |   +-- modelo.py       # PamparV3 -- forward, generate
 |   |   +-- config.py       # ConfigV3 + presets
 |   |   +-- talamo.py       # TalamoInicial -- routing
@@ -278,7 +278,7 @@ PAMPAr-Coder/
 |   |   +-- pampar_48k.model # Vocab 48K bilingue (activo)
 |   +-- *.jsonl             # Datasets de training
 +-- checkpoints/
-|   +-- v3_ghidra_v9.pt     # Mejor checkpoint actual
+|   +-- v3_train.pt          # Mejor checkpoint actual
 +-- _archive/               # Backups pre-refactorizacion
 +-- tests/                  # Tests pytest
 ```
@@ -349,4 +349,6 @@ python -m pytest tests/ -v
 
 ## Licencia
 
-AGPL-3.0-or-later -- Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
+BUSL-1.1 -- Copyright (c) 2024-2026 Lucas Ricardo Mella Chillemi
+
+Change Date: April 7, 2030 — License converts to Apache-2.0. See [LICENSE](LICENSE) for details.

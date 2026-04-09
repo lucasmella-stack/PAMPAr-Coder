@@ -85,25 +85,18 @@ data/
 # Logs
 logs/
 *.log
-scripts/train_v3_err.txt
-scripts/train_v3_log.txt
-scripts/destilar_log.txt
-scripts/generation_log.txt
+scripts/_logs/
 tensorboard/
 
 # Sessions (generated HTML/JSONL replays)
 sessions/
 
-# Archive (temporary refactoring backups)
+# Archive (dead scripts, old backups)
 _archive/
+scripts/_archive/
 
-# Large dataset files (>100MB — no caben en GitHub)
-biblioteca/python_real/magicoder_oss_75k.jsonl
-biblioteca/python_real/starcoder2_self_oss_50k.jsonl
-# Datasets generados por integrar_datos.py (2.4 GB — usar script para regenerar)
-biblioteca/instruccion/
-biblioteca/ejercicios/
-biblioteca/textbook/
+# Large dataset files — use scripts to regenerate
+biblioteca/
 
 # OS
 .DS_Store

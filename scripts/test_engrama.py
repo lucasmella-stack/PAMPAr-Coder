@@ -23,15 +23,16 @@ import sys
 import time
 from pathlib import Path
 
-import torch
 import sentencepiece as spm
+import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pampar.coder.v3 import PamparV3, PRESET_V3
-from pampar.coder.v3.ghidra_probe import GhidraProbe
+from pampar.coder.v3 import PRESET_V3, PamparV3
 from pampar.coder.v3.engrama_stream import BancoEngrama, EngramaCapture
+from pampar.coder.v3.ghidra_probe import GhidraProbe
+from pampar.inference import load_model
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -44,31 +45,6 @@ EJEMPLOS_TEST = [
 ]
 
 
-def cargar_modelo(checkpoint_path: str) -> tuple[PamparV3, spm.SentencePieceProcessor]:
-    """Carga modelo y tokenizer."""
-    config = PRESET_V3
-    model = PamparV3(config).to(DEVICE)
-    tokenizer = spm.SentencePieceProcessor()
-    tokenizer.Load(str(ROOT / config.tokenizer_path))
-    model.registrar_tokenizer(tokenizer)
-
-    ckpt = Path(checkpoint_path)
-    if ckpt.exists():
-        state = torch.load(ckpt, map_location=DEVICE, weights_only=False)
-        if "modelo" in state:
-            model.load_state_dict(state["modelo"])
-        elif "model_state_dict" in state:
-            model.load_state_dict(state["model_state_dict"])
-        else:
-            model.load_state_dict(state)
-        print(f"Checkpoint cargado: {ckpt.name}")
-    else:
-        print(f"WARN: No se encontró {ckpt}, usando pesos aleatorios")
-
-    model.eval()
-    return model, tokenizer
-
-
 def evaluar_calidad(texto_generado: str) -> float:
     """Evalúa calidad del código generado (0-1)."""
     # Extraer código después de ### Solution:
@@ -76,7 +52,7 @@ def evaluar_calidad(texto_generado: str) -> float:
     pos = texto_generado.find(marcador)
     if pos < 0:
         return 0.1
-    codigo = texto_generado[pos + len(marcador):].strip()
+    codigo = texto_generado[pos + len(marcador) :].strip()
 
     score = 0.0
 
@@ -133,8 +109,7 @@ def test_ghidra_probe(
             traj = probe.routing_trajectory(t_idx)
             if traj:
                 traj_str = " → ".join(
-                    f"[{','.join(f'{v:.2f}' for v in step)}]"
-                    for step in traj
+                    f"[{','.join(f'{v:.2f}' for v in step)}]" for step in traj
                 )
                 print(f"  Token {t_idx} ({tokens[t_idx]!r}) routing: {traj_str}")
 
@@ -198,9 +173,7 @@ def test_engrama_inyeccion(
     print("\n  --- Sin EngramaStream ---")
     t0 = time.perf_counter()
     with torch.no_grad():
-        logits_sin, loss_sin, _ = model(
-            input_ids[:, :-1], targets=input_ids[:, 1:]
-        )
+        logits_sin, loss_sin, _ = model(input_ids[:, :-1], targets=input_ids[:, 1:])
     t_sin = time.perf_counter() - t0
 
     gen_sin = model.generate(input_ids, max_tokens=80, temperature=0.7)
@@ -214,13 +187,16 @@ def test_engrama_inyeccion(
     t0 = time.perf_counter()
     with torch.no_grad():
         logits_con, loss_con, _ = model(
-            input_ids[:, :-1], targets=input_ids[:, 1:],
+            input_ids[:, :-1],
+            targets=input_ids[:, 1:],
             banco_engrama=banco,
         )
     t_con = time.perf_counter() - t0
 
     gen_con = model.generate(
-        input_ids, max_tokens=80, temperature=0.7,
+        input_ids,
+        max_tokens=80,
+        temperature=0.7,
         banco_engrama=banco,
     )
     texto_con = tokenizer.Decode(gen_con[0].tolist())
@@ -241,7 +217,9 @@ def test_engrama_inyeccion(
     entropy_con = -(probs_con * probs_con.log().clamp(min=-100)).sum().item()
     print(f"  Entropy sin engrama: {entropy_sin:.2f}")
     print(f"  Entropy con engrama: {entropy_con:.2f}")
-    print(f"  ΔEntropy: {entropy_con - entropy_sin:+.2f} ({'más certero' if entropy_con < entropy_sin else 'más disperso'})")
+    print(
+        f"  ΔEntropy: {entropy_con - entropy_sin:+.2f} ({'más certero' if entropy_con < entropy_sin else 'más disperso'})"
+    )
 
 
 def main() -> None:
@@ -266,7 +244,7 @@ def main() -> None:
     print(f"Device: {DEVICE}")
     print(f"Checkpoint: {args.checkpoint}")
 
-    model, tokenizer = cargar_modelo(args.checkpoint)
+    model, tokenizer = load_model(args.checkpoint, DEVICE, verbose=True)
 
     # Crear o cargar banco
     banco = BancoEngrama(dim=PRESET_V3.dim, max_engramas_por_clave=10)

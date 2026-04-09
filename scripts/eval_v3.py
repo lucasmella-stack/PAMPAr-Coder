@@ -271,55 +271,10 @@ CASOS = [
 
 
 # =============================================================================
-# Carga del modelo v3
+# Carga del modelo v3 (delegada a pampar.inference)
 # =============================================================================
 
-
-def cargar_modelo_v3(checkpoint: Path, device: torch.device):
-    import dataclasses
-
-    from pampar.coder.v3.config import PRESET_V3, ConfigV3
-    from pampar.coder.v3.modelo import PamparV3
-
-    ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    raw_cfg = ckpt.get("config", {})
-    state = ckpt.get("modelo", ckpt)
-
-    # Reconstruir ConfigV3 filtrando solo los campos válidos del dataclass
-    if isinstance(raw_cfg, dict) and "dim" in raw_cfg:
-        campos_validos = {f.name for f in dataclasses.fields(ConfigV3)}
-        kwargs = {k: v for k, v in raw_cfg.items() if k in campos_validos}
-        try:
-            config = ConfigV3(**kwargs)
-        except TypeError:
-            config = PRESET_V3
-    elif isinstance(raw_cfg, ConfigV3):
-        config = raw_cfg
-    else:
-        config = PRESET_V3
-
-    modelo = PamparV3(config).to(device)
-    missing, unexpected = modelo.load_state_dict(state, strict=False)
-    if missing:
-        print(f"  [warn] keys faltantes: {len(missing)}")
-    modelo.eval()
-    return modelo, config
-
-
-def cargar_tokenizer(vocab_size: int = 48000):
-    import sentencepiece as spm
-
-    candidates = [
-        Path("data/tokenizer/pampar_48k.model"),
-        Path("data/tokenizer/code_tokenizer.model"),
-    ]
-    for p in candidates:
-        if p.exists():
-            tok = spm.SentencePieceProcessor()
-            tok.Load(str(p))
-            return tok
-    raise FileNotFoundError("No se encontró el tokenizer")
-
+from pampar.inference import load_model
 
 # =============================================================================
 # Extracción de firma para modo guiado
@@ -752,12 +707,9 @@ def main():
 
     print("  Cargando modelo...", end=" ", flush=True)
     t0 = time.time()
-    modelo, config = cargar_modelo_v3(checkpoint, device)
-    tokenizer = cargar_tokenizer(config.vocab_size)
+    modelo, tokenizer = load_model(checkpoint, device, verbose=False)
     n_params = sum(p.numel() for p in modelo.parameters()) / 1e6
-    print(
-        f"OK ({n_params:.1f}M params, vocab={config.vocab_size:,}, {time.time() - t0:.1f}s)\n"
-    )
+    print(f"OK ({n_params:.1f}M params, {time.time() - t0:.1f}s)\n")
 
     resultados = []
     t_start = time.time()

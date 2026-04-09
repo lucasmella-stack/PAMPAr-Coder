@@ -66,54 +66,10 @@ def cargar_humaneval() -> list[dict[str, Any]]:
 
 
 # =============================================================================
-# Carga del modelo
+# Carga del modelo (delegada a pampar.inference)
 # =============================================================================
 
-
-def cargar_modelo(checkpoint: Path, device: torch.device):
-    """Carga PamparV3 desde checkpoint."""
-    import dataclasses
-
-    from pampar.coder.v3.config import PRESET_V3, ConfigV3
-    from pampar.coder.v3.modelo import PamparV3
-
-    ckpt = torch.load(str(checkpoint), map_location="cpu", weights_only=False)
-    raw_cfg = ckpt.get("config", {})
-    state = ckpt.get("modelo", ckpt)
-
-    if isinstance(raw_cfg, dict) and "dim" in raw_cfg:
-        campos = {f.name for f in dataclasses.fields(ConfigV3)}
-        kwargs = {k: v for k, v in raw_cfg.items() if k in campos}
-        try:
-            config = ConfigV3(**kwargs)
-        except TypeError:
-            config = PRESET_V3
-    elif isinstance(raw_cfg, ConfigV3):
-        config = raw_cfg
-    else:
-        config = PRESET_V3
-
-    modelo = PamparV3(config).to(device)
-    modelo.load_state_dict(state, strict=False)
-    modelo.eval()
-    return modelo, config
-
-
-def cargar_tokenizer(vocab_size: int = 48000):
-    """Busca y carga el tokenizer SentencePiece."""
-    import sentencepiece as spm
-
-    candidates = [
-        Path("data/tokenizer/pampar_48k.model"),
-        Path("data/tokenizer/code_tokenizer.model"),
-    ]
-    for p in candidates:
-        if p.exists():
-            tok = spm.SentencePieceProcessor()
-            tok.Load(str(p))
-            return tok
-    raise FileNotFoundError("Tokenizer no encontrado")
-
+from pampar.inference import load_model
 
 # =============================================================================
 # Generación
@@ -359,8 +315,7 @@ def main():
     # Cargar modelo
     print("  Cargando modelo...", end=" ", flush=True)
     t0 = time.time()
-    modelo, config = cargar_modelo(checkpoint, device)
-    tokenizer = cargar_tokenizer(config.vocab_size)
+    modelo, tokenizer = load_model(checkpoint, device, verbose=False)
     n_params = sum(p.numel() for p in modelo.parameters()) / 1e6
     print(f"OK ({n_params:.1f}M params, {time.time() - t0:.1f}s)")
 

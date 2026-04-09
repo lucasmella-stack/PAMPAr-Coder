@@ -35,7 +35,6 @@ from pampar.memoria.clasificador import ClasificadorPareto, EntradaMemoria
 from pampar.memoria.cola_finetune import ColaFinetune
 from pampar.skills.ejecutar_codigo import EjecutorCodigo
 
-
 ROOT = Path(__file__).resolve().parent.parent
 SFT_SCRIPT = ROOT / "scripts" / "sft_v5.py"
 GOOD_DATASET = ROOT / "data" / "final_sft.jsonl"
@@ -53,30 +52,10 @@ TOKENIZER_PATHS = [
 
 
 # =============================================================================
-# Carga de modelo y tokenizer (igual que eval_v3.py)
+# Carga de modelo (delegada a pampar.inference)
 # =============================================================================
 
-def cargar_modelo(checkpoint: Path, device: torch.device):
-    """Carga PamparV3 desde un checkpoint .pt."""
-    import dataclasses
-
-    from pampar.coder.v3.config import PRESET_V3, ConfigV3
-    from pampar.coder.v3.modelo import PamparV3
-
-    ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    raw_cfg = ckpt.get("config", {})
-    state = ckpt.get("modelo", ckpt)
-
-    if isinstance(raw_cfg, dict) and "dim" in raw_cfg:
-        valid = {f.name for f in dataclasses.fields(ConfigV3)}
-        cfg = ConfigV3(**{k: v for k, v in raw_cfg.items() if k in valid})
-    else:
-        cfg = PRESET_V3
-
-    modelo = PamparV3(cfg)
-    modelo.load_state_dict(state, strict=False)
-    modelo.to(device).eval()
-    return modelo, cfg
+from pampar.inference import load_model
 
 
 def cargar_tokenizer(vocab_size: int) -> spm.SentencePieceProcessor:
@@ -97,6 +76,7 @@ def cargar_tokenizer(vocab_size: int) -> spm.SentencePieceProcessor:
 # =============================================================================
 # Generación (adaptada de eval_v3.py, misma lógica que funciona)
 # =============================================================================
+
 
 def generar(
     modelo,
@@ -139,7 +119,7 @@ def generar(
             next_token = int(torch.multinomial(probs, 1))
 
         generados.append(next_token)
-        decoded = tokenizer.Decode(generados[len(ids):]).replace("\u2047", "\n")
+        decoded = tokenizer.Decode(generados[len(ids) :]).replace("\u2047", "\n")
 
         # Parar si el modelo empieza una nueva sección
         if "###" in decoded:
@@ -158,12 +138,13 @@ def generar(
         if decoded.endswith("\n\n") and len(decoded) > 20:
             return decoded.rstrip()
 
-    return tokenizer.Decode(generados[len(ids):]).replace("\u2047", "\n")
+    return tokenizer.Decode(generados[len(ids) :]).replace("\u2047", "\n")
 
 
 # =============================================================================
 # Normalización de indentación (ídem eval_v3.py)
 # =============================================================================
+
 
 def _normalizar_indentacion(codigo: str) -> str:
     """Corrige indentación inconsistente a múltiplos de 4 espacios."""
@@ -185,6 +166,7 @@ def _normalizar_indentacion(codigo: str) -> str:
 # Loop de coding autónomo
 # =============================================================================
 
+
 class CodingLoop:
     """
     Loop autónomo: genera → ejecuta → observa error → reintenta → aprende.
@@ -204,15 +186,13 @@ class CodingLoop:
         max_tokens: int = 512,
         memoria_dir: str = MEMORIA_DIR,
     ):
-        print(f"\n{'═'*60}")
+        print(f"\n{'═' * 60}")
         print(f"  PAMPAr-Coder — Cargando modelo...")
-        print(f"{'═'*60}")
+        print(f"{'═' * 60}")
 
         t0 = time.time()
         print(f"  Checkpoint : {checkpoint.name}", end=" ", flush=True)
-        self.modelo, self.cfg = cargar_modelo(checkpoint, device)
-        self.tok = cargar_tokenizer(self.cfg.vocab_size)
-        self.modelo.registrar_tokenizer(self.tok)
+        self.modelo, self.tok = load_model(checkpoint, device, verbose=False)
         n_params = sum(p.numel() for p in self.modelo.parameters()) / 1e6
         print(f"({n_params:.1f}M params, {time.time() - t0:.1f}s)")
 
@@ -233,7 +213,7 @@ class CodingLoop:
 
         print(f"  Dispositivo: {device}")
         print(f"  Cola aprendizaje: {len(self.cola)} ejemplos acumulados")
-        print(f"{'═'*60}\n")
+        print(f"{'═' * 60}\n")
 
     # ── Callbacks ─────────────────────────────────────────────────────────────
 
@@ -255,27 +235,40 @@ class CodingLoop:
             idx += 1
         nuevo_ckpt = ROOT / "checkpoints" / f"v3_sft_chat_v{idx}.pt"
 
-        print(f"  Dataset  : {GOOD_DATASET.name} ({GOOD_DATASET.stat().st_size // 1024} KB)")
+        print(
+            f"  Dataset  : {GOOD_DATASET.name} ({GOOD_DATASET.stat().st_size // 1024} KB)"
+        )
         print(f"  Entrada  : {self.checkpoint.name}")
         print(f"  Salida   : {nuevo_ckpt.name}")
         print(f"  Entrenando... (puede tardar varios minutos)\n")
 
         cmd = [
-            sys.executable, str(SFT_SCRIPT),
-            "--checkpoint-in", str(self.checkpoint),
-            "--checkpoint-out", str(nuevo_ckpt),
-            "--targeted", str(GOOD_DATASET),
-            "--lr", "5e-7",
-            "--lr-min", "5e-8",
-            "--max-pasos", "200",
-            "--epochs", "5",
-            "--warmup", "10",
+            sys.executable,
+            str(SFT_SCRIPT),
+            "--checkpoint-in",
+            str(self.checkpoint),
+            "--checkpoint-out",
+            str(nuevo_ckpt),
+            "--targeted",
+            str(GOOD_DATASET),
+            "--lr",
+            "5e-7",
+            "--lr-min",
+            "5e-8",
+            "--max-pasos",
+            "200",
+            "--epochs",
+            "5",
+            "--warmup",
+            "10",
         ]
 
         result = subprocess.run(cmd, cwd=str(ROOT))
 
         if result.returncode != 0:
-            print(f"\n  ❌ Mini-SFT falló (rc={result.returncode}). Checkpoint no guardado.")
+            print(
+                f"\n  ❌ Mini-SFT falló (rc={result.returncode}). Checkpoint no guardado."
+            )
             return False
 
         if not nuevo_ckpt.exists():
@@ -284,13 +277,13 @@ class CodingLoop:
 
         # Recargar modelo en proceso
         print(f"\n  ♻️  Recargando modelo desde {nuevo_ckpt.name}...")
-        self.modelo, self.cfg = cargar_modelo(nuevo_ckpt, self.device)
-        self.tok = cargar_tokenizer(self.cfg.vocab_size)
-        self.modelo.registrar_tokenizer(self.tok)
+        self.modelo, self.tok = load_model(nuevo_ckpt, self.device, verbose=False)
         self.checkpoint = nuevo_ckpt
 
         n_vaciados = self.cola.vaciar_post_finetune()
-        print(f"  ✅ Modelo actualizado. Cola vaciada ({n_vaciados} ejemplos procesados).\n")
+        print(
+            f"  ✅ Modelo actualizado. Cola vaciada ({n_vaciados} ejemplos procesados).\n"
+        )
         return True
 
     def _proponer_finetune(self, n: int, stats: dict) -> bool:
@@ -302,7 +295,7 @@ class CodingLoop:
         Siempre retorna False para evitar que ColaFinetune llame
         al lanzar_finetune() antiguo (que usa el script obsoleto).
         """
-        print(f"\n{'─'*60}")
+        print(f"\n{'─' * 60}")
         print(f"📚 Cola de aprendizaje lista: {n} ejemplos")
         print(f"   Importancia promedio: {stats.get('importancia_promedio', '?')}")
         print(f"   ¿Querés lanzar un mini-SFT para que el modelo mejore?")
@@ -325,9 +318,7 @@ class CodingLoop:
     def _guardar_error(self, problema: str, codigo: str, error: str) -> None:
         """Persiste un fallo en la ColaFinetune para futura mejora."""
         texto = (
-            f"### Problem:\n{problema}\n"
-            f"### Attempted:\n{codigo}\n"
-            f"### Error:\n{error}"
+            f"### Problem:\n{problema}\n### Attempted:\n{codigo}\n### Error:\n{error}"
         )
         entrada = self.clasificador.clasificar(texto=texto, tipo="error")
         # Los errores del modelo son siempre L3 — siempre queremos aprender de ellos
@@ -356,7 +347,10 @@ class CodingLoop:
             t0 = time.time()
 
             codigo_raw = generar(
-                self.modelo, self.tok, prompt, self.device,
+                self.modelo,
+                self.tok,
+                prompt,
+                self.device,
                 max_tokens=self.max_tokens,
                 temperature=self.temp,
                 repetition_penalty=self.rep_penalty,
@@ -441,6 +435,7 @@ class CodingLoop:
 # Entry point
 # =============================================================================
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="PAMPAr-Coder — Loop interactivo de generación y ejecución de código"
@@ -451,11 +446,21 @@ def main() -> None:
         help="Checkpoint del modelo (default: v3_sft_v7.pt)",
     )
     parser.add_argument("--device", default="auto", help="cuda / cpu / auto")
-    parser.add_argument("--temp", type=float, default=0.1, help="Temperatura de generación")
-    parser.add_argument("--rep-penalty", type=float, default=1.15, help="Penalización de repetición")
-    parser.add_argument("--max-tokens", type=int, default=512, help="Máximo tokens a generar")
-    parser.add_argument("--max-reintentos", type=int, default=2, help="Reintentos si falla")
-    parser.add_argument("--memoria-dir", default=MEMORIA_DIR, help="Directorio para ColaFinetune")
+    parser.add_argument(
+        "--temp", type=float, default=0.1, help="Temperatura de generación"
+    )
+    parser.add_argument(
+        "--rep-penalty", type=float, default=1.15, help="Penalización de repetición"
+    )
+    parser.add_argument(
+        "--max-tokens", type=int, default=512, help="Máximo tokens a generar"
+    )
+    parser.add_argument(
+        "--max-reintentos", type=int, default=2, help="Reintentos si falla"
+    )
+    parser.add_argument(
+        "--memoria-dir", default=MEMORIA_DIR, help="Directorio para ColaFinetune"
+    )
     args = parser.parse_args()
 
     if args.device == "auto":
