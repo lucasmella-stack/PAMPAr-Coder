@@ -48,12 +48,12 @@ tok_emb [48K x 640]
 
 ### The 4 Streams
 
-| Stream         | Brodmann Zones | Processes                          |
-| -------------- | -------------- | ---------------------------------- |
-| **SYNTAX**     | B01-B15        | Keywords, operators, punctuation   |
-| **SEMANTICS**  | B16-B30        | Types, variables, literals         |
-| **LOGIC**      | B31-B42        | Control flow, conditionals, loops  |
-| **STRUCTURAL** | B43-B52        | Blocks, indentation, scope         |
+| Stream         | Brodmann Zones | Processes                         |
+| -------------- | -------------- | --------------------------------- |
+| **SYNTAX**     | B01-B15        | Keywords, operators, punctuation  |
+| **SEMANTICS**  | B16-B30        | Types, variables, literals        |
+| **LOGIC**      | B31-B42        | Control flow, conditionals, loops |
+| **STRUCTURAL** | B43-B52        | Blocks, indentation, scope        |
 
 ### Parameters
 
@@ -130,24 +130,24 @@ A learning system where a mentor model (Qwen-plus via DashScope) teaches PamparV
 
 ### Core Mechanisms
 
-| Mechanism                              | Purpose                                                                 |
-| -------------------------------------- | ----------------------------------------------------------------------- |
-| **EWC** (Elastic Weight Consolidation) | Protects important weights — penalizes changes to critical params       |
-| **Replay Buffer**                      | Mixes new and previous examples (simulates sleep consolidation)         |
-| **Differential LR**                    | LLAVES/Thalamus 0.01×, attention 0.1×, embedding 0.1×, FFN 1.0×        |
-| **Conversational Absorption**          | Trains on mentor explanations + examples (knowledge distillation)       |
+| Mechanism                              | Purpose                                                           |
+| -------------------------------------- | ----------------------------------------------------------------- |
+| **EWC** (Elastic Weight Consolidation) | Protects important weights — penalizes changes to critical params |
+| **Replay Buffer**                      | Mixes new and previous examples (simulates sleep consolidation)   |
+| **Differential LR**                    | LLAVES/Thalamus 0.01×, attention 0.1×, embedding 0.1×, FFN 1.0×   |
+| **Conversational Absorption**          | Trains on mentor explanations + examples (knowledge distillation) |
 
 ### Bio-Mechanisms (`bio_mechanisms.py`)
 
 5 mechanisms based on real neuroscience, integrated as post-lesson hooks:
 
-| Mechanism              | Biological Inspiration     | Implementation                                                                       |
-| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------ |
-| **Neuromodulation**    | Dopamine + Norepinephrine  | Dynamically modulates LR based on success/error (×0.3 to ×3.0)                       |
-| **LTP**                | Long-term potentiation     | Strengthens `LateralGate.scale` of streams with consistent high activation (Hebb rule)|
-| **Sleep Consolidation**| REM + SWS phases           | Periodic replay (every 15 lessons): random (REM) + sorted by difficulty (SWS)        |
-| **Neurogenesis**       | New hippocampal neurons    | Injects LoRA adapters (rank=8, ~10K params) into StreamFFN when loss > 4.0           |
-| **Synaptic Pruning**   | Synaptic pruning (~50%)    | Reduces `LateralGate.scale < 0.03` every 30 lessons (decay ×0.5)                     |
+| Mechanism               | Biological Inspiration    | Implementation                                                                         |
+| ----------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| **Neuromodulation**     | Dopamine + Norepinephrine | Dynamically modulates LR based on success/error (×0.3 to ×3.0)                         |
+| **LTP**                 | Long-term potentiation    | Strengthens `LateralGate.scale` of streams with consistent high activation (Hebb rule) |
+| **Sleep Consolidation** | REM + SWS phases          | Periodic replay (every 15 lessons): random (REM) + sorted by difficulty (SWS)          |
+| **Neurogenesis**        | New hippocampal neurons   | Injects LoRA adapters (rank=8, ~10K params) into StreamFFN when loss > 4.0             |
+| **Synaptic Pruning**    | Synaptic pruning (~50%)   | Reduces `LateralGate.scale < 0.03` every 30 lessons (decay ×0.5)                       |
 
 All coordinated by `BioOrchestrator.after_lesson()`. Can be disabled with `--no-bio`.
 
@@ -193,15 +193,15 @@ python scripts/classroom_server.py \
 
 ## Subsystems
 
-| Module        | Components                  | Purpose                                                                                        |
-| ------------- | --------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Model**     | `pampar/coder/v3/`          | PamparV3: forward, generate, routing, blocks                                                   |
-| **Memory**    | `pampar/memoria/`           | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune                                  |
-| **Runtime**   | `pampar/runtime/`           | Agent (orchestrator), Scanner (device), BootProtocol                                           |
-| **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                                          |
-| **Inference** | `pampar/inference.py`       | JSON-lines stdin/stdout server for VS Code                                                     |
+| Module        | Components                  | Purpose                                                                                         |
+| ------------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Model**     | `pampar/coder/v3/`          | PamparV3: forward, generate, routing, blocks                                                    |
+| **Memory**    | `pampar/memoria/`           | ClasificadorPareto (L0-L3), RAGResidual (FAISS), ColaFinetune                                   |
+| **Runtime**   | `pampar/runtime/`           | Agent (orchestrator), Scanner (device), BootProtocol                                            |
+| **Skills**    | `pampar/skills/`            | LectorArchivos (30+ ext), EjecutorCodigo (subprocess)                                           |
+| **Inference** | `pampar/inference.py`       | JSON-lines stdin/stdout server for VS Code                                                      |
 | **Classroom** | `scripts/classroom*.py`     | Conversational mentor: engine + teacher + curriculum + training + events + memory + persistence |
-| **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 neuroscience mechanisms: Neuromod, LTP, Sleep, Neurogenesis, Pruning                         |
+| **Bio-Mech**  | `scripts/bio_mechanisms.py` | 5 neuroscience mechanisms: Neuromod, LTP, Sleep, Neurogenesis, Pruning                          |
 
 ---
 
@@ -296,15 +296,15 @@ PAMPAr-Coder/
 
 ## Understanding the Loss
 
-| Loss  | Meaning                        |
-| ----- | ------------------------------ |
-| ~10.7 | Untrained (log 48000)          |
-| 7-8   | Random weights                 |
-| 5-7   | Beginning to learn             |
-| 2-4   | Active learning                |
-| 1.5-2 | Optimal zone                   |
-| < 1.5 | Topic well learned             |
-| < 0.7 | Topic mastered                 |
+| Loss  | Meaning               |
+| ----- | --------------------- |
+| ~10.7 | Untrained (log 48000) |
+| 7-8   | Random weights        |
+| 5-7   | Beginning to learn    |
+| 2-4   | Active learning       |
+| 1.5-2 | Optimal zone          |
+| < 1.5 | Topic well learned    |
+| < 0.7 | Topic mastered        |
 
 ---
 
