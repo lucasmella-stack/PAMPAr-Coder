@@ -156,13 +156,24 @@ class SimpleDataLoader:
         logger.info("Encontrados %d archivos JSONL", len(archivos))
 
         all_ids: list[int] = []
-        for ruta in archivos:
+        t0 = time.time()
+        for i, ruta in enumerate(archivos):
             self._tokenize_file(ruta, all_ids)
+            if (i + 1) % 20 == 0 or i == len(archivos) - 1:
+                elapsed = time.time() - t0
+                logger.info(
+                    "  Tokenizando: %d/%d archivos — %.1fM tokens — %.0fs",
+                    i + 1,
+                    len(archivos),
+                    len(all_ids) / 1e6,
+                    elapsed,
+                )
 
         return all_ids
 
-    def _tokenize_file(self, ruta: Path, all_ids: list[int]) -> None:
-        """Tokeniza un JSONL y acumula token IDs."""
+    def _tokenize_file(self, ruta: Path, all_ids: list[int]) -> int:
+        """Tokeniza un JSONL y acumula token IDs. Retorna tokens añadidos."""
+        n_before = len(all_ids)
         with ruta.open(encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -178,6 +189,7 @@ class SimpleDataLoader:
                         all_ids.extend(ids)
                 except (json.JSONDecodeError, AttributeError):
                     continue
+        return len(all_ids) - n_before
 
     def get_batch(self, device: torch.device) -> torch.Tensor:
         """Devuelve un batch [B, seq_len] cíclico."""
@@ -187,6 +199,10 @@ class SimpleDataLoader:
             self._idx += 1
         batch_np = self._data[indices]
         return torch.from_numpy(batch_np.astype(np.int64)).to(device)
+
+    def reset(self) -> None:
+        """Resetea el índice al inicio (misma secuencia para fair comparison)."""
+        self._idx = 0
 
     @property
     def n_chunks(self) -> int:
@@ -263,7 +279,7 @@ def train_experiment(
     experiment: str,
     args: argparse.Namespace,
     device: torch.device,
-    tokenizer: spm.SentencePieceProcessor,
+    loader: "SimpleDataLoader",
 ) -> Path:
     """Entrena un experimento y devuelve la ruta del log JSON."""
     spec = EXPERIMENTS[experiment]
@@ -274,14 +290,8 @@ def train_experiment(
     # ── Modelo
     model, config_dict = _create_model(experiment, device)
 
-    # ── Data
-    loader = SimpleDataLoader(
-        biblioteca=args.biblioteca,
-        tokenizer=tokenizer,
-        batch_size=args.batch_size,
-        seq_len=args.seq_len,
-        seed=42,  # Mismo seed para todos
-    )
+    # ── Resetear data loader al mismo punto para fair comparison
+    loader.reset()
 
     # ── Optimizer
     optimizer = torch.optim.AdamW(
@@ -519,9 +529,18 @@ def main() -> None:
     # ── Experiments
     experiments = list(EXPERIMENTS.keys()) if args.all else [args.experiment]
 
+    # ── Crear data loader UNA sola vez (tokenización ~11 min para 865M tokens)
+    loader = SimpleDataLoader(
+        biblioteca=args.biblioteca,
+        tokenizer=tok,
+        batch_size=args.batch_size,
+        seq_len=args.seq_len,
+        seed=42,
+    )
+
     results: dict[str, str] = {}
     for exp in experiments:
-        log_path = train_experiment(exp, args, device, tok)
+        log_path = train_experiment(exp, args, device, loader)
         results[exp] = str(log_path)
         torch.cuda.empty_cache() if device.type == "cuda" else None
 
