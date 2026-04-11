@@ -30,6 +30,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import sentencepiece as spm
 import torch
 import torch.nn.utils as nn_utils
@@ -81,6 +82,7 @@ class SimpleDataLoader:
 
     Lee todos los JSONL de la biblioteca en orden fijo,
     tokeniza y sirve batches [B, L+1] cíclicamente.
+    Almacena todos los tokens en un array numpy contiguo para eficiencia de memoria.
     """
 
     def __init__(
@@ -94,26 +96,44 @@ class SimpleDataLoader:
         self._tok = tokenizer
         self._batch_size = batch_size
         self._seq_len = seq_len + 1  # +1 para target
-        self._chunks: list[list[int]] = []
         self._idx = 0
 
         logger.info("Cargando biblioteca desde %s...", biblioteca)
-        self._load_biblioteca(biblioteca)
+        all_ids = self._load_biblioteca(biblioteca)
 
-        # Shuffle determinístico
-        rng = torch.Generator().manual_seed(seed)
-        indices = torch.randperm(len(self._chunks), generator=rng).tolist()
-        self._chunks = [self._chunks[i] for i in indices]
-
+        # Crear chunks como numpy array 2D contiguo (mucho menos memoria que list[list[int]])
+        stride = self._seq_len // 2
+        n_chunks = max(0, (len(all_ids) - self._seq_len) // stride)
         logger.info(
-            "Biblioteca: %d chunks de %d tokens (%.1f MB de texto)",
-            len(self._chunks),
+            "Creando %d chunks (seq_len=%d, stride=%d) desde %d tokens...",
+            n_chunks,
             self._seq_len,
-            sum(len(c) for c in self._chunks) * 2 / 1e6,
+            stride,
+            len(all_ids),
         )
 
-    def _load_biblioteca(self, biblioteca: Path) -> None:
-        """Carga todos los JSONL de la biblioteca."""
+        # Construir array [n_chunks, seq_len] directamente con numpy
+        self._data = np.empty((n_chunks, self._seq_len), dtype=np.int32)
+        ids_array = np.array(all_ids, dtype=np.int32)
+        del all_ids  # Liberar la lista Python
+        for i in range(n_chunks):
+            start = i * stride
+            self._data[i] = ids_array[start : start + self._seq_len]
+        del ids_array  # Liberar el array temporal
+
+        # Shuffle determinístico
+        rng = np.random.RandomState(seed)
+        self._order = rng.permutation(n_chunks)
+
+        logger.info(
+            "Biblioteca: %d chunks de %d tokens (%.1f MB en disco)",
+            n_chunks,
+            self._seq_len,
+            self._data.nbytes / 1e6,
+        )
+
+    def _load_biblioteca(self, biblioteca: Path) -> list[int]:
+        """Carga todos los JSONL de la biblioteca y devuelve token IDs."""
         indice_path = biblioteca / "indice.json"
         if not indice_path.exists():
             raise FileNotFoundError(f"Índice no encontrado: {indice_path}")
@@ -135,12 +155,14 @@ class SimpleDataLoader:
         archivos.sort()  # Orden determinístico
         logger.info("Encontrados %d archivos JSONL", len(archivos))
 
-        for ruta in archivos:
-            self._tokenize_file(ruta)
-
-    def _tokenize_file(self, ruta: Path) -> None:
-        """Tokeniza un JSONL y lo divide en chunks de seq_len."""
         all_ids: list[int] = []
+        for ruta in archivos:
+            self._tokenize_file(ruta, all_ids)
+
+        return all_ids
+
+    def _tokenize_file(self, ruta: Path, all_ids: list[int]) -> None:
+        """Tokeniza un JSONL y acumula token IDs."""
         with ruta.open(encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -157,26 +179,22 @@ class SimpleDataLoader:
                 except (json.JSONDecodeError, AttributeError):
                     continue
 
-        # Dividir en chunks con stride
-        stride = self._seq_len // 2
-        for i in range(0, len(all_ids) - self._seq_len, stride):
-            self._chunks.append(all_ids[i : i + self._seq_len])
-
     def get_batch(self, device: torch.device) -> torch.Tensor:
         """Devuelve un batch [B, seq_len] cíclico."""
-        batch = []
+        indices = []
         for _ in range(self._batch_size):
-            batch.append(self._chunks[self._idx % len(self._chunks)])
+            indices.append(self._order[self._idx % len(self._order)])
             self._idx += 1
-        return torch.tensor(batch, dtype=torch.long, device=device)
+        batch_np = self._data[indices]
+        return torch.from_numpy(batch_np.astype(np.int64)).to(device)
 
     @property
     def n_chunks(self) -> int:
-        return len(self._chunks)
+        return len(self._data)
 
     @property
     def epoch_steps(self) -> int:
-        return len(self._chunks) // self._batch_size
+        return len(self._data) // self._batch_size
 
 
 # ── Modelo factory ───────────────────────────────────────────────────────────
