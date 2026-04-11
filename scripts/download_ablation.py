@@ -46,16 +46,22 @@ REMOTE_RESULTS = "/workspace/PAMPAr-Coder/ablation_results"
 # SSH helpers
 # ---------------------------------------------------------------------------
 
+
 def _ssh_base(host: str, port: int, key: Path) -> list[str]:
     """Construye el prefijo base para comandos SSH."""
     return [
         "ssh",
-        "-o", "StrictHostKeyChecking=no",
-        "-o", "ConnectTimeout=10",
-        "-o", "BatchMode=yes",
-        "-i", str(key),
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=10",
+        "-o",
+        "BatchMode=yes",
+        "-i",
+        str(key),
         f"root@{host}",
-        "-p", str(port),
+        "-p",
+        str(port),
     ]
 
 
@@ -71,16 +77,22 @@ def run_remote(host: str, port: int, key: Path, command: str) -> tuple[int, str]
     return result.returncode, output
 
 
-def scp_download(host: str, port: int, key: Path, remote_path: str, local_path: Path) -> bool:
+def scp_download(
+    host: str, port: int, key: Path, remote_path: str, local_path: Path
+) -> bool:
     """Descarga un directorio remoto vía scp."""
     local_path.mkdir(parents=True, exist_ok=True)
     cmd = [
         "scp",
         "-r",
-        "-o", "StrictHostKeyChecking=no",
-        "-o", "ConnectTimeout=30",
-        "-i", str(key),
-        "-P", str(port),
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=30",
+        "-i",
+        str(key),
+        "-P",
+        str(port),
         f"root@{host}:{remote_path}",
         str(local_path),
     ]
@@ -95,6 +107,7 @@ def scp_download(host: str, port: int, key: Path, remote_path: str, local_path: 
 # ---------------------------------------------------------------------------
 # Estado del entrenamiento
 # ---------------------------------------------------------------------------
+
 
 def check_training_status(host: str, port: int, key: Path) -> dict:
     """
@@ -126,19 +139,22 @@ def check_training_status(host: str, port: int, key: Path) -> dict:
 
     # Proceso vivo
     rc, out = run_remote(
-        host, port, key,
-        "ps aux | grep ablation_train | grep -v grep | wc -l"
+        host, port, key, "ps aux | grep ablation_train | grep -v grep | wc -l"
     )
     status["process_alive"] = out.strip() == "1"
 
     # Últimas líneas del log
-    rc, out = run_remote(host, port, key, f"tail -12 {REMOTE_LOG} 2>/dev/null || echo NO_LOG")
+    rc, out = run_remote(
+        host, port, key, f"tail -12 {REMOTE_LOG} 2>/dev/null || echo NO_LOG"
+    )
     status["last_log_lines"] = out
 
     # GPU
     rc, out = run_remote(
-        host, port, key,
-        "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader 2>/dev/null || echo ?,?"
+        host,
+        port,
+        key,
+        "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader 2>/dev/null || echo ?,?",
     )
     parts = out.strip().split(",")
     if len(parts) == 2:
@@ -149,8 +165,10 @@ def check_training_status(host: str, port: int, key: Path) -> dict:
     finished: list[str] = []
     for exp in EXPECTED_EXPERIMENTS:
         rc, out = run_remote(
-            host, port, key,
-            f"grep -c '\"step\": {MAX_STEPS}' {REMOTE_RESULTS}/{exp}/metrics.jsonl 2>/dev/null || echo 0"
+            host,
+            port,
+            key,
+            f"grep -c '\"step\": {MAX_STEPS}' {REMOTE_RESULTS}/{exp}/metrics.jsonl 2>/dev/null || echo 0",
         )
         if out.strip() not in ("0", ""):
             finished.append(exp)
@@ -168,11 +186,12 @@ def all_done(status: dict) -> bool:
 # Descarga
 # ---------------------------------------------------------------------------
 
+
 def download_results(host: str, port: int, key: Path, out_dir: Path) -> bool:
     """Descarga ablation_results/ del pod a out_dir."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  DESCARGANDO RESULTADOS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Origen: root@{host}:{REMOTE_RESULTS}")
     print(f"  Destino: {out_dir}")
     print()
@@ -199,12 +218,16 @@ def download_results(host: str, port: int, key: Path, out_dir: Path) -> bool:
 # Terminar pod
 # ---------------------------------------------------------------------------
 
+
 def terminate_pod_via_api() -> bool:
     """Termina el pod de ablación via RunPod API."""
     try:
         import runpod
     except ImportError:
-        print("  [INFO] runpod no instalado, saltando terminación via API", file=sys.stderr)
+        print(
+            "  [INFO] runpod no instalado, saltando terminación via API",
+            file=sys.stderr,
+        )
         return False
 
     # Cargar API key
@@ -219,7 +242,10 @@ def terminate_pod_via_api() -> bool:
                         break
 
     if not api_key:
-        print("  [WARNING] RUNPOD_API_KEY no encontrada, no se puede terminar el pod", file=sys.stderr)
+        print(
+            "  [WARNING] RUNPOD_API_KEY no encontrada, no se puede terminar el pod",
+            file=sys.stderr,
+        )
         return False
 
     runpod.api_key = api_key
@@ -243,6 +269,7 @@ def terminate_pod_via_api() -> bool:
 # ---------------------------------------------------------------------------
 # Loop de monitoreo
 # ---------------------------------------------------------------------------
+
 
 def monitor_loop(
     host: str,
@@ -283,7 +310,9 @@ def monitor_loop(
         finished = status["finished_experiments"]
         n_done = len(finished)
 
-        print(f"  Proceso: {proc} | GPU: {status['gpu_util']} | Mem: {status['gpu_mem']}")
+        print(
+            f"  Proceso: {proc} | GPU: {status['gpu_util']} | Mem: {status['gpu_mem']}"
+        )
         print(f"  Experimentos finalizados: {n_done}/4 {finished}")
 
         if status["last_log_lines"]:
@@ -306,9 +335,9 @@ def monitor_loop(
 
     # Terminar pod
     if not no_terminate:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("  TERMINANDO POD")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         terminated = terminate_pod_via_api()
         if not terminated:
             print(
@@ -331,8 +360,11 @@ def _sleep(interval_min: int) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Descargar resultados de ablación y terminar pod")
+    parser = argparse.ArgumentParser(
+        description="Descargar resultados de ablación y terminar pod"
+    )
     parser.add_argument("--host", required=True, help="IP del pod RunPod")
     parser.add_argument("--port", type=int, default=22935, help="Puerto SSH")
     parser.add_argument(

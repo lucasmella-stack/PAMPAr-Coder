@@ -48,8 +48,8 @@ LABELS: dict[str, str] = {
 }
 
 COLORS: dict[str, str] = {
-    "pampar_v3": "#2563eb",   # azul
-    "no_llaves": "#dc2626",   # rojo
+    "pampar_v3": "#2563eb",  # azul
+    "no_llaves": "#dc2626",  # rojo
     "single_stream": "#16a34a",  # verde
     "vanilla_gpt": "#9333ea",  # violeta
 }
@@ -65,6 +65,7 @@ LINESTYLES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Lectura de datos
 # ---------------------------------------------------------------------------
+
 
 def load_metrics(results_dir: Path) -> dict[str, dict[str, list]]:
     """
@@ -127,6 +128,7 @@ def load_meta(results_dir: Path) -> dict[str, dict]:
 # ---------------------------------------------------------------------------
 # Figuras
 # ---------------------------------------------------------------------------
+
 
 def _apply_style(ax: plt.Axes, title: str, xlabel: str, ylabel: str) -> None:
     ax.set_title(title, fontsize=13, fontweight="bold", pad=10)
@@ -241,7 +243,9 @@ def plot_final_bar(
     labels = [LABELS.get(e, e) for e in experiments]
 
     fig, ax = plt.subplots(figsize=(7, 4))
-    bars = ax.bar(labels, losses, color=colors, edgecolor="black", linewidth=0.7, width=0.55)
+    bars = ax.bar(
+        labels, losses, color=colors, edgecolor="black", linewidth=0.7, width=0.55
+    )
 
     # Anotar valores
     for bar, val in zip(bars, losses):
@@ -256,7 +260,9 @@ def plot_final_bar(
         )
 
     ax.set_ylabel("Final eval loss (↓ better)", fontsize=11)
-    ax.set_title("PAMPAr Ablation — Final Eval Loss Comparison", fontsize=13, fontweight="bold")
+    ax.set_title(
+        "PAMPAr Ablation — Final Eval Loss Comparison", fontsize=13, fontweight="bold"
+    )
     ax.set_ylim(0, max(losses) * 1.18)
     ax.grid(True, axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
     ax.spines["top"].set_visible(False)
@@ -275,6 +281,7 @@ def plot_final_bar(
 # ---------------------------------------------------------------------------
 # Tabla resumen
 # ---------------------------------------------------------------------------
+
 
 def build_summary(
     data: dict[str, dict[str, list]],
@@ -325,7 +332,11 @@ def build_summary(
         elif control_loss is not None and final_eval_loss is not None:
             delta = final_eval_loss - control_loss
             row["delta_vs_control"] = f"+{delta:.4f}" if delta >= 0 else f"{delta:.4f}"
-            row["delta_pct"] = f"+{delta / control_loss * 100:.1f}%" if delta >= 0 else f"{delta / control_loss * 100:.1f}%"
+            row["delta_pct"] = (
+                f"+{delta / control_loss * 100:.1f}%"
+                if delta >= 0
+                else f"{delta / control_loss * 100:.1f}%"
+            )
 
         rows.append(row)
 
@@ -342,7 +353,11 @@ def print_summary_table(rows: list[dict]) -> None:
     print(header)
     print("-" * 75)
     for r in rows:
-        loss_str = f"{r['final_eval_loss']:.4f}" if isinstance(r["final_eval_loss"], float) else "pending"
+        loss_str = (
+            f"{r['final_eval_loss']:.4f}"
+            if isinstance(r["final_eval_loss"], float)
+            else "pending"
+        )
         print(
             f"{r['label']:<18} {r['n_params']:>7} {str(r['final_eval_step']):>8} "
             f"{loss_str:>10} {str(r['final_eval_ppl']):>7} "
@@ -356,9 +371,15 @@ def save_csv(rows: list[dict], results_dir: Path) -> Path:
     """Guarda CSV con la tabla resumen."""
     out = results_dir / "summary.csv"
     fieldnames = [
-        "experiment", "label", "n_params", "max_step",
-        "final_eval_step", "final_eval_loss", "final_eval_ppl",
-        "delta_vs_control", "delta_pct",
+        "experiment",
+        "label",
+        "n_params",
+        "max_step",
+        "final_eval_step",
+        "final_eval_loss",
+        "final_eval_ppl",
+        "delta_vs_control",
+        "delta_pct",
     ]
     with out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -371,6 +392,7 @@ def save_csv(rows: list[dict], results_dir: Path) -> Path:
 # LaTeX table helper
 # ---------------------------------------------------------------------------
 
+
 def print_latex_table(rows: list[dict]) -> None:
     """Imprime una tabla LaTeX lista para pegar en el paper."""
     print("\n% ─── LaTeX table (paste into paper) ───────────────────────")
@@ -378,18 +400,34 @@ def print_latex_table(rows: list[dict]) -> None:
     print(r"\centering")
     print(r"\begin{tabular}{lcccc}")
     print(r"\toprule")
-    print(r"\textbf{Model} & \textbf{Steps} & \textbf{Eval Loss} & \textbf{Perplexity} & \textbf{$\Delta$ vs.\ control} \\")
+    print(
+        r"\textbf{Model} & \textbf{Steps} & \textbf{Eval Loss} & \textbf{Perplexity} & \textbf{$\Delta$ vs.\ control} \\"
+    )
     print(r"\midrule")
     for r in rows:
-        loss_str = f"{r['final_eval_loss']:.3f}" if isinstance(r["final_eval_loss"], float) else r"---"
-        ppl_str = f"{r['final_eval_ppl']:.2f}" if isinstance(r["final_eval_ppl"], float) else r"---"
-        delta_str = str(r["delta_vs_control"]).replace("+", r"$+$") if r["delta_vs_control"] != "—" else "---"
+        loss_str = (
+            f"{r['final_eval_loss']:.3f}"
+            if isinstance(r["final_eval_loss"], float)
+            else r"---"
+        )
+        ppl_str = (
+            f"{r['final_eval_ppl']:.2f}"
+            if isinstance(r["final_eval_ppl"], float)
+            else r"---"
+        )
+        delta_str = (
+            str(r["delta_vs_control"]).replace("+", r"$+$")
+            if r["delta_vs_control"] != "—"
+            else "---"
+        )
         step_str = str(r["final_eval_step"]) if r["final_eval_step"] != "—" else r"---"
         name = r"\texttt{" + r["experiment"].replace("_", r"\_") + "}"
         print(f"{name} & {step_str} & {loss_str} & {ppl_str} & {delta_str} \\\\")
     print(r"\bottomrule")
     print(r"\end{tabular}")
-    print(r"\caption{Ablation results at 30K training steps. \textbf{Lower is better.}}")
+    print(
+        r"\caption{Ablation results at 30K training steps. \textbf{Lower is better.}}"
+    )
     print(r"\label{tab:ablation_results}")
     print(r"\end{table}")
     print("% ──────────────────────────────────────────────────────────\n")
@@ -398,6 +436,7 @@ def print_latex_table(rows: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze PAMPAr ablation results")
@@ -421,7 +460,10 @@ def main() -> None:
 
     results_dir: Path = args.results_dir
     if not results_dir.exists():
-        print(f"[ERROR] Directorio de resultados no encontrado: {results_dir}", file=sys.stderr)
+        print(
+            f"[ERROR] Directorio de resultados no encontrado: {results_dir}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     figures_dir = results_dir / "figures"
@@ -453,6 +495,7 @@ def main() -> None:
     if args.show:
         matplotlib.use("TkAgg")
         import importlib
+
         import matplotlib.pyplot as _plt  # noqa: F401
 
     eval_out = plot_eval_curves(data, figures_dir, show=args.show)
