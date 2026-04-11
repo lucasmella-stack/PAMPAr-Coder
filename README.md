@@ -26,7 +26,7 @@ PAMPAr-Coder is a 62.6M parameter language model that **reasons over reference i
 - **Device**: knowledge via local RAG (Python docs, MDN, man pages, user files)
 - **Hardware**: designed to run on consumer hardware (GTX 1650, 4 GB VRAM)
 
-**Current state**: `v3_train.pt` — 98K steps, Mixed Selectivity (FiLM). Classroom system with conversational mentor (Qwen-plus) + 5 bio-inspired mechanisms. Tree of 21 concepts with adaptive prerequisites.
+**Current state**: `v3_train.pt` — 98K steps, Mixed Selectivity (FiLM). Ablation study running on RTX 3090 (4 experiments × 30K steps). Paper published on [Academia.edu](https://www.academia.edu/works/165626856) — DOI: [10.57967/hf/8329](https://doi.org/10.57967/hf/8329).
 
 ---
 
