@@ -36,7 +36,9 @@ import torch
 import torch.nn.utils as nn_utils
 
 ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(SCRIPTS))  # para vanilla_gpt
 
 from pampar.coder.v3 import PRESET_V3, ConfigV3, PamparV3
 
