@@ -142,6 +142,11 @@ class LateralGate(nn.Module):
                 weighted_others.append(others[other_idx] * w)
                 other_idx += 1
 
+            # Con n_streams=1 no hay peers — skip lateral
+            if not weighted_others:
+                out.append(streams[t])
+                continue
+
             # Concatenar y proyectar
             lateral_input = torch.cat(weighted_others, dim=-1)  # [B, L, D*(n-1)]
             lateral_out = self.gates[t](lateral_input)  # [B, L, D]

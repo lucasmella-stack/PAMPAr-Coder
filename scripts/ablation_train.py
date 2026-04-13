@@ -65,7 +65,7 @@ EXPERIMENTS: dict[str, dict[str, Any]] = {
     "single_stream": {
         "desc": "1 stream — sin estructura 2D",
         "model": "pampar",
-        "config_overrides": {"n_streams": 1, "n_territorios": 1},
+        "config_overrides": {"n_streams": 1},
     },
     "vanilla_gpt": {
         "desc": "GPT estándar ~62M params",
@@ -432,17 +432,18 @@ def train_experiment(
         logger.info("Interrumpido — guardando checkpoint...")
     finally:
         log_file.close()
+        final_step = step + 1 if "step" in dir() else start_step  # noqa: F821
         torch.save(
             {
                 "modelo": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
-                "paso": step + 1,  # noqa: F821
+                "paso": final_step,
                 "data_idx": loader._idx,  # noqa: SLF001
                 "config": config_dict,
             },
             ckpt_path,
         )
-        logger.info("[%s] Checkpoint final guardado — paso %d", experiment, step + 1)
+        logger.info("[%s] Checkpoint final guardado — paso %d", experiment, final_step)
 
     # ── Eval final
     eval_loss = _eval_loss(model, loader, device, n_batches=50)
