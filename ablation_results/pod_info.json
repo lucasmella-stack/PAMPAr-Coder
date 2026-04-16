@@ -1,0 +1,12 @@
+{
+  "id": "tv5zydwzr00zt3",
+  "imageName": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+  "env": [
+    "JUPYTER_PASSWORD=pampar2026",
+    "PUBLIC_KEY=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPxtd1SeWbk4jyoTsghJZn5a+JoZ+KPJSFk6YHdMKLNy runpod-auto"
+  ],
+  "machineId": "f54xaijl6jsv",
+  "machine": {
+    "podHostId": "tv5zydwzr00zt3-6441179a"
+  }
+}

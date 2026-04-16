@@ -112,3 +112,8 @@ biblioteca/
 # OS
 .DS_Store
 Thumbs.db
+
+biblioteca.tar.gz
+biblioteca/
+*.tar.gz
+

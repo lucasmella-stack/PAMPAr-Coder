@@ -1,0 +1,37 @@
+{
+  "experiment": "no_llaves",
+  "desc": "Sin LLAVES \u2014 solo routing aprendido",
+  "config": {
+    "vocab_size": 48000,
+    "tokenizer_path": "data/tokenizer/pampar_48k.model",
+    "dim": 640,
+    "n_streams": 4,
+    "n_levels": 5,
+    "n_heads": 8,
+    "n_kv_heads": 2,
+    "ffn_mult": 4.0,
+    "n_zonas": 52,
+    "n_territorios": 4,
+    "peso_llaves": 0.0,
+    "ventana_contexto": 32,
+    "lateral_bottleneck": 128,
+    "use_mixed_selectivity": true,
+    "modulator_bottleneck": 128,
+    "max_seq_len": 4096,
+    "dropout": 0.1,
+    "umbral_exit": 0.9,
+    "capas_min": 2,
+    "exit_percentile": 0.1,
+    "use_checkpoint": true,
+    "n_params": 62618660
+  },
+  "args": {
+    "lr": 0.0003,
+    "batch_size": 16,
+    "seq_len": 512,
+    "max_pasos": 30000
+  },
+  "n_chunks": 3377853,
+  "start_step": 20000,
+  "started_at": "2026-04-13 11:26:58"
+}

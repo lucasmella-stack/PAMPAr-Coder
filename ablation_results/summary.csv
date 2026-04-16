@@ -1,0 +1,5 @@
+experiment,label,n_params,max_step,final_eval_step,final_eval_loss,final_eval_ppl,delta_vs_control,delta_pct
+pampar_v3,PAMPAr-V3 (control),62.6M,30000,30000,0.7549,2.13,—,—
+no_llaves,No LLAVES,62.6M,30000,30000,0.7601,2.14,+0.0052,+0.7%
+single_stream,Single Stream,53.9M,30000,30000,0.784,2.19,+0.0291,+3.9%
+vanilla_gpt,Vanilla GPT,60.8M,30000,30000,0.7204,2.06,-0.0345,-4.6%

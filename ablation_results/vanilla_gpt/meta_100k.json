@@ -1,0 +1,24 @@
+{
+  "experiment": "vanilla_gpt",
+  "desc": "GPT est\u00e1ndar ~62M params",
+  "config": {
+    "vocab_size": 48000,
+    "dim": 640,
+    "n_layers": 7,
+    "n_heads": 8,
+    "n_kv_heads": 2,
+    "ffn_mult": 4.0,
+    "max_seq_len": 4096,
+    "dropout": 0.1,
+    "n_params": 60826240
+  },
+  "args": {
+    "lr": 0.0003,
+    "batch_size": 16,
+    "seq_len": 512,
+    "max_pasos": 100000
+  },
+  "n_chunks": 3377853,
+  "start_step": 30000,
+  "started_at": "2026-04-15 23:17:08"
+}
