@@ -1,0 +1,5197 @@
+{
+  "pampar_v3": {
+    "experiment": "pampar_v3",
+    "humaneval": {
+      "pass_at_1": 0.0,
+      "passed": 0,
+      "total": 164,
+      "elapsed_sec": 2251.21,
+      "per_problem": [
+        {
+          "task_id": "HumanEval/0",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1439,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/1",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1577,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/2",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1523,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/3",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/4",
+          "passed": false,
+          "error": "TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/5",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1545,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/6",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1553,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/7",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1519,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/8",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1452,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/9",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/10",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1571,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/11",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1511,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/12",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/13",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1350,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/14",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1528,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/15",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1396,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/16",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1570,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/17",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1464,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/18",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1448,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/19",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1530,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/20",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/21",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1514,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/22",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1565,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/23",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1539,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/24",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1524,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/25",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1475,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/26",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1554,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/27",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1521,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/28",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1500,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/29",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1467,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/30",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/31",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1399,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/32",
+          "passed": false,
+          "error": "TypeError: must be real number, not NoneType",
+          "completion_len": 1344,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/33",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1481,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/34",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1400,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/35",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1480,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/36",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1401,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/37",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1499,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/38",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1609,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/39",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1449,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/40",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1415,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/41",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 745,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/42",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/43",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1473,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/44",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1487,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/45",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1832,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/46",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1388,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/47",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/48",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1539,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/49",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/50",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1498,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/51",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1423,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/52",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/53",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/54",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1486,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/55",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1367,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/56",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1274,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/57",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/58",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/59",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1437,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/60",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/61",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1436,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/62",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1571,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/63",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1559,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/64",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1419,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/65",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/66",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/67",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1502,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/68",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/69",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1533,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/70",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 13)",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/71",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 13)",
+          "completion_len": 1479,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/72",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/73",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1428,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/74",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 16)",
+          "completion_len": 1424,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/75",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1453,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/76",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1448,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/77",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1391,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/78",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1397,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/79",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1485,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/80",
+          "passed": false,
+          "error": "AssertionError: a",
+          "completion_len": 1452,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/81",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/82",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 726,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/83",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1328,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/84",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1460,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/85",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1373,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/86",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1464,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/87",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1456,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/88",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1566,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/89",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1486,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/90",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/91",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/92",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 20)",
+          "completion_len": 1427,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/93",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1406,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/94",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1467,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/95",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1495,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/96",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1346,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/97",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1481,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/98",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/99",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1375,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/100",
+          "passed": false,
+          "error": "AssertionError: Test 3",
+          "completion_len": 1376,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/101",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1539,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/102",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1350,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/103",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/104",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/105",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/106",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/107",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1455,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/108",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/109",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1431,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/110",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1349,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/111",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/112",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1510,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/113",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1421,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/114",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1427,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/115",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1502,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/116",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1590,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/117",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/118",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1453,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/119",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1533,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/120",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1461,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/121",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1484,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/122",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1383,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/123",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1539,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/124",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1479,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/125",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 12)",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/126",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/127",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/128",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/129",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1433,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/130",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/131",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1469,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/132",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1532,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/133",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/134",
+          "passed": false,
+          "error": "SyntaxError: unterminated triple-quoted string literal (detected at line 36) (<eval>, line 15)",
+          "completion_len": 1584,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/135",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1399,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/136",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1545,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/137",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1203,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/138",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1540,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/139",
+          "passed": false,
+          "error": "AssertionError: Test 4",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/140",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1516,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/141",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/142",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1361,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/143",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1371,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/144",
+          "passed": false,
+          "error": "AssertionError: test1",
+          "completion_len": 1559,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/145",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1566,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/146",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/147",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/148",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 18)",
+          "completion_len": 1461,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/149",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1529,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/150",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/151",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1458,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/152",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1464,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/153",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/154",
+          "passed": false,
+          "error": "AssertionError: test #0",
+          "completion_len": 1454,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/155",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1530,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/156",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1588,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/157",
+          "passed": false,
+          "error": "NameError: name 'right' is not defined",
+          "completion_len": 1519,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/158",
+          "passed": false,
+          "error": "AssertionError: t1",
+          "completion_len": 1221,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/159",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1258,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/160",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1429,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/161",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1521,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/162",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/163",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1500,
+          "tokens": 512
+        }
+      ]
+    },
+    "custom_eval": {
+      "accuracy": 0.0,
+      "passed": 0,
+      "total": 16,
+      "by_level": {
+        "level_1": "0/5",
+        "level_2": "0/4",
+        "level_3": "0/3",
+        "level_4": "0/2",
+        "level_5": "0/2"
+      },
+      "per_problem": [
+        {
+          "level": 1,
+          "desc": "Count vowels",
+          "passed": false,
+          "error": "KeyError: 'contar_vocales'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Sum digits",
+          "passed": false,
+          "error": "KeyError: 'suma_digitos'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Palindrome",
+          "passed": false,
+          "error": "KeyError: 'es_palindromo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Max of list",
+          "passed": false,
+          "error": "KeyError: 'maximo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "FizzBuzz",
+          "passed": false,
+          "error": "KeyError: 'fizzbuzz'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Flatten one level",
+          "passed": false,
+          "error": "KeyError: 'aplanar'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Element frequency",
+          "passed": false,
+          "error": "KeyError: 'frecuencia'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Squares of evens",
+          "passed": false,
+          "error": "KeyError: 'cuadrados_pares'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Invert dict",
+          "passed": false,
+          "error": "KeyError: 'invertir_dict'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Fibonacci iterative",
+          "passed": false,
+          "error": "KeyError: 'fibonacci'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Binary search",
+          "passed": false,
+          "error": "KeyError: 'busqueda_binaria'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Merge sort",
+          "passed": false,
+          "error": "KeyError: 'merge_sort'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Stack class",
+          "passed": false,
+          "error": "KeyError: 'Stack'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Punto with distance",
+          "passed": false,
+          "error": "KeyError: 'Punto'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Memoize decorator",
+          "passed": false,
+          "error": "KeyError: 'memoize'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Prime generator",
+          "passed": false,
+          "error": "KeyError: 'primos_hasta'",
+          "tokens": 384
+        }
+      ]
+    },
+    "throughput": {
+      "tokens_per_sec": 38.89,
+      "total_tokens": 2560,
+      "elapsed_sec": 65.82,
+      "n_prompts": 10,
+      "max_tokens": 256
+    },
+    "early_exit": {
+      "mean_level": 5.0,
+      "max_level": 5,
+      "n_tokens_measured": 640,
+      "pct_early_exit": 0.0,
+      "histogram": {
+        "5": 640
+      }
+    }
+  },
+  "no_llaves": {
+    "experiment": "no_llaves",
+    "humaneval": {
+      "pass_at_1": 0.0,
+      "passed": 0,
+      "total": 164,
+      "elapsed_sec": 2261.9,
+      "per_problem": [
+        {
+          "task_id": "HumanEval/0",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1437,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/1",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/2",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1523,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/3",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1542,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/4",
+          "passed": false,
+          "error": "TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/5",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/6",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1636,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/7",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/8",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1448,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/9",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/10",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1425,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/11",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/12",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1584,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/13",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1418,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/14",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1544,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/15",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1600,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/16",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/17",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/18",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1507,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/19",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1583,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/20",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1456,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/21",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1580,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/22",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1524,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/23",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1556,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/24",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1446,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/25",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1429,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/26",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/27",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1352,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/28",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1564,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/29",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1537,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/30",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1447,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/31",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1377,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/32",
+          "passed": false,
+          "error": "TypeError: must be real number, not NoneType",
+          "completion_len": 969,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/33",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1556,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/34",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1565,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/35",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1457,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/36",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1463,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/37",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1519,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/38",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1622,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/39",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1487,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/40",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1445,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/41",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1349,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/42",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1500,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/43",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1377,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/44",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1553,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/45",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1544,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/46",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1468,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/47",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1371,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/48",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/49",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1504,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/50",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/51",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1502,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/52",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1557,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/53",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1468,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/54",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1458,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/55",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1490,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/56",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1547,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/57",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1512,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/58",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1444,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/59",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1462,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/60",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/61",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1460,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/62",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1394,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/63",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/64",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1392,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/65",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1415,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/66",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1459,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/67",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1520,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/68",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1419,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/69",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1422,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/70",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1532,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/71",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/72",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1245,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/73",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1414,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/74",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1403,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/75",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1393,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/76",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1601,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/77",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/78",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1318,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/79",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1560,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/80",
+          "passed": false,
+          "error": "AssertionError: a",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/81",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1448,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/82",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1149,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/83",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/84",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1521,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/85",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1490,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/86",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/87",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1437,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/88",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1511,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/89",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/90",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1444,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/91",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/92",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1520,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/93",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1420,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/94",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1520,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/95",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1505,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/96",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1311,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/97",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1335,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/98",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1401,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/99",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/100",
+          "passed": false,
+          "error": "AssertionError: Test 3",
+          "completion_len": 1413,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/101",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1447,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/102",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1454,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/103",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1357,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/104",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1507,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/105",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/106",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1419,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/107",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1566,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/108",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/109",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1499,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/110",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/111",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1398,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/112",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1499,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/113",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1397,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/114",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1514,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/115",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1436,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/116",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1541,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/117",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1595,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/118",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1361,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/119",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1425,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/120",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1525,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/121",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1407,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/122",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1433,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/123",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1375,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/124",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1498,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/125",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/126",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1533,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/127",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/128",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1415,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/129",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1512,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/130",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/131",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1378,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/132",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1004,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/133",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/134",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1370,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/135",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1398,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/136",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1499,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/137",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1410,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/138",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1446,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/139",
+          "passed": false,
+          "error": "AssertionError: Test 4",
+          "completion_len": 1495,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/140",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1183,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/141",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1504,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/142",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1365,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/143",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1300,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/144",
+          "passed": false,
+          "error": "AssertionError: test1",
+          "completion_len": 1386,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/145",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1583,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/146",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1405,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/147",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1443,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/148",
+          "passed": false,
+          "error": "TypeError: object of type 'NoneType' has no len()",
+          "completion_len": 1477,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/149",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/150",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1345,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/151",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1378,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/152",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1317,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/153",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/154",
+          "passed": false,
+          "error": "AssertionError: test #0",
+          "completion_len": 1522,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/155",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1411,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/156",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1521,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/157",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1463,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/158",
+          "passed": false,
+          "error": "AssertionError: t1",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/159",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1462,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/160",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1316,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/161",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/162",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1421,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/163",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1537,
+          "tokens": 512
+        }
+      ]
+    },
+    "custom_eval": {
+      "accuracy": 0.0,
+      "passed": 0,
+      "total": 16,
+      "by_level": {
+        "level_1": "0/5",
+        "level_2": "0/4",
+        "level_3": "0/3",
+        "level_4": "0/2",
+        "level_5": "0/2"
+      },
+      "per_problem": [
+        {
+          "level": 1,
+          "desc": "Count vowels",
+          "passed": false,
+          "error": "KeyError: 'contar_vocales'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Sum digits",
+          "passed": false,
+          "error": "KeyError: 'suma_digitos'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Palindrome",
+          "passed": false,
+          "error": "KeyError: 'es_palindromo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Max of list",
+          "passed": false,
+          "error": "KeyError: 'maximo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "FizzBuzz",
+          "passed": false,
+          "error": "KeyError: 'fizzbuzz'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Flatten one level",
+          "passed": false,
+          "error": "KeyError: 'aplanar'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Element frequency",
+          "passed": false,
+          "error": "KeyError: 'frecuencia'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Squares of evens",
+          "passed": false,
+          "error": "KeyError: 'cuadrados_pares'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Invert dict",
+          "passed": false,
+          "error": "KeyError: 'invertir_dict'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Fibonacci iterative",
+          "passed": false,
+          "error": "KeyError: 'fibonacci'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Binary search",
+          "passed": false,
+          "error": "KeyError: 'busqueda_binaria'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Merge sort",
+          "passed": false,
+          "error": "KeyError: 'merge_sort'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Stack class",
+          "passed": false,
+          "error": "KeyError: 'Stack'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Punto with distance",
+          "passed": false,
+          "error": "KeyError: 'Punto'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Memoize decorator",
+          "passed": false,
+          "error": "KeyError: 'memoize'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Prime generator",
+          "passed": false,
+          "error": "KeyError: 'primos_hasta'",
+          "tokens": 384
+        }
+      ]
+    },
+    "throughput": {
+      "tokens_per_sec": 39.02,
+      "total_tokens": 2560,
+      "elapsed_sec": 65.61,
+      "n_prompts": 10,
+      "max_tokens": 256
+    },
+    "early_exit": {
+      "mean_level": 5.0,
+      "max_level": 5,
+      "n_tokens_measured": 640,
+      "pct_early_exit": 0.0,
+      "histogram": {
+        "5": 640
+      }
+    }
+  },
+  "single_stream": {
+    "experiment": "single_stream",
+    "humaneval": {
+      "pass_at_1": 0.0,
+      "passed": 0,
+      "total": 164,
+      "elapsed_sec": 1092.07,
+      "per_problem": [
+        {
+          "task_id": "HumanEval/0",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1443,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/1",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1632,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/2",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1323,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/3",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/4",
+          "passed": false,
+          "error": "TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/5",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1554,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/6",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1535,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/7",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1615,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/8",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1598,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/9",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1694,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/10",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1442,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/11",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/12",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1543,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/13",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1516,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/14",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1220,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/15",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1446,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/16",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 879,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/17",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1377,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/18",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1417,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/19",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1614,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/20",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1616,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/21",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1631,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/22",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1593,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/23",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1579,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/24",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1573,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/25",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/26",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1507,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/27",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 712,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/28",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1617,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/29",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/30",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/31",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/32",
+          "passed": false,
+          "error": "TypeError: must be real number, not NoneType",
+          "completion_len": 1535,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/33",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1519,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/34",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1480,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/35",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1474,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/36",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/37",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1545,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/38",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1646,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/39",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1069,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/40",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1360,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/41",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/42",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1576,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/43",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1418,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/44",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1415,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/45",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/46",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1510,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/47",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1656,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/48",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1503,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/49",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/50",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1542,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/51",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1439,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/52",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1452,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/53",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/54",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1614,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/55",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 590,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/56",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1379,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/57",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/58",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/59",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1266,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/60",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1491,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/61",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1500,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/62",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1508,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/63",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 601,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/64",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1456,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/65",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1521,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/66",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1559,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/67",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/68",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1617,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/69",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 13)",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/70",
+          "passed": false,
+          "error": "SyntaxError: unterminated triple-quoted string literal (detected at line 33) (<eval>, line 13)",
+          "completion_len": 1149,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/71",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 13)",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/72",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1771,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/73",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1532,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/74",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 16)",
+          "completion_len": 1537,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/75",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1458,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/76",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1464,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/77",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1470,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/78",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1456,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/79",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1604,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/80",
+          "passed": false,
+          "error": "AssertionError: a",
+          "completion_len": 1365,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/81",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/82",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/83",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1449,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/84",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1403,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/85",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1484,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/86",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/87",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1472,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/88",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1605,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/89",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/90",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1467,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/91",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/92",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 20)",
+          "completion_len": 1476,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/93",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/94",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1528,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/95",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1544,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/96",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1338,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/97",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1588,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/98",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1356,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/99",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1437,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/100",
+          "passed": false,
+          "error": "AssertionError: Test 3",
+          "completion_len": 1577,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/101",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1584,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/102",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1328,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/103",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1453,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/104",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1468,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/105",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1346,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/106",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1562,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/107",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1504,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/108",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1469,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/109",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/110",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/111",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/112",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1542,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/113",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1492,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/114",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1451,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/115",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/116",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1596,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/117",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1502,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/118",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1462,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/119",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 17)",
+          "completion_len": 848,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/120",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1008,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/121",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1426,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/122",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1368,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/123",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1520,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/124",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1546,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/125",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 12)",
+          "completion_len": 1536,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/126",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 18)",
+          "completion_len": 1543,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/127",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1550,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/128",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1517,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/129",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1530,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/130",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/131",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1495,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/132",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1546,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/133",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/134",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/135",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1380,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/136",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 14)",
+          "completion_len": 1498,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/137",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1511,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/138",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1454,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/139",
+          "passed": false,
+          "error": "AssertionError: Test 4",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/140",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1420,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/141",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1531,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/142",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/143",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1589,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/144",
+          "passed": false,
+          "error": "AssertionError: test1",
+          "completion_len": 1358,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/145",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1438,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/146",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1473,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/147",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1316,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/148",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 18)",
+          "completion_len": 1520,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/149",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1555,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/150",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1295,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/151",
+          "passed": false,
+          "error": "IndentationError: unindent does not match any outer indentation level (<eval>, line 14)",
+          "completion_len": 1394,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/152",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1467,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/153",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1545,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/154",
+          "passed": false,
+          "error": "AssertionError: test #0",
+          "completion_len": 1630,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/155",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1468,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/156",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1054,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/157",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 12)",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/158",
+          "passed": false,
+          "error": "AssertionError: t1",
+          "completion_len": 1496,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/159",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1541,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/160",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1906,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/161",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1513,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/162",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1595,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/163",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1551,
+          "tokens": 512
+        }
+      ]
+    },
+    "custom_eval": {
+      "accuracy": 0.0,
+      "passed": 0,
+      "total": 16,
+      "by_level": {
+        "level_1": "0/5",
+        "level_2": "0/4",
+        "level_3": "0/3",
+        "level_4": "0/2",
+        "level_5": "0/2"
+      },
+      "per_problem": [
+        {
+          "level": 1,
+          "desc": "Count vowels",
+          "passed": false,
+          "error": "KeyError: 'contar_vocales'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Sum digits",
+          "passed": false,
+          "error": "KeyError: 'suma_digitos'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Palindrome",
+          "passed": false,
+          "error": "KeyError: 'es_palindromo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Max of list",
+          "passed": false,
+          "error": "KeyError: 'maximo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "FizzBuzz",
+          "passed": false,
+          "error": "KeyError: 'fizzbuzz'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Flatten one level",
+          "passed": false,
+          "error": "KeyError: 'aplanar'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Element frequency",
+          "passed": false,
+          "error": "KeyError: 'frecuencia'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Squares of evens",
+          "passed": false,
+          "error": "KeyError: 'cuadrados_pares'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Invert dict",
+          "passed": false,
+          "error": "KeyError: 'invertir_dict'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Fibonacci iterative",
+          "passed": false,
+          "error": "KeyError: 'fibonacci'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Binary search",
+          "passed": false,
+          "error": "KeyError: 'busqueda_binaria'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Merge sort",
+          "passed": false,
+          "error": "KeyError: 'merge_sort'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Stack class",
+          "passed": false,
+          "error": "KeyError: 'Stack'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Punto with distance",
+          "passed": false,
+          "error": "KeyError: 'Punto'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Memoize decorator",
+          "passed": false,
+          "error": "KeyError: 'memoize'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Prime generator",
+          "passed": false,
+          "error": "KeyError: 'primos_hasta'",
+          "tokens": 384
+        }
+      ]
+    },
+    "throughput": {
+      "tokens_per_sec": 83.31,
+      "total_tokens": 2560,
+      "elapsed_sec": 30.73,
+      "n_prompts": 10,
+      "max_tokens": 256
+    },
+    "early_exit": {
+      "mean_level": 5.0,
+      "max_level": 5,
+      "n_tokens_measured": 640,
+      "pct_early_exit": 0.0,
+      "histogram": {
+        "5": 640
+      }
+    }
+  },
+  "vanilla_gpt": {
+    "experiment": "vanilla_gpt",
+    "humaneval": {
+      "pass_at_1": 0.0,
+      "passed": 0,
+      "total": 164,
+      "elapsed_sec": 707.37,
+      "per_problem": [
+        {
+          "task_id": "HumanEval/0",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1512,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/1",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1548,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/2",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1485,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/3",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/4",
+          "passed": false,
+          "error": "TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/5",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1509,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/6",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1472,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/7",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1525,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/8",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1488,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/9",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1554,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/10",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1381,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/11",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/12",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1380,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/13",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/14",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 9)",
+          "completion_len": 873,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/15",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1461,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/16",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1544,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/17",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1455,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/18",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1512,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/19",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1430,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/20",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1522,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/21",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1504,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/22",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1605,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/23",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1412,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/24",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1415,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/25",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1514,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/26",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/27",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1572,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/28",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/29",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1510,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/30",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1535,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/31",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/32",
+          "passed": false,
+          "error": "TypeError: must be real number, not NoneType",
+          "completion_len": 1414,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/33",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1532,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/34",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1568,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/35",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/36",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1406,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/37",
+          "passed": false,
+          "error": "TypeError: 'NoneType' object is not iterable",
+          "completion_len": 1567,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/38",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1586,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/39",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1403,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/40",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/41",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1334,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/42",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1535,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/43",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1425,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/44",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1687,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/45",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/46",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1428,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/47",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1440,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/48",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1473,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/49",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1482,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/50",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/51",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1505,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/52",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1375,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/53",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1493,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/54",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/55",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1470,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/56",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1473,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/57",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1546,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/58",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1499,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/59",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1387,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/60",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1483,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/61",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1529,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/62",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1436,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/63",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1517,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/64",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1501,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/65",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1400,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/66",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1517,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/67",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1395,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/68",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1589,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/69",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1329,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/70",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/71",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1427,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/72",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1546,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/73",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1422,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/74",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1511,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/75",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1423,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/76",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1479,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/77",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1010,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/78",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1489,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/79",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1543,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/80",
+          "passed": false,
+          "error": "AssertionError: a",
+          "completion_len": 1334,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/81",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1408,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/82",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1503,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/83",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1379,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/84",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 949,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/85",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1457,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/86",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1561,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/87",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1314,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/88",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1475,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/89",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/90",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1401,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/91",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1481,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/92",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1421,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/93",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1424,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/94",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1420,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/95",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1516,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/96",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/97",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1016,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/98",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1455,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/99",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1534,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/100",
+          "passed": false,
+          "error": "AssertionError: Test 3",
+          "completion_len": 1492,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/101",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/102",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1464,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/103",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1457,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/104",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1432,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/105",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/106",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1452,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/107",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1592,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/108",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1459,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/109",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1399,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/110",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1503,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/111",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1409,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/112",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1526,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/113",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 1449,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/114",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1541,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/115",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1495,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/116",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1479,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/117",
+          "passed": false,
+          "error": "AssertionError: First test error: None",
+          "completion_len": 1585,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/118",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1442,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/119",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1508,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/120",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/121",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1425,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/122",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1532,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/123",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1465,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/124",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1066,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/125",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1469,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/126",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1517,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/127",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1389,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/128",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1352,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/129",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1531,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/130",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1337,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/131",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1388,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/132",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 844,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/133",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1411,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/134",
+          "passed": false,
+          "error": "SyntaxError: invalid character '⁇' (U+2047) (<eval>, line 15)",
+          "completion_len": 1506,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/135",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1538,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/136",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1454,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/137",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1049,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/138",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1518,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/139",
+          "passed": false,
+          "error": "AssertionError: Test 4",
+          "completion_len": 1522,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/140",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1441,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/141",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1487,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/142",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/143",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1569,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/144",
+          "passed": false,
+          "error": "AssertionError: test1",
+          "completion_len": 1097,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/145",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1450,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/146",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1463,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/147",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1505,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/148",
+          "passed": false,
+          "error": "TypeError: object of type 'NoneType' has no len()",
+          "completion_len": 1417,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/149",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1565,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/150",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1378,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/151",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1478,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/152",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1436,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/153",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1570,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/154",
+          "passed": false,
+          "error": "AssertionError: test #0",
+          "completion_len": 1550,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/155",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1324,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/156",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1498,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/157",
+          "passed": false,
+          "error": "AssertionError: This prints if this assert fails 1 (good for debugging!)",
+          "completion_len": 1528,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/158",
+          "passed": false,
+          "error": "AssertionError: t1",
+          "completion_len": 1409,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/159",
+          "passed": false,
+          "error": "AssertionError: Error",
+          "completion_len": 1544,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/160",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1175,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/161",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1515,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/162",
+          "passed": false,
+          "error": "AssertionError: ",
+          "completion_len": 1400,
+          "tokens": 512
+        },
+        {
+          "task_id": "HumanEval/163",
+          "passed": false,
+          "error": "AssertionError: Test 1",
+          "completion_len": 977,
+          "tokens": 512
+        }
+      ]
+    },
+    "custom_eval": {
+      "accuracy": 0.0,
+      "passed": 0,
+      "total": 16,
+      "by_level": {
+        "level_1": "0/5",
+        "level_2": "0/4",
+        "level_3": "0/3",
+        "level_4": "0/2",
+        "level_5": "0/2"
+      },
+      "per_problem": [
+        {
+          "level": 1,
+          "desc": "Count vowels",
+          "passed": false,
+          "error": "KeyError: 'contar_vocales'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Sum digits",
+          "passed": false,
+          "error": "KeyError: 'suma_digitos'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Palindrome",
+          "passed": false,
+          "error": "KeyError: 'es_palindromo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "Max of list",
+          "passed": false,
+          "error": "KeyError: 'maximo'",
+          "tokens": 384
+        },
+        {
+          "level": 1,
+          "desc": "FizzBuzz",
+          "passed": false,
+          "error": "KeyError: 'fizzbuzz'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Flatten one level",
+          "passed": false,
+          "error": "KeyError: 'aplanar'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Element frequency",
+          "passed": false,
+          "error": "KeyError: 'frecuencia'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Squares of evens",
+          "passed": false,
+          "error": "KeyError: 'cuadrados_pares'",
+          "tokens": 384
+        },
+        {
+          "level": 2,
+          "desc": "Invert dict",
+          "passed": false,
+          "error": "KeyError: 'invertir_dict'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Fibonacci iterative",
+          "passed": false,
+          "error": "KeyError: 'fibonacci'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Binary search",
+          "passed": false,
+          "error": "KeyError: 'busqueda_binaria'",
+          "tokens": 384
+        },
+        {
+          "level": 3,
+          "desc": "Merge sort",
+          "passed": false,
+          "error": "KeyError: 'merge_sort'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Stack class",
+          "passed": false,
+          "error": "KeyError: 'Stack'",
+          "tokens": 384
+        },
+        {
+          "level": 4,
+          "desc": "Punto with distance",
+          "passed": false,
+          "error": "KeyError: 'Punto'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Memoize decorator",
+          "passed": false,
+          "error": "KeyError: 'memoize'",
+          "tokens": 384
+        },
+        {
+          "level": 5,
+          "desc": "Prime generator",
+          "passed": false,
+          "error": "KeyError: 'primos_hasta'",
+          "tokens": 384
+        }
+      ]
+    },
+    "throughput": {
+      "tokens_per_sec": 137.32,
+      "total_tokens": 2560,
+      "elapsed_sec": 18.64,
+      "n_prompts": 10,
+      "max_tokens": 256
+    }
+  }
+}
