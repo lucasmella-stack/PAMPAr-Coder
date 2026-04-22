@@ -35,6 +35,8 @@ from pampar.coder.v3.talamo import TalamoInicial
 
 from .config import ConfigV4
 from .modalities import ModalityRouter, TextEncoder
+from .recurrent import RecurrentBlock, RecurrentOutput
+from .recurrent_nivel import RecurrentNivelAdapter
 
 if TYPE_CHECKING:
     from pampar.coder.v3.engrama_stream import BancoEngrama
@@ -68,9 +70,37 @@ class PamparV4(nn.Module):
 
         # Cerebro v3 sin modificaciones
         self.talamo = TalamoInicial(config)
-        self.niveles = nn.ModuleList(
-            [NivelProfundo(config, nivel_idx=i) for i in range(config.n_levels)]
-        )
+
+        # ── Path A (default): stack de N niveles secuenciales (igual a v3)
+        # ── Path B (use_recurrent_loop=True): Prelude + Body×T + Coda
+        if not config.use_recurrent_loop:
+            self.niveles = nn.ModuleList(
+                [NivelProfundo(config, nivel_idx=i) for i in range(config.n_levels)]
+            )
+            self.prelude_nivel = None
+            self.body_nivel = None
+            self.coda_nivel = None
+            self.recurrent_block = None
+            self.recurrent_adapter = None
+        else:
+            # Prelude (nivel 0), Body (nivel 1, peso compartido en T iters),
+            # Coda (nivel 2). El stack convencional NO se construye.
+            self.niveles = nn.ModuleList()
+            self.prelude_nivel = NivelProfundo(config, nivel_idx=0)
+            self.body_nivel = NivelProfundo(config, nivel_idx=1)
+            self.coda_nivel = NivelProfundo(config, nivel_idx=2)
+            self.recurrent_block = RecurrentBlock(
+                dim=config.dim,
+                max_loops=config.max_loop_iters,
+                use_lti=config.use_lti_injection,
+                use_loop_rope=config.use_loop_index_rope,
+                use_act=config.use_act_halting,
+                threshold=config.act_loop_threshold,
+            )
+            self.recurrent_adapter = RecurrentNivelAdapter(
+                self.body_nivel, n_streams=config.n_streams
+            )
+
         self.norm_f = RMSNorm(config.dim)
 
         # LM head + weight tying con el peso del TextEncoder
@@ -104,24 +134,34 @@ class PamparV4(nn.Module):
     def registrar_tokenizer(self, tokenizer: object) -> None:
         self.talamo.registrar_tokenizer(tokenizer)
 
+    def _all_niveles(self) -> List[NivelProfundo]:
+        """Devuelve todos los NivelProfundo del modelo, sea cual sea el path.
+
+        En path A (stack v3): self.niveles.
+        En path B (recurrent): [prelude, body, coda].
+        """
+        if self.config.use_recurrent_loop:
+            return [self.prelude_nivel, self.body_nivel, self.coda_nivel]
+        return list(self.niveles)
+
     def _enable_kv_cache(self) -> None:
-        for nivel in self.niveles:
+        for nivel in self._all_niveles():
             nivel.attn._use_kv_cache = True
             nivel.attn._kv_cache = None
             nivel.attn._start_pos = 0
 
     def _disable_kv_cache(self) -> None:
-        for nivel in self.niveles:
+        for nivel in self._all_niveles():
             nivel.attn._use_kv_cache = False
             nivel.attn._kv_cache = None
             nivel.attn._start_pos = 0
 
     def _set_cache_pos(self, pos: int) -> None:
-        for nivel in self.niveles:
+        for nivel in self._all_niveles():
             nivel.attn._start_pos = pos
 
     def set_train_norm_clamp(self, enabled: bool) -> None:
-        for nivel in self.niveles:
+        for nivel in self._all_niveles():
             nivel._train_norm_clamp = enabled
 
     def _combinar_streams(
@@ -134,6 +174,55 @@ class PamparV4(nn.Module):
         return sum(
             streams[t] * weights[:, :, t : t + 1] for t in range(self.config.n_streams)
         )
+
+    def _forward_recurrent(
+        self,
+        streams: List[torch.Tensor],
+        terr_acts: torch.Tensor,
+        zona_acts: torch.Tensor,
+        info: Dict,
+        banco_engrama: Optional["BancoEngrama"],
+    ) -> Tuple[List[torch.Tensor], torch.Tensor, Dict]:
+        """Path B: Prelude → RecurrentBlock(body × T) → Coda.
+
+        - Prelude y Coda son niveles únicos (peso propio).
+        - Body se ejecuta dentro del RecurrentBlock con peso compartido
+          entre las T iteraciones.
+        - Si `use_act_halting` está activo, T es dinámico per-token.
+        """
+        # 1) Prelude
+        streams, terr_acts, _ = self.prelude_nivel(
+            streams,
+            terr_acts,
+            TalamoInicial.agregar_fn,
+            banco_engrama=banco_engrama,
+            zona_acts=zona_acts,
+        )
+
+        # 2) Recurrent body
+        combined_init = self.recurrent_adapter.reset(streams, terr_acts, zona_acts)
+        rec_out: RecurrentOutput = self.recurrent_block(
+            e=combined_init,
+            step_fn=self.recurrent_adapter.step,
+            h_init=combined_init,
+        )
+        streams = self.recurrent_adapter.streams
+        terr_acts = self.recurrent_adapter.terr_acts
+
+        info["recurrent_n_steps"] = rec_out.n_steps
+        info["recurrent_ponder_cost"] = rec_out.ponder_cost
+        if rec_out.halt_steps is not None:
+            info["recurrent_halt_steps"] = rec_out.halt_steps
+
+        # 3) Coda
+        streams, terr_acts, _ = self.coda_nivel(
+            streams,
+            terr_acts,
+            TalamoInicial.agregar_fn,
+            banco_engrama=banco_engrama,
+            zona_acts=zona_acts,
+        )
+        return streams, terr_acts, info
 
     # ────────────────────────────────────────────────────────────────────
     # Forward
@@ -174,47 +263,54 @@ class PamparV4(nn.Module):
             "modality_ids": modality_ids,
         }
 
-        for i, nivel in enumerate(self.niveles):
-            if self.config.use_checkpoint and self.training and not use_early_exit:
+        # ── Path B: recurrent loop ──────────────────────────────────────────
+        if self.config.use_recurrent_loop:
+            streams, terr_acts, info = self._forward_recurrent(
+                streams, terr_acts, zona_acts, info, banco_engrama
+            )
+        # ── Path A (default): stack secuencial de niveles ───────────────────
+        else:
+            for i, nivel in enumerate(self.niveles):
+                if self.config.use_checkpoint and self.training and not use_early_exit:
 
-                def create_checkpoint_fn(n):
-                    def fn(*stream_tensors):
-                        s_list = list(stream_tensors[:-2])
-                        ta = stream_tensors[-2]
-                        za = stream_tensors[-1]
-                        new_s, new_ta, _ = n(
-                            s_list,
-                            ta,
-                            TalamoInicial.agregar_fn,
-                            zona_acts=za,
-                        )
-                        return (*new_s, new_ta)
+                    def create_checkpoint_fn(n):
+                        def fn(*stream_tensors):
+                            s_list = list(stream_tensors[:-2])
+                            ta = stream_tensors[-2]
+                            za = stream_tensors[-1]
+                            new_s, new_ta, _ = n(
+                                s_list,
+                                ta,
+                                TalamoInicial.agregar_fn,
+                                zona_acts=za,
+                            )
+                            return (*new_s, new_ta)
 
-                    return fn
+                        return fn
 
-                result = torch.utils.checkpoint.checkpoint(
-                    create_checkpoint_fn(nivel),
-                    *streams,
-                    terr_acts,
-                    zona_acts,
-                    use_reentrant=False,
-                )
-                streams = list(result[: self.config.n_streams])
-                terr_acts = result[self.config.n_streams]
-                conf = 0.0
-            else:
-                streams, terr_acts, conf = nivel(
-                    streams,
-                    terr_acts,
-                    TalamoInicial.agregar_fn,
-                    banco_engrama=banco_engrama,
-                    zona_acts=zona_acts,
-                )
+                    result = torch.utils.checkpoint.checkpoint(
+                        create_checkpoint_fn(nivel),
+                        *streams,
+                        terr_acts,
+                        zona_acts,
+                        use_reentrant=False,
+                    )
+                    streams = list(result[: self.config.n_streams])
+                    terr_acts = result[self.config.n_streams]
+                    conf = 0.0
+                else:
+                    streams, terr_acts, conf = nivel(
+                        streams,
+                        terr_acts,
+                        TalamoInicial.agregar_fn,
+                        banco_engrama=banco_engrama,
+                        zona_acts=zona_acts,
+                    )
 
-            if use_early_exit and conf > self.config.umbral_exit:
-                if i >= self.config.capas_min - 1:
-                    info["exit_nivel"] = i + 1
-                    break
+                if use_early_exit and conf > self.config.umbral_exit:
+                    if i >= self.config.capas_min - 1:
+                        info["exit_nivel"] = i + 1
+                        break
 
         x_final = self._combinar_streams(streams, terr_acts)
         x_final = self.norm_f(x_final)

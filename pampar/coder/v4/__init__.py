@@ -29,6 +29,15 @@ from .modalities import (
     TextEncoder,
 )
 from .modelo import PamparV4
+from .recurrent import (
+    ACTHalting,
+    ACTOutput,
+    LoopIndexEmbedding,
+    LTIInjection,
+    RecurrentBlock,
+    RecurrentOutput,
+)
+from .recurrent_nivel import RecurrentNivelAdapter
 
 __all__ = [
     "ConfigV4",
@@ -43,4 +52,12 @@ __all__ = [
     "TextEncoder",
     "CONTEXT_DIM",
     "build_context_v4",
+    # Recurrent (Fase 4)
+    "ACTHalting",
+    "ACTOutput",
+    "LoopIndexEmbedding",
+    "LTIInjection",
+    "RecurrentBlock",
+    "RecurrentOutput",
+    "RecurrentNivelAdapter",
 ]
