@@ -34,7 +34,9 @@ from pampar.coder.v3.bloques import NivelProfundo, RMSNorm
 from pampar.coder.v3.talamo import TalamoInicial
 
 from .config import ConfigV4
-from .modalities import ModalityRouter, TextEncoder
+from .hierarchical import HierarchicalModulator
+from .modalities import ModalityId, ModalityRouter, TextEncoder
+from .nivel_v4 import NivelProfundoV4
 from .recurrent import RecurrentBlock, RecurrentOutput
 from .recurrent_nivel import RecurrentNivelAdapter
 
@@ -71,41 +73,20 @@ class PamparV4(nn.Module):
         # Cerebro v3 sin modificaciones
         self.talamo = TalamoInicial(config)
 
+        # ── Modulator jerárquico compartido (opcional, Fase 2 + Fase 6)
+        # Vive a nivel modelo y se inyecta a cada NivelProfundoV4.
+        self.hierarchical_modulator: Optional[HierarchicalModulator] = (
+            HierarchicalModulator(config)
+            if config.use_hierarchical_modulators
+            else None
+        )
+
         # ── Path A (default): stack de N niveles secuenciales (igual a v3)
         # ── Path B (use_recurrent_loop=True): Prelude + Body×T + Coda
-        if not config.use_recurrent_loop:
-            self.niveles = nn.ModuleList(
-                [NivelProfundo(config, nivel_idx=i) for i in range(config.n_levels)]
-            )
-            self.prelude_nivel = None
-            self.body_nivel = None
-            self.coda_nivel = None
-            self.recurrent_block = None
-            self.recurrent_adapter = None
+        if config.use_recurrent_loop:
+            self._build_path_b()
         else:
-            # Prelude (nivel 0), Body (nivel 1, peso compartido en T iters),
-            # Coda (nivel 2). El stack convencional NO se construye.
-            self.niveles = nn.ModuleList()
-            self.prelude_nivel = NivelProfundo(config, nivel_idx=0)
-            self.body_nivel = NivelProfundo(config, nivel_idx=1)
-            self.coda_nivel = NivelProfundo(config, nivel_idx=2)
-            self.recurrent_block = RecurrentBlock(
-                dim=config.dim,
-                max_loops=config.max_loop_iters,
-                use_lti=config.use_lti_injection,
-                use_loop_rope=config.use_loop_index_rope,
-                use_act=config.use_act_halting,
-                threshold=config.act_loop_threshold,
-            )
-            self.recurrent_adapter = RecurrentNivelAdapter(
-                self.body_nivel, n_streams=config.n_streams
-            )
-
-            # Fase 5b: opcionalmente compartir FFN entre los 3 niveles.
-            # Atención y modulators NO se comparten (preservan selectividad
-            # por posición en el loop).
-            if config.share_ffn_across_niveles:
-                self._share_ffn_modules()
+            self._build_path_a()
 
         self.norm_f = RMSNorm(config.dim)
 
@@ -114,6 +95,55 @@ class PamparV4(nn.Module):
         self.lm_head.weight = self.modality_router.text_encoder.weight
 
         self._init_weights()
+
+    # ────────────────────────────────────────────────────────────────────
+    # Construcción de niveles (path A / path B)
+    # ────────────────────────────────────────────────────────────────────
+
+    def _make_nivel(self, nivel_idx: int) -> NivelProfundoV4:
+        """Factory helper: crea un NivelProfundoV4 con el modulator jerárquico inyectado."""
+        return NivelProfundoV4(
+            self.config,
+            nivel_idx=nivel_idx,
+            hierarchical_modulator=self.hierarchical_modulator,
+        )
+
+    def _build_path_a(self) -> None:
+        """Path A: stack de N niveles secuenciales (igual a v3)."""
+        self.niveles = nn.ModuleList(
+            [self._make_nivel(i) for i in range(self.config.n_levels)]
+        )
+        self.prelude_nivel = None
+        self.body_nivel = None
+        self.coda_nivel = None
+        self.recurrent_block = None
+        self.recurrent_adapter = None
+
+    def _build_path_b(self) -> None:
+        """Path B: Prelude + Body×T + Coda con peso compartido en el body."""
+        cfg = self.config
+        self.niveles = nn.ModuleList()
+        self.prelude_nivel = self._make_nivel(0)
+        self.body_nivel = self._make_nivel(1)
+        self.coda_nivel = self._make_nivel(2)
+        self.recurrent_block = RecurrentBlock(
+            dim=cfg.dim,
+            max_loops=cfg.max_loop_iters,
+            use_lti=cfg.use_lti_injection,
+            use_loop_rope=cfg.use_loop_index_rope,
+            use_act=cfg.use_act_halting,
+            threshold=cfg.act_loop_threshold,
+        )
+        self.recurrent_adapter = RecurrentNivelAdapter(
+            self.body_nivel,
+            n_streams=cfg.n_streams,
+            max_loops=cfg.max_loop_iters,
+            modality_id=ModalityId.TEXT,
+        )
+
+        # Fase 5b: opcionalmente compartir FFN entre los 3 niveles del body.
+        if cfg.share_ffn_across_niveles:
+            self._share_ffn_modules()
 
     # ────────────────────────────────────────────────────────────────────
     # API helpers (mismas firmas que PamparV3 — drop-in compatible)

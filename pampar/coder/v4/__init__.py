@@ -30,6 +30,7 @@ from .modalities import (
     TextEncoder,
 )
 from .modelo import PamparV4
+from .nivel_v4 import NivelProfundoV4
 from .recurrent import (
     ACTHalting,
     ACTOutput,
@@ -49,6 +50,7 @@ __all__ = [
     "ModalityRouter",
     "NUM_MODALITIES",
     "PamparV4",
+    "NivelProfundoV4",
     "StreamFFN",
     "TextEncoder",
     "CONTEXT_DIM",

@@ -178,10 +178,16 @@ class TestPamparV4Forward:
 
 class TestPamparV4EquivalenciaConV3:
     """
-    PamparV4 con misma seed y misma config debe ser numéricamente idéntico
-    a PamparV3 en modo solo-texto. El TextEncoder es un wrapper trivial
-    sobre nn.Embedding, así que la única diferencia debería ser que el
-    embedding está dentro de modality_router.text_encoder.embedding.
+    Equivalencia numérica V3 ↔ V4.
+
+    Importante (post-Fase 6):
+        Con `use_mixed_selectivity=True` (default), V4 usa
+        `ContextModulatorV4` con contexto de 71 dims (incluyendo
+        modality_id one-hot que SIEMPRE activa TEXT=1.0). Por lo tanto,
+        V4 NO es bit-equivalent a V3 en Mixed Selectivity, por diseño.
+
+        En `use_mixed_selectivity=False` (legacy), no hay modulators,
+        y V4 ES numéricamente equivalente a V3.
     """
 
     def _make_cfg_v3(self, cfg_v4: ConfigV4) -> ConfigV3:
@@ -199,45 +205,64 @@ class TestPamparV4EquivalenciaConV3:
             max_seq_len=cfg_v4.max_seq_len,
             dropout=cfg_v4.dropout,
             use_checkpoint=cfg_v4.use_checkpoint,
+            use_mixed_selectivity=cfg_v4.use_mixed_selectivity,
         )
 
-    def test_misma_salida_numerica(self, small_cfg_v4):
-        cfg_v3 = self._make_cfg_v3(small_cfg_v4)
-
-        torch.manual_seed(42)
-        model_v3 = PamparV3(cfg_v3).eval()
-
-        torch.manual_seed(42)
-        model_v4 = PamparV4(small_cfg_v4).eval()
-
-        # Sincronizar pesos: copiar todo el state_dict de v3 al v4 mapeando
-        # tok_emb.weight ↔ modality_router.text_encoder.embedding.weight
+    @staticmethod
+    def _sync_v3_to_v4(model_v3: PamparV3, model_v4: PamparV4) -> None:
+        """Copia state_dict de v3 a v4 con renombre tok_emb→text_encoder."""
         sd_v3 = model_v3.state_dict()
         sd_v4 = model_v4.state_dict()
         new_sd: dict = {}
         for k, v in sd_v4.items():
             if k.startswith("modality_router.text_encoder.embedding."):
-                # Mapeo desde el equivalente en v3 (tok_emb.*)
                 v3_key = (
                     "tok_emb." + k.split("modality_router.text_encoder.embedding.")[1]
                 )
-                if v3_key in sd_v3:
-                    new_sd[k] = sd_v3[v3_key]
-                else:
-                    new_sd[k] = v
-            elif k in sd_v3:
-                new_sd[k] = sd_v3[k]
+                new_sd[k] = sd_v3.get(v3_key, v)
             else:
-                new_sd[k] = v
+                new_sd[k] = sd_v3.get(k, v)
         model_v4.load_state_dict(new_sd, strict=True)
 
-        ids = torch.randint(0, small_cfg_v4.vocab_size, (1, 5))
+    def test_legacy_mode_es_equivalente_a_v3(self, small_cfg_v4):
+        """En modo legacy (sin modulators), V4 == V3 bit-perfect."""
+        cfg_v4_legacy = ConfigV4(
+            **{**small_cfg_v4.__dict__, "use_mixed_selectivity": False}
+        )
+        cfg_v3 = self._make_cfg_v3(cfg_v4_legacy)
 
+        torch.manual_seed(42)
+        model_v3 = PamparV3(cfg_v3).eval()
+        torch.manual_seed(42)
+        model_v4 = PamparV4(cfg_v4_legacy).eval()
+
+        self._sync_v3_to_v4(model_v3, model_v4)
+
+        ids = torch.randint(0, cfg_v4_legacy.vocab_size, (1, 5))
         with torch.no_grad():
             logits_v3, _, _ = model_v3(ids)
             logits_v4, _, _ = model_v4(ids)
 
         assert torch.allclose(logits_v3, logits_v4, atol=1e-5)
+
+    def test_mixed_mode_diverge_de_v3_pero_es_valido(self, small_cfg_v4):
+        """En Mixed Selectivity, V4 diverge intencionalmente de V3."""
+        cfg_v3 = self._make_cfg_v3(small_cfg_v4)
+
+        torch.manual_seed(42)
+        model_v3 = PamparV3(cfg_v3).eval()
+        torch.manual_seed(42)
+        model_v4 = PamparV4(small_cfg_v4).eval()
+
+        ids = torch.randint(0, small_cfg_v4.vocab_size, (1, 5))
+        with torch.no_grad():
+            logits_v3, _, _ = model_v3(ids)
+            logits_v4, _, _ = model_v4(ids)
+
+        # Misma forma, ambos finitos, pero NO idénticos.
+        assert logits_v3.shape == logits_v4.shape
+        assert torch.isfinite(logits_v3).all() and torch.isfinite(logits_v4).all()
+        assert not torch.allclose(logits_v3, logits_v4, atol=1e-3)
 
 
 class TestPamparV4Backward:

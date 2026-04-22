@@ -36,18 +36,25 @@ import torch.nn as nn
 from pampar.coder.v3.nivel import NivelProfundo
 from pampar.coder.v3.talamo import TalamoInicial
 
+from .modalities import ModalityId
+
 
 class RecurrentNivelAdapter(nn.Module):
     """
     Adapta un `NivelProfundo` v3 a la interfaz `StepFn` de `RecurrentBlock`.
 
     Args:
-        body_nivel: el `NivelProfundo` que se ejecutará en cada iteración
-                    del loop (peso compartido entre iteraciones).
+        body_nivel: el `NivelProfundo` (o `NivelProfundoV4`) que se
+                    ejecutará en cada iteración del loop (peso compartido).
         n_streams:  cantidad de streams (debe coincidir con el config).
+        max_loops:  cantidad máxima de iteraciones del loop. Se propaga
+                    al body como `max_loops` para normalizar `loop_idx`
+                    en el contexto del modulator V4.
+        modality_id: modalidad por defecto del body (TEXT por ahora;
+                     futuro: per-token desde el ModalityRouter).
 
     Uso típico:
-        adapter = RecurrentNivelAdapter(body_nivel, n_streams=4)
+        adapter = RecurrentNivelAdapter(body_nivel, n_streams=4, max_loops=8)
         adapter.reset(streams_init, terr_acts_init, zona_acts)
         out = recurrent_block(combined_init, step_fn=adapter.step)
         # Después del loop:
@@ -55,10 +62,18 @@ class RecurrentNivelAdapter(nn.Module):
         final_terr_acts = adapter.terr_acts
     """
 
-    def __init__(self, body_nivel: NivelProfundo, n_streams: int):
+    def __init__(
+        self,
+        body_nivel: NivelProfundo,
+        n_streams: int,
+        max_loops: int = 1,
+        modality_id: int = ModalityId.TEXT,
+    ):
         super().__init__()
         self.body_nivel = body_nivel
         self.n_streams = n_streams
+        self.max_loops = max_loops
+        self.modality_id = modality_id
 
         # Estado interno (no son nn.Parameters, no se serializan)
         self._streams: Optional[List[torch.Tensor]] = None
@@ -66,6 +81,20 @@ class RecurrentNivelAdapter(nn.Module):
         self._zona_acts: Optional[torch.Tensor] = None
         self._last_combined: Optional[torch.Tensor] = None
         self._is_reset: bool = False
+        # Detectamos una sola vez si el body acepta loop_idx
+        # (NivelProfundoV4) o no (NivelProfundo v3 puro).
+        self._body_accepts_loop_kwargs = self._detect_loop_kwargs(body_nivel)
+
+    @staticmethod
+    def _detect_loop_kwargs(body: nn.Module) -> bool:
+        """Devuelve True si `body.forward` acepta `loop_idx`."""
+        import inspect
+
+        try:
+            sig = inspect.signature(body.forward)
+            return "loop_idx" in sig.parameters
+        except (TypeError, ValueError):
+            return False
 
     # ────────────────────────────────────────────────────────────────────
     # API pública
@@ -136,14 +165,28 @@ class RecurrentNivelAdapter(nn.Module):
         # 2) Aplicar delta a cada stream → preserva diferenciación
         streams_in = [s + delta for s in self._streams]
 
-        # 3) Forward del nivel body (peso compartido entre iteraciones)
-        new_streams, new_terr_acts, _conf = self.body_nivel(
-            streams_in,
-            self._terr_acts,
-            TalamoInicial.agregar_fn,
-            banco_engrama=None,
-            zona_acts=self._zona_acts,
-        )
+        # 3) Forward del nivel body (peso compartido entre iteraciones).
+        #    Si el body acepta loop_idx (NivelProfundoV4), se lo pasamos
+        #    para que el modulator condicione (gamma, beta) por iteración.
+        if self._body_accepts_loop_kwargs:
+            new_streams, new_terr_acts, _conf = self.body_nivel(
+                streams_in,
+                self._terr_acts,
+                TalamoInicial.agregar_fn,
+                banco_engrama=None,
+                zona_acts=self._zona_acts,
+                loop_idx=t,
+                max_loops=self.max_loops,
+                modality_id=self.modality_id,
+            )
+        else:
+            new_streams, new_terr_acts, _conf = self.body_nivel(
+                streams_in,
+                self._terr_acts,
+                TalamoInicial.agregar_fn,
+                banco_engrama=None,
+                zona_acts=self._zona_acts,
+            )
 
         # 4) Actualizar estado y devolver nuevo combined
         self._streams = new_streams
