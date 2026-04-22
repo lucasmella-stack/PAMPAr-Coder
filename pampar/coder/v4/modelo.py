@@ -101,6 +101,12 @@ class PamparV4(nn.Module):
                 self.body_nivel, n_streams=config.n_streams
             )
 
+            # Fase 5b: opcionalmente compartir FFN entre los 3 niveles.
+            # Atención y modulators NO se comparten (preservan selectividad
+            # por posición en el loop).
+            if config.share_ffn_across_niveles:
+                self._share_ffn_modules()
+
         self.norm_f = RMSNorm(config.dim)
 
         # LM head + weight tying con el peso del TextEncoder
@@ -143,6 +149,25 @@ class PamparV4(nn.Module):
         if self.config.use_recurrent_loop:
             return [self.prelude_nivel, self.body_nivel, self.coda_nivel]
         return list(self.niveles)
+
+    def _share_ffn_modules(self) -> None:
+        """Comparte el FFN entre los 3 niveles del path B (Fase 5b).
+
+        Toma el FFN del prelude como canónico y reemplaza el de body y
+        coda por la misma referencia. PyTorch maneja esto correctamente:
+        los gradientes se acumulan en el único set de parámetros.
+
+        En `use_mixed_selectivity=True` comparte `ffn_shared`. En modo
+        legacy comparte la lista completa `ffns`.
+        """
+        if self.config.use_mixed_selectivity:
+            shared_ffn = self.prelude_nivel.ffn_shared
+            self.body_nivel.ffn_shared = shared_ffn
+            self.coda_nivel.ffn_shared = shared_ffn
+        else:
+            shared_ffns = self.prelude_nivel.ffns
+            self.body_nivel.ffns = shared_ffns
+            self.coda_nivel.ffns = shared_ffns
 
     def _enable_kv_cache(self) -> None:
         for nivel in self._all_niveles():

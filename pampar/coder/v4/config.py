@@ -78,6 +78,16 @@ class ConfigV4(ConfigV3):
     use_loop_index_rope: bool = False
     """Inyectar embedding sinusoidal del índice de loop en el contexto."""
 
+    # ── Sharing entre niveles del path B (Fase 5b) ──────────────────────────
+    share_ffn_across_niveles: bool = False
+    """Si True y `use_recurrent_loop=True`, los 3 niveles (Prelude, Body,
+    Coda) comparten el bloque FFN (mismo módulo, mismos params). Reduce
+    params totales ~33% del costo FFN. Los modulators y atención NO se
+    comparten — cada nivel mantiene su selectividad propia.
+
+    Solo aplica con `use_mixed_selectivity=True` (compartimos `ffn_shared`).
+    En modo legacy se compartiría la lista `ffns` completa."""
+
     # ── Propiedades derivadas multimodal ────────────────────────────────────
 
     @property

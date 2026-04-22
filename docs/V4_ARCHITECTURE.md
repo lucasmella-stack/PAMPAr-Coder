@@ -1,6 +1,6 @@
 # PAMPAr V4 — Recurrent-Depth Multimodal Transformer
 
-> Estado: **Fases 0-4 + 5a completas (scaffold, contexto multimodal, modulators jerárquicos, ModalityRouter, recurrent loop standalone, recurrent loop cableado en `PamparV4` vía flag).**
+> Estado: **Fases 0-5 completas (scaffold, contexto multimodal, modulators jerárquicos, ModalityRouter, recurrent loop standalone, recurrent cableado vía flag, FFN compartido + harness A/B).**
 > v3 sigue siendo producción. v4 evoluciona en paralelo sin tocar v3.
 
 ---
@@ -35,7 +35,7 @@ escalar a multimodal (texto, imagen, audio, video, code-AST, diagrama, tabla).
 | 3                 | `ModalityRouter` + `TextEncoder` cableado en el modelo         | ✅     |
 | 4                 | Recurrent loop (Prelude → R×T → Coda) + LTI + Loop-RoPE + ACT  | ✅     |
 | 5a                | RecurrentBlock cableado en PamparV4 vía `use_recurrent_loop`   | ✅     |
-| 5b                | FFN compartido entre niveles + validación A/B contra v3        | ⏳     |
+| 5b                | FFN compartido entre Prelude/Body/Coda + harness A/B           | ✅     |
 | 6 (futuro)        | Encoder de imagen (PatchEncoder ViT)                           | —      |
 | 7 (futuro lejano) | Encoder de audio (mel-spec → linear)                           | —      |
 

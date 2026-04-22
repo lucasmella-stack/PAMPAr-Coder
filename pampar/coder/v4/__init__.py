@@ -18,6 +18,7 @@ Estado: scaffold + Fase 1 (contexto enriquecido). v3 sigue siendo producción.
 Ver `docs/V4_ARCHITECTURE.md` para el plan completo de evolución.
 """
 
+from .ab_harness import ABReport, build_pair, compare_forward, count_params
 from .config import ConfigV4
 from .ffn import CONTEXT_DIM, ContextModulatorV4, StreamFFN, build_context_v4
 from .hierarchical import HierarchicalModulator
@@ -60,4 +61,9 @@ __all__ = [
     "RecurrentBlock",
     "RecurrentOutput",
     "RecurrentNivelAdapter",
+    # A/B harness (Fase 5b)
+    "ABReport",
+    "build_pair",
+    "compare_forward",
+    "count_params",
 ]
