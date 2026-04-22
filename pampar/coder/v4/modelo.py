@@ -249,6 +249,84 @@ class PamparV4(nn.Module):
         )
         return streams, terr_acts, info
 
+    @staticmethod
+    def _make_checkpoint_fn(nivel: NivelProfundo, n_streams: int):
+        """Crea una closure compatible con `torch.utils.checkpoint`.
+
+        Empaqueta la firma multi-tensor que `checkpoint` requiere
+        (solo posicionales, todos Tensors) y devuelve los outputs
+        re-empaquetados como tupla.
+        """
+
+        def fn(*stream_tensors: torch.Tensor):
+            s_list = list(stream_tensors[:-2])
+            ta = stream_tensors[-2]
+            za = stream_tensors[-1]
+            new_s, new_ta, _ = nivel(s_list, ta, TalamoInicial.agregar_fn, zona_acts=za)
+            return (*new_s, new_ta)
+
+        return fn
+
+    def _run_nivel_with_checkpoint(
+        self,
+        nivel: NivelProfundo,
+        streams: List[torch.Tensor],
+        terr_acts: torch.Tensor,
+        zona_acts: torch.Tensor,
+    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
+        """Ejecuta un nivel con activation checkpointing (training only).
+
+        El checkpoint no propaga `conf` (no lo necesita el path con
+        gradient checkpointing porque early exit no se usa en training).
+        """
+        fn = self._make_checkpoint_fn(nivel, self.config.n_streams)
+        result = torch.utils.checkpoint.checkpoint(
+            fn, *streams, terr_acts, zona_acts, use_reentrant=False
+        )
+        new_streams = list(result[: self.config.n_streams])
+        new_terr_acts = result[self.config.n_streams]
+        return new_streams, new_terr_acts
+
+    def _forward_stack(
+        self,
+        streams: List[torch.Tensor],
+        terr_acts: torch.Tensor,
+        zona_acts: torch.Tensor,
+        info: Dict,
+        use_early_exit: bool,
+        banco_engrama: Optional["BancoEngrama"],
+    ) -> Tuple[List[torch.Tensor], torch.Tensor, Dict]:
+        """Path A: stack secuencial de N niveles (comportamiento v3).
+
+        Soporta gradient checkpointing en training (sin early exit) y
+        early exit en inference (sin checkpointing).
+        """
+        use_ckpt = self.config.use_checkpoint and self.training and not use_early_exit
+
+        for i, nivel in enumerate(self.niveles):
+            if use_ckpt:
+                streams, terr_acts = self._run_nivel_with_checkpoint(
+                    nivel, streams, terr_acts, zona_acts
+                )
+                continue
+
+            streams, terr_acts, conf = nivel(
+                streams,
+                terr_acts,
+                TalamoInicial.agregar_fn,
+                banco_engrama=banco_engrama,
+                zona_acts=zona_acts,
+            )
+            if (
+                use_early_exit
+                and conf > self.config.umbral_exit
+                and i >= self.config.capas_min - 1
+            ):
+                info["exit_nivel"] = i + 1
+                break
+
+        return streams, terr_acts, info
+
     # ────────────────────────────────────────────────────────────────────
     # Forward
     # ────────────────────────────────────────────────────────────────────
@@ -295,47 +373,9 @@ class PamparV4(nn.Module):
             )
         # ── Path A (default): stack secuencial de niveles ───────────────────
         else:
-            for i, nivel in enumerate(self.niveles):
-                if self.config.use_checkpoint and self.training and not use_early_exit:
-
-                    def create_checkpoint_fn(n):
-                        def fn(*stream_tensors):
-                            s_list = list(stream_tensors[:-2])
-                            ta = stream_tensors[-2]
-                            za = stream_tensors[-1]
-                            new_s, new_ta, _ = n(
-                                s_list,
-                                ta,
-                                TalamoInicial.agregar_fn,
-                                zona_acts=za,
-                            )
-                            return (*new_s, new_ta)
-
-                        return fn
-
-                    result = torch.utils.checkpoint.checkpoint(
-                        create_checkpoint_fn(nivel),
-                        *streams,
-                        terr_acts,
-                        zona_acts,
-                        use_reentrant=False,
-                    )
-                    streams = list(result[: self.config.n_streams])
-                    terr_acts = result[self.config.n_streams]
-                    conf = 0.0
-                else:
-                    streams, terr_acts, conf = nivel(
-                        streams,
-                        terr_acts,
-                        TalamoInicial.agregar_fn,
-                        banco_engrama=banco_engrama,
-                        zona_acts=zona_acts,
-                    )
-
-                if use_early_exit and conf > self.config.umbral_exit:
-                    if i >= self.config.capas_min - 1:
-                        info["exit_nivel"] = i + 1
-                        break
+            streams, terr_acts, info = self._forward_stack(
+                streams, terr_acts, zona_acts, info, use_early_exit, banco_engrama
+            )
 
         x_final = self._combinar_streams(streams, terr_acts)
         x_final = self.norm_f(x_final)

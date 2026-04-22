@@ -146,31 +146,6 @@ class ContextModulatorV4(nn.Module):
         # Init en zeros para que gamma=0, beta=0 al inicio (identidad)
         nn.init.zeros_(self.proj[2].weight)
 
-    def _build_context(
-        self,
-        zona_acts: torch.Tensor,
-        terr_acts: torch.Tensor,
-        stream_idx: int,
-        nivel_idx: int,
-        n_levels: int,
-        conf: float,
-        loop_idx: int = 0,
-        max_loops: int = 1,
-        modality_id: int = ModalityId.TEXT,
-    ) -> torch.Tensor:
-        """Delega en `build_context_v4` (función libre)."""
-        return build_context_v4(
-            zona_acts=zona_acts,
-            terr_acts=terr_acts,
-            stream_idx=stream_idx,
-            nivel_idx=nivel_idx,
-            n_levels=n_levels,
-            conf=conf,
-            loop_idx=loop_idx,
-            max_loops=max_loops,
-            modality_id=modality_id,
-        )
-
     def forward(
         self,
         ffn_out: torch.Tensor,
@@ -202,7 +177,7 @@ class ContextModulatorV4(nn.Module):
         Returns:
             [B, L, dim] salida modulada: (1 + gamma) * ffn_out + beta.
         """
-        ctx = self._build_context(
+        ctx = build_context_v4(
             zona_acts=zona_acts,
             terr_acts=terr_acts,
             stream_idx=stream_idx,
