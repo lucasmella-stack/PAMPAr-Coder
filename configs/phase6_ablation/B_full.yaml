@@ -1,0 +1,15 @@
+# B_full — Path B completo con Fase 6:
+#   * Recurrent loop (Prelude + Body×T + Coda)
+#   * HierarchicalModulator compartido
+#   * loop_idx propagado al modulator (default)
+#   * FFN compartido entre niveles del path
+extends: "_base.yaml"
+name: "B_full"
+description: "Path B completo (recurrent + hierarchical + loop_idx + ffn share)"
+
+model:
+  use_hierarchical_modulators: true
+  use_recurrent_loop: true
+  max_loop_iters: 3
+  share_ffn_across_niveles: true
+  disable_loop_idx_in_modulator: false

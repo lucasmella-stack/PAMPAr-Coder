@@ -1,0 +1,9 @@
+# A_hier — Path A con HierarchicalModulator compartido entre niveles.
+# Mide si el sharing del backbone del modulator ayuda incluso sin recurrencia.
+extends: "_base.yaml"
+name: "A_hier"
+description: "Path A con HierarchicalModulator compartido"
+
+model:
+  use_hierarchical_modulators: true
+  use_recurrent_loop: false

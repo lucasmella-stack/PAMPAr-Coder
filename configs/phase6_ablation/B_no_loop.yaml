@@ -1,0 +1,17 @@
+# B_no_loop — IDÉNTICO a B_full pero con disable_loop_idx_in_modulator=True.
+# El recurrent loop sigue ejecutando T iteraciones (no es B con T=1) — solo
+# el modulator queda CIEGO a la posición temporal. Sanity check para
+# validar que loop_idx aporta señal real, no solo decorativa.
+#
+# Hipótesis H2: B_full > B_no_loop. Si val_loss(B_full) ≈ val_loss(B_no_loop)
+# entonces Fase 6 no aporta y hay que repensar.
+extends: "_base.yaml"
+name: "B_no_loop"
+description: "Path B con loop_idx ablacionado en el modulator"
+
+model:
+  use_hierarchical_modulators: true
+  use_recurrent_loop: true
+  max_loop_iters: 3
+  share_ffn_across_niveles: true
+  disable_loop_idx_in_modulator: true

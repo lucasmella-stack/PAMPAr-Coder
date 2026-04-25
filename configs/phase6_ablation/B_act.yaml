@@ -1,0 +1,15 @@
+# B_act — Path B con ACT (Adaptive Computation Time) habilitado.
+# El modelo decide por-token cuántas iteraciones del loop ejecutar.
+# Hipótesis H3: misma val_loss que B_full pero con menor número promedio
+# de iteraciones (más eficiente en inferencia).
+extends: "_base.yaml"
+name: "B_act"
+description: "Path B con ACT halting"
+
+model:
+  use_hierarchical_modulators: true
+  use_recurrent_loop: true
+  max_loop_iters: 5
+  share_ffn_across_niveles: true
+  use_act_halting: true
+  act_loop_threshold: 0.99

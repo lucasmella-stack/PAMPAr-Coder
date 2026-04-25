@@ -1,0 +1,9 @@
+# A_baseline — Path A (stack secuencial), modulators V4 independientes,
+# sin hierarchical. Es el control "cerca de v3" pero sobre arquitectura V4.
+extends: "_base.yaml"
+name: "A_baseline"
+description: "Path A, modulators V4 independientes por nivel"
+
+model:
+  use_hierarchical_modulators: false
+  use_recurrent_loop: false
