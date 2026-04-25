@@ -28,7 +28,8 @@ Uso:
       --config configs/phase6_ablation/B_full.yaml \
       --seed 42
 
-  # Lanzar las 5 variantes × 3 seeds (use scripts/launch_phase6_ablation.ps1)
+  # Lanzar las 5 variantes × 3 seeds
+  bash scripts/launch_phase6_ablation.sh
 """
 
 from __future__ import annotations
@@ -318,9 +319,11 @@ def main() -> int:
     log_every = train_cfg.get("log_every", 25)
     eval_every = train_cfg.get("eval_every", 200)
     ckpt_every = train_cfg.get("ckpt_every", 1000)
+    last_step = 0  # init defensivo: si exception antes del loop, finally no crashea
 
     try:
         for step in range(max_steps):
+            last_step = step + 1
             lr = cosine_lr(step, train_cfg["warmup_steps"], max_steps, train_cfg["lr"])
             for pg in optimizer.param_groups:
                 pg["lr"] = lr
@@ -406,7 +409,7 @@ def main() -> int:
         torch.save(
             {
                 "model": model.state_dict(),
-                "step": step + 1 if "step" in dir() else 0,  # noqa: F821
+                "step": last_step,
                 "cfg": dataclasses.asdict(resolved_cfg),
             },
             run_dir / "final.pt",

@@ -1,31 +1,22 @@
 # PAMPAr-Coder — Phase 6 ablation training image (Alibaba GPU ready)
 #
 # Base: PyTorch oficial con CUDA 12.1, runtime + cuDNN.
-# Multi-stage para minimizar tamaño final.
+# Single-stage: la base ya es minimal (~6GB con CUDA), splitear en stages
+# y copiar site-packages es frágil porque depende de la versión exacta
+# de Python del base image (3.11.x → si cambia, los COPY rompen).
 
-# ── Stage 1: builder (instala deps) ────────────────────────────────────
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime AS builder
-
-WORKDIR /build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        git \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
-
-# ── Stage 2: runtime ───────────────────────────────────────────────────
 FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
 
 # Non-root user
 RUN groupadd -r pampar && useradd -r -g pampar -m -d /home/pampar pampar
 
-# Copia paquetes Python ya instalados desde builder
-COPY --from=builder /opt/conda/lib/python3.11/site-packages /opt/conda/lib/python3.11/site-packages
-COPY --from=builder /opt/conda/bin /opt/conda/bin
-
+# Deps Python (cachea la layer si requirements.txt no cambia)
 WORKDIR /workspace
+COPY requirements.txt /workspace/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copia el repo (data/clean_sft.jsonl y tokenizer van adentro)
 COPY --chown=pampar:pampar . /workspace
 
 # El dataset y tokenizer se copian con el repo. Los outputs van a un
