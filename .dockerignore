@@ -1,0 +1,39 @@
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+.venv/
+venv/
+.env
+.env.*
+
+# Outputs grandes (se montan como volumen, no se copian a la imagen)
+ablation_results/
+checkpoints/
+sessions/
+generation_log.txt
+*.pt
+*.bin
+
+# Datos opcionales que pesan mucho (se montan como volumen si hace falta)
+biblioteca/textbook/
+data/textbook_v3/
+data/distillation/
+
+# Git
+.git/
+.github/
+
+# Editor
+.vscode/
+.idea/
+
+# Docs
+*.md
+!README.md
+paper/
+docs/
+brain_scan.html
+scan_neuro.html
