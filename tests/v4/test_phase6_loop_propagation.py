@@ -286,3 +286,56 @@ class TestPamparV4PathBPropagaLoopIdx:
         # loop_idx ∈ {0, 1, 2}
         loop_ids_seen = set(captured)
         assert loop_ids_seen >= {0, 1, 2}, f"loop_idx visto: {loop_ids_seen}"
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Ablación: disable_loop_idx_in_modulator
+# ────────────────────────────────────────────────────────────────────────
+
+
+class TestDisableLoopIdxAblation:
+    def test_flag_fuerza_loop_idx_cero_en_modulator(self, small_cfg):
+        """Con la flag activa, el modulator SIEMPRE recibe loop_idx=0
+        aunque el recurrent loop ejecute T iteraciones."""
+        cfg = ConfigV4(
+            **{
+                **small_cfg.__dict__,
+                "use_recurrent_loop": True,
+                "max_loop_iters": 3,
+                "disable_loop_idx_in_modulator": True,
+            }
+        )
+        model = PamparV4(cfg).eval()
+
+        captured: list[int] = []
+        original = model.body_nivel.modulators[0].forward
+
+        def spy(*args, **kwargs):
+            captured.append(kwargs.get("loop_idx", -1))
+            return original(*args, **kwargs)
+
+        model.body_nivel.modulators[0].forward = spy
+
+        ids = torch.randint(0, cfg.vocab_size, (1, 4))
+        with torch.no_grad():
+            model(ids)
+
+        assert captured, "modulator nunca fue llamado"
+        assert all(li == 0 for li in captured), (
+            f"flag no funciona — loop_idx visto: {set(captured)}"
+        )
+
+    def test_recurrent_loop_aun_ejecuta_T_iteraciones(self, small_cfg):
+        """La flag NO reduce iteraciones — solo ciega el modulator."""
+        cfg = ConfigV4(
+            **{
+                **small_cfg.__dict__,
+                "use_recurrent_loop": True,
+                "max_loop_iters": 4,
+                "disable_loop_idx_in_modulator": True,
+            }
+        )
+        model = PamparV4(cfg).eval()
+        ids = torch.randint(0, cfg.vocab_size, (1, 4))
+        _, _, info = model(ids)
+        assert info["recurrent_n_steps"] == 4

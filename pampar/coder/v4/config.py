@@ -78,6 +78,13 @@ class ConfigV4(ConfigV3):
     use_loop_index_rope: bool = False
     """Inyectar embedding sinusoidal del índice de loop en el contexto."""
 
+    disable_loop_idx_in_modulator: bool = False
+    """Ablación científica (sanity check de Fase 6): si True, fuerza
+    `loop_idx=0` y `max_loops=1` en el contexto del modulator (V4 e
+    HierarchicalModulator) sin cambiar la cantidad real de iteraciones
+    del recurrent loop. Permite medir si el modulator REALMENTE usa la
+    señal de loop_idx (B_full vs B_no_loop). Default False (producción)."""
+
     # ── Sharing entre niveles del path B (Fase 5b) ──────────────────────────
     share_ffn_across_niveles: bool = False
     """Si True y `use_recurrent_loop=True`, los 3 niveles (Prelude, Body,

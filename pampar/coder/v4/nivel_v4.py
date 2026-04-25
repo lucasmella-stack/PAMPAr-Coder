@@ -121,7 +121,16 @@ class NivelProfundoV4(NivelProfundo):
         max_loops: int,
         modality_id: int,
     ) -> torch.Tensor:
-        """Dispatcha al modulator apropiado (independiente o jerárquico)."""
+        """Dispatcha al modulator apropiado (independiente o jerárquico).
+
+        Si `config.disable_loop_idx_in_modulator` está activo (ablación),
+        fuerza `loop_idx=0`/`max_loops=1` en el contexto. El recurrent
+        loop sigue ejecutándose con T iteraciones reales — solo el
+        modulator queda ciego a su posición temporal.
+        """
+        if self.config.disable_loop_idx_in_modulator:
+            loop_idx = 0
+            max_loops = 1
         if self._uses_hierarchical:
             return self._hierarchical_modulator(
                 h_base,
